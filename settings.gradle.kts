@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 rootProject.name = "lilserve"
 
 include("kernel")
+
+include("reservation-service:domain")
