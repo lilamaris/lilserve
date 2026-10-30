@@ -9,6 +9,7 @@ Java 21 + Spring Boot 4, Gradle Kotlin DSL.
 ## Index
 
 - `gradle/libs.versions.toml` — source of truth for dependencies and versions; reuse existing entries before adding one.
+- `build-logic/convention` — convention plugins; apply them in the root build, never configure java/jacoco/spotless directly.
 
 ## Code
 
@@ -20,6 +21,7 @@ Java 21 + Spring Boot 4, Gradle Kotlin DSL.
 ## Tests
 
 - Write tests only when strictly necessary; add a regression test for every bug fix.
+- `check` enforces 80% line coverage (`jacocoTestCoverageVerification` via `java.coverage`); add real tests, not filler, to meet it.
 - JUnit 5 + AssertJ. Mockito only for external dependencies; real objects for value objects.
 - Unit: domain logic without a Spring context. Integration: only the DB/framework scope needed.
 - One scenario per test; test public behavior and results, not internal methods or call order.
