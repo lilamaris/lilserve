@@ -117,6 +117,28 @@ public class Room {
     }
 
     /**
+     * Changes the name and description together after validating both values and the update time.
+     *
+     * @param name the new name
+     * @param description the new description, blank allowed
+     * @param updatedAt the update time, not before creation or the last update time
+     * @throws IllegalStateException if the room is already deleted
+     * @throws IllegalValueConditionException if {@code name} is blank
+     * @throws IllegalComparisonConditionException if either value exceeds its column length or
+     *     {@code updatedAt} is before creation or the last update time
+     * @throws NullPointerException if {@code name}, {@code description}, or {@code updatedAt} is
+     *     null
+     */
+    public void updateMetadata(String name, String description, Instant updatedAt) {
+        validateNotDeleted();
+        StringPrecondition.requireMaxLen(name, MAX_NAME_LENGTH);
+        StringPrecondition.requireNonNullMaxLen(description, MAX_DESCRIPTION_LENGTH);
+        update(updatedAt);
+        this.name = name;
+        this.description = description;
+    }
+
+    /**
      * Changes the room code and records {@code updatedAt} as the new update time.
      *
      * @param code the new code
