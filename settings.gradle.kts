@@ -18,3 +18,5 @@ rootProject.name = "lilserve"
 include("kernel")
 
 include("reservation-service:domain")
+
+include("reservation-service:application")
