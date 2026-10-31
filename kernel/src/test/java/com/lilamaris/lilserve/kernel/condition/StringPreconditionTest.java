@@ -92,6 +92,50 @@ class StringPreconditionTest {
     }
 
     @Test
+    @DisplayName("null 허용 최대 길이 조건을 검사하면 조건을 만족한 값을 반환한다")
+    void returnsValueWhenNonNullMaxLenConditionMatches() {
+        assertThat(StringPrecondition.requireNonNullMaxLen("value", 5)).isEqualTo("value");
+    }
+
+    @Test
+    @DisplayName("null 허용 최대 길이 조건은 빈 문자열을 허용한다")
+    void acceptsBlankForNonNullMaxLenCondition() {
+        assertThat(StringPrecondition.requireNonNullMaxLen(" ", 5)).isEqualTo(" ");
+        assertThat(StringPrecondition.requireNonNullMaxLen("", 5)).isEqualTo("");
+    }
+
+    @Test
+    @DisplayName("null 허용 최대 길이 조건은 값 길이가 최대 길이와 같으면 값을 그대로 반환한다")
+    void returnsValueWhenLengthEqualsMaxLenForNonNullMaxLenCondition() {
+        assertThat(StringPrecondition.requireNonNullMaxLen("a".repeat(5), 5))
+                .isEqualTo("a".repeat(5));
+    }
+
+    @Test
+    @DisplayName("null 허용 최대 길이 조건은 값 길이가 최대 길이를 넘으면 예외를 던진다")
+    void throwsWhenLengthExceedsMaxLenForNonNullMaxLenCondition() {
+        String value = "a".repeat(6);
+
+        IllegalComparisonConditionException exception =
+                catchThrowableOfType(
+                        IllegalComparisonConditionException.class,
+                        () -> StringPrecondition.requireNonNullMaxLen(value, 5));
+
+        assertThat(exception).hasMessage("must be at most 5.");
+        assertThat(exception.condition()).isEqualTo(ComparisonCondition.AT_MOST);
+        assertThat(exception.subject()).isEqualTo(6);
+        assertThat(exception.reference()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("null 허용 최대 길이 조건은 값이 null일 때 NullPointerException을 던진다")
+    void throwsNullPointerExceptionWhenValueIsNullForNonNullMaxLenCondition() {
+        assertThatThrownBy(() -> StringPrecondition.requireNonNullMaxLen(null, 5))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("value must not be null.");
+    }
+
+    @Test
     @DisplayName("최대 길이 조건을 검사하면 조건을 만족한 값을 반환한다")
     void returnsValueWhenMaxLenConditionMatches() {
         assertThat(StringPrecondition.requireMaxLen("value", 10)).isEqualTo("value");
