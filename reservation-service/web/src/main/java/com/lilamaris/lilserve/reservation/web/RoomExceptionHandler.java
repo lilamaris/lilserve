@@ -1,5 +1,6 @@
 package com.lilamaris.lilserve.reservation.web;
 
+import com.lilamaris.lilserve.reservation.web.controller.RoomController;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -13,10 +14,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * missing room, a room in the wrong deletion state, and a duplicate code, and none of those is the
  * web layer's decision to make, so each is translated here.
  *
+ * <p>The advice is scoped to {@link RoomController}, so the seat advice keeps answering seat
+ * failures with the seat wording.
+ *
  * <p>Request bodies that fail Bean Validation are answered with 400 by Spring MVC itself, so this
  * advice handles only the failures that come out of the application layer.
  */
-@RestControllerAdvice
+@RestControllerAdvice(assignableTypes = RoomController.class)
 public class RoomExceptionHandler {
 
     /**
