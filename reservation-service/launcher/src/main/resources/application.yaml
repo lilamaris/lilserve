@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: reservation-service
+  datasource:
+    url: ${LILSERVE_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lilserve}
+    username: ${LILSERVE_DATASOURCE_USERNAME}
+    password: ${LILSERVE_DATASOURCE_PASSWORD}
+  jpa:
+    open-in-view: false
+
+lilserve:
+  timezone: ${LILSERVE_TIMEZONE:UTC}

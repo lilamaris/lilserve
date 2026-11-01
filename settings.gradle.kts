@@ -24,3 +24,5 @@ include("reservation-service:application")
 include("reservation-service:persistence")
 
 include("reservation-service:web")
+
+include("reservation-service:launcher")
