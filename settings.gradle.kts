@@ -22,3 +22,5 @@ include("reservation-service:domain")
 include("reservation-service:application")
 
 include("reservation-service:persistence")
+
+include("reservation-service:web")
