@@ -9,6 +9,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadata
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
+import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.RoomExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateRoomRequest;
 import com.lilamaris.lilserve.reservation.web.dto.RoomResponse;
@@ -45,9 +46,13 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>Deletion is soft: delete records {@code deletedAt} and leaves the row, restore clears it. A
  * room that does not exist, or is not in the deletion state the operation requires, is reported as
  * 404 by {@link RoomExceptionHandler}.
+ *
+ * <p>The path carries the API version as a segment, and the mapping declares version {@code 1}, so
+ * a request for a version this layer does not declare, and a request with no version at that
+ * position, is answered with 400 by {@link ApiVersionConfiguration} and no use case runs.
  */
 @RestController
-@RequestMapping("/api/rooms")
+@RequestMapping(path = "/api/{version}/rooms", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
 @Tag(
         name = "Room",
@@ -56,7 +61,9 @@ import org.springframework.web.bind.annotation.RestController;
     @ApiResponse(
             responseCode = "400",
             description =
-                    "the body carried a value the domain rejected, or the identifier is not a UUID",
+                    "the body carried a value the domain rejected, the identifier is not a UUID,"
+                            + " the request carries no API version, or a version this layer does not"
+                            + " declare",
             content =
                     @Content(
                             mediaType = "application/json",

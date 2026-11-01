@@ -8,6 +8,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseC
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.SeatExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateSeatRequest;
 import com.lilamaris.lilserve.reservation.web.dto.SeatResponse;
@@ -43,16 +44,22 @@ import org.springframework.web.bind.annotation.RestController;
  * loads that room. Deletion is soft: delete records {@code deletedAt} and leaves the row, restore
  * clears it. A seat that does not exist, or is not in the deletion state the operation requires, is
  * reported as 404 by {@link SeatExceptionHandler}.
+ *
+ * <p>The path carries the API version as a segment, and the mapping declares version {@code 1}, so
+ * a request for a version this layer does not declare, and a request with no version at that
+ * position, is answered with 400 by {@link ApiVersionConfiguration} and no use case runs.
  */
 @RestController
-@RequestMapping("/api/seats")
+@RequestMapping(path = "/api/{version}/seats", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
 @Tag(name = "Seat", description = "Seats: create, find, change code, delete, restore.")
 @ApiResponses({
     @ApiResponse(
             responseCode = "400",
             description =
-                    "the body carried a value the domain rejected, or the identifier is not a UUID",
+                    "the body carried a value the domain rejected, the identifier is not a UUID,"
+                            + " the request carries no API version, or a version this layer does not"
+                            + " declare",
             content =
                     @Content(
                             mediaType = "application/json",
