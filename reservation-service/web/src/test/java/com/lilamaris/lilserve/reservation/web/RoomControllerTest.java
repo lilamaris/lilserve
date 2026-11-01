@@ -45,7 +45,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @DisplayName("룸 웹 API")
 @WebMvcTest(controllers = RoomController.class)
 @ContextConfiguration(classes = WebMvcTestConfiguration.class)
-@Import({RoomController.class, RoomExceptionHandler.class})
+@Import({RoomController.class, RoomExceptionHandler.class, ApiVersionConfiguration.class})
 class RoomControllerTest {
     private static final UUID ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
@@ -53,7 +53,8 @@ class RoomControllerTest {
     private static final String CODE = "ROOM-01";
     private static final String NAME = "main hall";
     private static final String DESCRIPTION = "capacity 100";
-    private static final String ROOM_URL = "/api/rooms/" + ID;
+    private static final String ROOMS_URL = "/api/v1/rooms";
+    private static final String ROOM_URL = ROOMS_URL + "/" + ID;
 
     @Autowired private MockMvc mockMvc;
 
@@ -74,7 +75,7 @@ class RoomControllerTest {
         when(createRoomUseCase.create(CreateRoomCommand.of(CODE, NAME, DESCRIPTION)))
                 .thenReturn(CreateRoomResult.from(room()));
 
-        mockMvc.perform(post("/api/rooms").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post(ROOMS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.roomId").value(ID.toString()))
                 .andExpect(jsonPath("$.code").value(CODE))
@@ -93,7 +94,7 @@ class RoomControllerTest {
                 {"code":"","name":"main hall","description":"capacity 100"}
                 """;
 
-        mockMvc.perform(post("/api/rooms").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post(ROOMS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(createRoomUseCase);
@@ -126,7 +127,7 @@ class RoomControllerTest {
     @Test
     @DisplayName("식별자 형태가 맞지 않으면 400으로 거부한다")
     void rejectsMalformedRoomId() throws Exception {
-        mockMvc.perform(get("/api/rooms/not-a-uuid")).andExpect(status().isBadRequest());
+        mockMvc.perform(get(ROOMS_URL + "/not-a-uuid")).andExpect(status().isBadRequest());
 
         verifyNoInteractions(findRoomUseCase);
     }

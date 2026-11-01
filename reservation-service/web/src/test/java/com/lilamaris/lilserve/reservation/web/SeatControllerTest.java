@@ -42,14 +42,15 @@ import org.springframework.test.web.servlet.MockMvc;
 @DisplayName("좌석 웹 API")
 @WebMvcTest(controllers = SeatController.class)
 @ContextConfiguration(classes = WebMvcTestConfiguration.class)
-@Import({SeatController.class, SeatExceptionHandler.class})
+@Import({SeatController.class, SeatExceptionHandler.class, ApiVersionConfiguration.class})
 class SeatControllerTest {
     private static final UUID SEAT_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID ROOM_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
     private static final Instant UPDATED_AT = Instant.parse("2026-01-02T00:00:00Z");
     private static final String CODE = "SEAT-01";
-    private static final String SEAT_URL = "/api/seats/" + SEAT_ID;
+    private static final String SEATS_URL = "/api/v1/seats";
+    private static final String SEAT_URL = SEATS_URL + "/" + SEAT_ID;
 
     @Autowired private MockMvc mockMvc;
 
@@ -69,7 +70,7 @@ class SeatControllerTest {
         when(createSeatUseCase.create(CreateSeatCommand.of(ROOM_ID, CODE)))
                 .thenReturn(CreateSeatResult.from(seat()));
 
-        mockMvc.perform(post("/api/seats").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post(SEATS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.seatId").value(SEAT_ID.toString()))
                 .andExpect(jsonPath("$.roomId").value(ROOM_ID.toString()))
@@ -87,7 +88,7 @@ class SeatControllerTest {
                 {"roomId":null,"code":""}
                 """;
 
-        mockMvc.perform(post("/api/seats").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post(SEATS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(createSeatUseCase);
@@ -99,7 +100,7 @@ class SeatControllerTest {
         var code = "b".repeat(Seat.MAX_CODE_LENGTH + 1);
         var body = "{\"roomId\":\"" + ROOM_ID + "\",\"code\":\"" + code + "\"}";
 
-        mockMvc.perform(post("/api/seats").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post(SEATS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(createSeatUseCase);
@@ -115,7 +116,7 @@ class SeatControllerTest {
         when(createSeatUseCase.create(CreateSeatCommand.of(ROOM_ID, CODE)))
                 .thenThrow(new NoSuchElementException("room does not exists."));
 
-        mockMvc.perform(post("/api/seats").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post(SEATS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("seat does not exist."));
     }
@@ -147,7 +148,7 @@ class SeatControllerTest {
     @Test
     @DisplayName("식별자 형태가 맞지 않으면 400으로 거부한다")
     void rejectsMalformedSeatId() throws Exception {
-        mockMvc.perform(get("/api/seats/not-a-uuid")).andExpect(status().isBadRequest());
+        mockMvc.perform(get(SEATS_URL + "/not-a-uuid")).andExpect(status().isBadRequest());
 
         verifyNoInteractions(findSeatUseCase);
     }
