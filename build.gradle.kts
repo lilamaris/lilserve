@@ -1,4 +1,7 @@
-plugins { id("code.format") }
+plugins {
+    id("code.format")
+    alias(libs.plugins.spring.boot) apply false
+}
 
 group = "com.lilamaris.lilserve"
 

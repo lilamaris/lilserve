@@ -45,6 +45,22 @@ public final class StringPrecondition {
     }
 
     /**
+     * Requires that {@code value} is non-null and its length is at most {@code maxLen}. Blank
+     * values are accepted.
+     *
+     * @param value the value to check, not null
+     * @param maxLen the inclusive maximum length
+     * @return {@code value} unchanged
+     * @throws IllegalComparisonConditionException if the length is above {@code maxLen}
+     * @throws NullPointerException if {@code value} is null
+     */
+    public static String requireNonNullMaxLen(String value, int maxLen) {
+        Objects.requireNonNull(value, "value must not be null.");
+        NumberPrecondition.requireAtMost(value.length(), maxLen);
+        return value;
+    }
+
+    /**
      * Requires that {@code value} is non-blank and its length is at most {@code maxLen}.
      *
      * @param value the value to check

@@ -1,0 +1,8 @@
+# Flyway owns the schema, so Hibernate validates it instead of creating one.
+# With no datasource URL configured, the H2 on the test classpath is
+# auto-configured as the embedded datasource.
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
