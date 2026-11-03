@@ -251,7 +251,7 @@ class UpdateSeatServiceTest {
     }
 
     private static Seat activeSeat() {
-        return Seat.of(SEAT_ID, ROOM_ID, CODE, CREATED_AT);
+        return Seat.of(SEAT, ROOM, CODE, CREATED_AT);
     }
 
     private static Seat updatedSeat(Instant lastUpdateAt) {

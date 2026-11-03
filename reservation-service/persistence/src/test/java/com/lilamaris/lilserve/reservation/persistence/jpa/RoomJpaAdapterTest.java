@@ -132,7 +132,7 @@ class RoomJpaAdapterTest {
     }
 
     private Room room(String code, String name, String description) {
-        return Room.of(UUID.randomUUID(), code, name, description, CREATED_AT);
+        return Room.of(RoomId.of(UUID.randomUUID()), code, name, description, CREATED_AT);
     }
 
     private RoomId persist(Room room) {

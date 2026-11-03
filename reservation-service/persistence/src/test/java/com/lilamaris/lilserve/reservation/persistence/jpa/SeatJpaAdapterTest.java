@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.Instant;
 import java.util.UUID;
@@ -44,7 +45,7 @@ class SeatJpaAdapterTest {
         assertThat(found).isPresent();
         var seat = found.orElseThrow();
         assertThat(seat.getId()).isEqualTo(seatId);
-        assertThat(seat.getRoomId()).isEqualTo(ROOM_ID);
+        assertThat(seat.getRoomId()).isEqualTo(RoomId.of(ROOM_ID));
         assertThat(seat.getCode()).isEqualTo("SEAT-01");
         assertThat(seat.getCreatedAt()).isEqualTo(CREATED_AT);
     }
@@ -135,7 +136,7 @@ class SeatJpaAdapterTest {
     }
 
     private Seat seat(String code) {
-        return Seat.of(UUID.randomUUID(), ROOM_ID, code, CREATED_AT);
+        return Seat.of(SeatId.of(UUID.randomUUID()), RoomId.of(ROOM_ID), code, CREATED_AT);
     }
 
     private SeatId persist(Seat seat) {
@@ -146,7 +147,8 @@ class SeatJpaAdapterTest {
     }
 
     private void seedRoom() {
-        entityManager.persist(Room.of(ROOM_ID, "ROOM-01", "main hall", "capacity 100", CREATED_AT));
+        entityManager.persist(
+                Room.of(RoomId.of(ROOM_ID), "ROOM-01", "main hall", "capacity 100", CREATED_AT));
         flush();
     }
 

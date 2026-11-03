@@ -23,7 +23,7 @@ public record CreateSeatResult(SeatId seatId, RoomId roomId, String code, Instan
      * @throws NullPointerException if {@code seat} is null
      */
     public static CreateSeatResult from(Seat seat) {
-        var roomId = RoomId.of(seat.getRoomId());
-        return new CreateSeatResult(seat.getId(), roomId, seat.getCode(), seat.getCreatedAt());
+        return new CreateSeatResult(
+                seat.getId(), seat.getRoomId(), seat.getCode(), seat.getCreatedAt());
     }
 }

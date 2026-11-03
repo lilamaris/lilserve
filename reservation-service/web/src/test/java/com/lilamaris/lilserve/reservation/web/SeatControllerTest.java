@@ -24,6 +24,8 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateSeatR
 import com.lilamaris.lilserve.reservation.application.port.in.result.FindSeatResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateSeatResult;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import com.lilamaris.lilserve.reservation.web.controller.SeatController;
 import java.time.Instant;
 import java.util.NoSuchElementException;
@@ -247,6 +249,6 @@ class SeatControllerTest {
     }
 
     private Seat seat() {
-        return Seat.of(SEAT_ID, ROOM_ID, CODE, CREATED_AT);
+        return Seat.of(SeatId.of(SEAT_ID), RoomId.of(ROOM_ID), CODE, CREATED_AT);
     }
 }

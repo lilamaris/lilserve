@@ -27,6 +27,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateRoomR
 import com.lilamaris.lilserve.reservation.application.port.in.result.FindRoomResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateRoomResult;
 import com.lilamaris.lilserve.reservation.domain.Room;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.web.controller.RoomController;
 import java.time.Instant;
 import java.util.NoSuchElementException;
@@ -243,6 +244,6 @@ class RoomControllerTest {
     }
 
     private Room room() {
-        return Room.of(ID, CODE, NAME, DESCRIPTION, CREATED_AT);
+        return Room.of(RoomId.of(ID), CODE, NAME, DESCRIPTION, CREATED_AT);
     }
 }

@@ -39,7 +39,7 @@ class FindRoomServiceTest {
     @BeforeEach
     void setUp() {
         service = new FindRoomService(roomFindPort);
-        room = Room.of(ID, CODE, NAME, DESCRIPTION, CREATED_AT);
+        room = Room.of(ROOM_ID, CODE, NAME, DESCRIPTION, CREATED_AT);
     }
 
     @Test

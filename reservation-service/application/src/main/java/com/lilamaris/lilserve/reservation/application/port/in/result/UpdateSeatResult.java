@@ -32,10 +32,9 @@ public record UpdateSeatResult(
      * @throws NullPointerException if {@code seat} is null
      */
     public static UpdateSeatResult from(Seat seat) {
-        var roomId = RoomId.of(seat.getRoomId());
         return new UpdateSeatResult(
                 seat.getId(),
-                roomId,
+                seat.getRoomId(),
                 seat.getCode(),
                 seat.getCreatedAt(),
                 seat.getUpdatedAt(),

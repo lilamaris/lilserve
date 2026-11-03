@@ -30,6 +30,7 @@ class FindSeatServiceTest {
     private static final Instant UPDATED_AT = CREATED_AT.plusSeconds(60);
     private static final String CODE = "A-01";
     private static final UUID ROOM_VALUE = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final RoomId ROOM_ID = RoomId.of(ROOM_VALUE);
 
     @Mock private SeatFindPort seatFindPort;
 
@@ -39,7 +40,7 @@ class FindSeatServiceTest {
     @BeforeEach
     void setUp() {
         service = new FindSeatService(seatFindPort);
-        seat = Seat.of(ID, ROOM_VALUE, CODE, CREATED_AT);
+        seat = Seat.of(SEAT_ID, ROOM_ID, CODE, CREATED_AT);
     }
 
     @Test
@@ -52,13 +53,7 @@ class FindSeatServiceTest {
 
         assertThat(result)
                 .isEqualTo(
-                        new FindSeatResult(
-                                SEAT_ID,
-                                RoomId.of(ROOM_VALUE),
-                                "A-02",
-                                CREATED_AT,
-                                UPDATED_AT,
-                                null));
+                        new FindSeatResult(SEAT_ID, ROOM_ID, "A-02", CREATED_AT, UPDATED_AT, null));
     }
 
     @Test
@@ -69,9 +64,7 @@ class FindSeatServiceTest {
         var result = service.find(FindSeatQuery.of(ID));
 
         assertThat(result)
-                .isEqualTo(
-                        new FindSeatResult(
-                                SEAT_ID, RoomId.of(ROOM_VALUE), CODE, CREATED_AT, null, null));
+                .isEqualTo(new FindSeatResult(SEAT_ID, ROOM_ID, CODE, CREATED_AT, null, null));
     }
 
     @Test

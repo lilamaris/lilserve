@@ -7,6 +7,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateSeatR
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.Clock;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -44,8 +45,8 @@ public class CreateSeatService implements CreateSeatUseCase {
                         .orElseThrow(() -> new NoSuchElementException("room does not exists."));
 
         var now = clock.instant();
-        var seatId = uuidIdGenerator.generate();
-        var seat = Seat.of(seatId, room.getId().getValue(), command.code(), now);
+        var seatId = SeatId.of(uuidIdGenerator.generate());
+        var seat = Seat.of(seatId, room.getId(), command.code(), now);
 
         seatSavePort.save(seat);
 

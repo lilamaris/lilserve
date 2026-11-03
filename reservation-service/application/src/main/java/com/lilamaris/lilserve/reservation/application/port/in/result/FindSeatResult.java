@@ -30,10 +30,9 @@ public record FindSeatResult(
      * @throws NullPointerException if {@code seat} is null
      */
     public static FindSeatResult from(Seat seat) {
-        var roomId = RoomId.of(seat.getRoomId());
         return new FindSeatResult(
                 seat.getId(),
-                roomId,
+                seat.getRoomId(),
                 seat.getCode(),
                 seat.getCreatedAt(),
                 seat.getUpdatedAt(),
