@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.lilamaris.lilserve.reservation.domain.Room;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import java.time.Instant;
@@ -20,6 +21,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @DisplayName("룸 생성 커맨드")
 class CreateRoomCommandTest {
     private static final UUID ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final RoomId ROOM_ID = RoomId.of(ID);
     private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
     private static final String CODE = "ROOM-01";
     private static final String NAME = "main hall";
@@ -117,7 +119,7 @@ class CreateRoomCommandTest {
 
     private static boolean roomAccepts(String code, String name, String description) {
         try {
-            Room.of(ID, code, name, description, CREATED_AT);
+            Room.of(ROOM_ID, code, name, description, CREATED_AT);
             return true;
         } catch (RuntimeException exception) {
             return false;

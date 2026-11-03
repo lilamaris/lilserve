@@ -42,6 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class CreateSeatServiceTest {
     private static final UUID SEAT_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID ROOM_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final RoomId ROOM = RoomId.of(ROOM_ID);
     private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
     private static final Clock CLOCK = Clock.fixed(CREATED_AT, ZoneOffset.UTC);
     private static final String CODE = "A-01";
@@ -65,15 +66,13 @@ class CreateSeatServiceTest {
 
         var seat = savedSeat();
         assertThat(seat.getId()).isEqualTo(SeatId.of(SEAT_ID));
-        assertThat(seat.getRoomId()).isEqualTo(ROOM_ID);
+        assertThat(seat.getRoomId()).isEqualTo(ROOM);
         assertThat(seat.getCode()).isEqualTo(CODE);
         assertThat(seat.getCreatedAt()).isEqualTo(CREATED_AT);
         assertThat(seat.getUpdatedAt()).isNull();
         assertThat(seat.getDeletedAt()).isNull();
         assertThat(result)
-                .isEqualTo(
-                        new CreateSeatResult(
-                                SeatId.of(SEAT_ID), RoomId.of(ROOM_ID), CODE, CREATED_AT));
+                .isEqualTo(new CreateSeatResult(SeatId.of(SEAT_ID), ROOM, CODE, CREATED_AT));
     }
 
     @Test
@@ -103,7 +102,7 @@ class CreateSeatServiceTest {
     @Test
     @DisplayName("부모 룸가 없으면 조회 실패 예외를 전파하고 좌석를 저장하지 않는다")
     void rejectsMissingRoom() {
-        when(roomFindPort.findNotDeletedById(RoomId.of(ROOM_ID))).thenReturn(Optional.empty());
+        when(roomFindPort.findNotDeletedById(ROOM)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM_ID, CODE)))
                 .isInstanceOf(NoSuchElementException.class);
@@ -115,7 +114,7 @@ class CreateSeatServiceTest {
     @DisplayName("부모 룸 조회가 실패하면 해당 예외를 전파하고 좌석를 저장하지 않는다")
     void propagatesRoomFindFailure() {
         var failure = new IllegalStateException("Room lookup failed");
-        when(roomFindPort.findNotDeletedById(RoomId.of(ROOM_ID))).thenThrow(failure);
+        when(roomFindPort.findNotDeletedById(ROOM)).thenThrow(failure);
 
         assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM_ID, CODE)))
                 .isSameAs(failure);
@@ -155,8 +154,8 @@ class CreateSeatServiceTest {
     }
 
     private void givenRoomFound() {
-        var room = Room.of(ROOM_ID, "ROOM-01", "main hall", "capacity 100", CREATED_AT);
-        when(roomFindPort.findNotDeletedById(RoomId.of(ROOM_ID))).thenReturn(Optional.of(room));
+        var room = Room.of(ROOM, "ROOM-01", "main hall", "capacity 100", CREATED_AT);
+        when(roomFindPort.findNotDeletedById(ROOM)).thenReturn(Optional.of(room));
     }
 
     private Seat savedSeat() {

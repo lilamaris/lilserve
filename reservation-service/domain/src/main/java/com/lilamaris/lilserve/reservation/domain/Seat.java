@@ -4,14 +4,16 @@ import com.lilamaris.lilserve.kernel.condition.StringPrecondition;
 import com.lilamaris.lilserve.kernel.condition.TimePrecondition;
 import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException;
 import com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,8 +28,9 @@ public class Seat {
 
     @EmbeddedId private SeatId id;
 
-    @Column(name = "room_id", nullable = false)
-    private UUID roomId;
+    @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "room_id", nullable = false))
+    private RoomId roomId;
 
     @Column(name = "code", nullable = false, length = MAX_CODE_LENGTH)
     private String code;
@@ -41,7 +44,7 @@ public class Seat {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    private Seat(SeatId id, UUID roomId, String code, Instant createdAt) {
+    private Seat(SeatId id, RoomId roomId, String code, Instant createdAt) {
         this.id = Objects.requireNonNull(id);
         this.roomId = Objects.requireNonNull(roomId);
         this.code = StringPrecondition.requireMaxLen(code, MAX_CODE_LENGTH);
@@ -61,9 +64,8 @@ public class Seat {
      * @throws NullPointerException if {@code id}, {@code roomId}, {@code code}, or {@code
      *     createdAt} is null
      */
-    public static Seat of(UUID id, UUID roomId, String code, Instant createdAt) {
-        var seatId = SeatId.of(id);
-        return new Seat(seatId, roomId, code, createdAt);
+    public static Seat of(SeatId id, RoomId roomId, String code, Instant createdAt) {
+        return new Seat(id, roomId, code, createdAt);
     }
 
     /**

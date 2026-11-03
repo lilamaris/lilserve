@@ -11,7 +11,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -74,9 +73,8 @@ public class Room {
      *     or {@code createdAt} is null
      */
     public static Room of(
-            UUID id, String code, String name, String description, Instant createdAt) {
-        var roomId = RoomId.of(id);
-        return new Room(roomId, code, name, description, createdAt);
+            RoomId id, String code, String name, String description, Instant createdAt) {
+        return new Room(id, code, name, description, createdAt);
     }
 
     /**

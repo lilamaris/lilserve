@@ -315,7 +315,7 @@ class UpdateRoomServiceTest {
     }
 
     private static Room activeRoom() {
-        return Room.of(ID, CODE, NAME, DESCRIPTION, CREATED_AT);
+        return Room.of(ROOM_ID, CODE, NAME, DESCRIPTION, CREATED_AT);
     }
 
     private static Room renamedRoom(Instant lastUpdateAt) {

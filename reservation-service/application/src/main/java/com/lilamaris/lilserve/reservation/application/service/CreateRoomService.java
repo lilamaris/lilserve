@@ -6,6 +6,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.CreateRoom
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateRoomResult;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomSavePort;
 import com.lilamaris.lilserve.reservation.domain.Room;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Clock;
@@ -37,7 +38,7 @@ public class CreateRoomService implements CreateRoomUseCase {
     @Transactional
     public CreateRoomResult create(@NotNull @Valid CreateRoomCommand command) {
         var now = clock.instant();
-        var roomId = uuidGenerator.generate();
+        var roomId = RoomId.of(uuidGenerator.generate());
         var room = Room.of(roomId, command.code(), command.name(), command.description(), now);
 
         roomSavePort.save(room);

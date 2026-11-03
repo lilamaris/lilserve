@@ -18,6 +18,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 @DisplayName("룸")
 class RoomTest {
     private static final String CODE = "ROOM-01";
+    private static final RoomId ID =
+            RoomId.of(UUID.fromString("00000000-0000-0000-0000-000000000001"));
     private static final String NAME = "main hall";
     private static final String DESCRIPTION = "capacity 100";
     private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
@@ -29,12 +31,11 @@ class RoomTest {
     @Test
     @DisplayName("룸을 생성하면 주값을 보관하고 갱신과 삭제 시점을 비운다")
     void retainsGivenValues() {
-        var id = UUID.randomUUID();
+        var id = RoomId.of(UUID.randomUUID());
 
         var room = Room.of(id, CODE, NAME, DESCRIPTION, CREATED_AT);
 
-        assertThat(room.getId()).isEqualTo(RoomId.of(id));
-        assertThat(room.getId().getValue()).isEqualTo(id);
+        assertThat(room.getId()).isEqualTo(id);
         assertThat(room.getCode()).isEqualTo(CODE);
         assertThat(room.getName()).isEqualTo(NAME);
         assertThat(room.getDescription()).isEqualTo(DESCRIPTION);
@@ -47,7 +48,7 @@ class RoomTest {
     @Test
     @DisplayName("문자열 길이가 상한과 같으면 룸을 생성할 수 있다")
     void acceptsTextsAtMaxLength() {
-        var room = Room.of(UUID.randomUUID(), text(20), text(300), text(1000), CREATED_AT);
+        var room = Room.of(ID, text(20), text(300), text(1000), CREATED_AT);
 
         assertThat(room.getCode()).hasSize(20);
         assertThat(room.getName()).hasSize(300);
@@ -58,7 +59,7 @@ class RoomTest {
     @ValueSource(strings = {"", " "})
     @DisplayName("코드가 빈 문자열이면 룸을 생성할 수 없다")
     void rejectsBlankCode(String code) {
-        assertThatThrownBy(() -> Room.of(UUID.randomUUID(), code, NAME, DESCRIPTION, CREATED_AT))
+        assertThatThrownBy(() -> Room.of(ID, code, NAME, DESCRIPTION, CREATED_AT))
                 .isInstanceOf(IllegalValueConditionException.class)
                 .hasMessage("must not be blank.");
     }
@@ -67,7 +68,7 @@ class RoomTest {
     @ValueSource(strings = {"", " "})
     @DisplayName("이름이 빈 문자열이면 룸을 생성할 수 없다")
     void rejectsBlankName(String name) {
-        assertThatThrownBy(() -> Room.of(UUID.randomUUID(), CODE, name, DESCRIPTION, CREATED_AT))
+        assertThatThrownBy(() -> Room.of(ID, CODE, name, DESCRIPTION, CREATED_AT))
                 .isInstanceOf(IllegalValueConditionException.class)
                 .hasMessage("must not be blank.");
     }
@@ -76,7 +77,7 @@ class RoomTest {
     @ValueSource(strings = {"", " "})
     @DisplayName("설명이 빈 문자열이어도 룸을 생성할 수 있다")
     void acceptsBlankDescription(String description) {
-        var room = Room.of(UUID.randomUUID(), CODE, NAME, description, CREATED_AT);
+        var room = Room.of(ID, CODE, NAME, description, CREATED_AT);
 
         assertThat(room.getDescription()).isEqualTo(description);
         assertThat(room.getCreatedAt()).isEqualTo(CREATED_AT);
@@ -90,7 +91,7 @@ class RoomTest {
         IllegalComparisonConditionException exception =
                 catchThrowableOfType(
                         IllegalComparisonConditionException.class,
-                        () -> Room.of(UUID.randomUUID(), code, NAME, DESCRIPTION, CREATED_AT));
+                        () -> Room.of(ID, code, NAME, DESCRIPTION, CREATED_AT));
 
         assertThat(exception).hasMessage("must be at most 20.");
         assertThat(exception.condition()).isEqualTo(ComparisonCondition.AT_MOST);
@@ -106,7 +107,7 @@ class RoomTest {
         IllegalComparisonConditionException exception =
                 catchThrowableOfType(
                         IllegalComparisonConditionException.class,
-                        () -> Room.of(UUID.randomUUID(), CODE, name, DESCRIPTION, CREATED_AT));
+                        () -> Room.of(ID, CODE, name, DESCRIPTION, CREATED_AT));
 
         assertThat(exception).hasMessage("must be at most 300.");
         assertThat(exception.references()).isEqualTo(List.of(300));
@@ -120,7 +121,7 @@ class RoomTest {
         IllegalComparisonConditionException exception =
                 catchThrowableOfType(
                         IllegalComparisonConditionException.class,
-                        () -> Room.of(UUID.randomUUID(), CODE, NAME, description, CREATED_AT));
+                        () -> Room.of(ID, CODE, NAME, description, CREATED_AT));
 
         assertThat(exception).hasMessage("must be at most 1000.");
         assertThat(exception.references()).isEqualTo(List.of(1000));
@@ -136,7 +137,7 @@ class RoomTest {
     @Test
     @DisplayName("코드가 null이면 룸을 생성할 수 없다")
     void rejectsNullCode() {
-        assertThatThrownBy(() -> Room.of(UUID.randomUUID(), null, NAME, DESCRIPTION, CREATED_AT))
+        assertThatThrownBy(() -> Room.of(ID, null, NAME, DESCRIPTION, CREATED_AT))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("value must not be null.");
     }
@@ -144,7 +145,7 @@ class RoomTest {
     @Test
     @DisplayName("이름이 null이면 룸을 생성할 수 없다")
     void rejectsNullName() {
-        assertThatThrownBy(() -> Room.of(UUID.randomUUID(), CODE, null, DESCRIPTION, CREATED_AT))
+        assertThatThrownBy(() -> Room.of(ID, CODE, null, DESCRIPTION, CREATED_AT))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("value must not be null.");
     }
@@ -152,7 +153,7 @@ class RoomTest {
     @Test
     @DisplayName("설명이 null이면 룸을 생성할 수 없다")
     void rejectsNullDescription() {
-        assertThatThrownBy(() -> Room.of(UUID.randomUUID(), CODE, NAME, null, CREATED_AT))
+        assertThatThrownBy(() -> Room.of(ID, CODE, NAME, null, CREATED_AT))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("value must not be null.");
     }
@@ -160,7 +161,7 @@ class RoomTest {
     @Test
     @DisplayName("생성 시점이 null이면 룸을 생성할 수 없다")
     void rejectsNullCreatedAt() {
-        assertThatThrownBy(() -> Room.of(UUID.randomUUID(), CODE, NAME, DESCRIPTION, null))
+        assertThatThrownBy(() -> Room.of(ID, CODE, NAME, DESCRIPTION, null))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -736,7 +737,7 @@ class RoomTest {
     }
 
     private static Room room() {
-        return Room.of(UUID.randomUUID(), CODE, NAME, DESCRIPTION, CREATED_AT);
+        return Room.of(ID, CODE, NAME, DESCRIPTION, CREATED_AT);
     }
 
     private static Instant coalesce(Instant updatedAt, Instant createdAt) {

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import com.lilamaris.lilserve.kernel.condition.ComparisonCondition;
 import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException;
 import com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.Instant;
 import java.util.List;
@@ -18,6 +19,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 @DisplayName("좌석")
 class SeatTest {
     private static final String CODE = "A-01";
+    private static final SeatId SEAT_ID =
+            SeatId.of(UUID.fromString("00000000-0000-0000-0000-000000000002"));
+    private static final RoomId ROOM_ID =
+            RoomId.of(UUID.fromString("00000000-0000-0000-0000-000000000001"));
     private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
     private static final Instant UPDATED_AT = Instant.parse("2026-01-02T00:00:00Z");
     private static final Instant LATER_AT = Instant.parse("2026-01-03T00:00:00Z");
@@ -27,13 +32,12 @@ class SeatTest {
     @Test
     @DisplayName("좌석을 생성하면 주값을 보관하고 갱신과 삭제 시점을 비운다")
     void retainsGivenValues() {
-        var id = UUID.randomUUID();
-        var roomId = UUID.randomUUID();
+        var id = SeatId.of(UUID.randomUUID());
+        var roomId = RoomId.of(UUID.randomUUID());
 
         var seat = Seat.of(id, roomId, CODE, CREATED_AT);
 
-        assertThat(seat.getId()).isEqualTo(SeatId.of(id));
-        assertThat(seat.getId().getValue()).isEqualTo(id);
+        assertThat(seat.getId()).isEqualTo(id);
         assertThat(seat.getRoomId()).isEqualTo(roomId);
         assertThat(seat.getCode()).isEqualTo(CODE);
         assertThat(seat.getCreatedAt()).isEqualTo(CREATED_AT);
@@ -45,7 +49,7 @@ class SeatTest {
     @Test
     @DisplayName("코드 길이가 상한과 같으면 좌석을 생성할 수 있다")
     void acceptsCodeAtMaxLength() {
-        var seat = Seat.of(UUID.randomUUID(), UUID.randomUUID(), text(20), CREATED_AT);
+        var seat = Seat.of(SEAT_ID, ROOM_ID, text(20), CREATED_AT);
 
         assertThat(seat.getCode()).hasSize(20);
     }
@@ -54,7 +58,7 @@ class SeatTest {
     @ValueSource(strings = {"", " "})
     @DisplayName("코드가 빈 문자열이면 좌석을 생성할 수 없다")
     void rejectsBlankCode(String code) {
-        assertThatThrownBy(() -> Seat.of(UUID.randomUUID(), UUID.randomUUID(), code, CREATED_AT))
+        assertThatThrownBy(() -> Seat.of(SEAT_ID, ROOM_ID, code, CREATED_AT))
                 .isInstanceOf(IllegalValueConditionException.class)
                 .hasMessage("must not be blank.");
     }
@@ -67,7 +71,7 @@ class SeatTest {
         IllegalComparisonConditionException exception =
                 catchThrowableOfType(
                         IllegalComparisonConditionException.class,
-                        () -> Seat.of(UUID.randomUUID(), UUID.randomUUID(), code, CREATED_AT));
+                        () -> Seat.of(SEAT_ID, ROOM_ID, code, CREATED_AT));
 
         assertThat(exception).hasMessage("must be at most 20.");
         assertThat(exception.condition()).isEqualTo(ComparisonCondition.AT_MOST);
@@ -78,21 +82,21 @@ class SeatTest {
     @Test
     @DisplayName("식별자가 null이면 좌석을 생성할 수 없다")
     void rejectsNullId() {
-        assertThatThrownBy(() -> Seat.of(null, UUID.randomUUID(), CODE, CREATED_AT))
+        assertThatThrownBy(() -> Seat.of(null, ROOM_ID, CODE, CREATED_AT))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     @DisplayName("룸 식별자가 null이면 좌석을 생성할 수 없다")
     void rejectsNullRoomId() {
-        assertThatThrownBy(() -> Seat.of(UUID.randomUUID(), null, CODE, CREATED_AT))
+        assertThatThrownBy(() -> Seat.of(SEAT_ID, null, CODE, CREATED_AT))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     @DisplayName("코드가 null이면 좌석을 생성할 수 없다")
     void rejectsNullCode() {
-        assertThatThrownBy(() -> Seat.of(UUID.randomUUID(), UUID.randomUUID(), null, CREATED_AT))
+        assertThatThrownBy(() -> Seat.of(SEAT_ID, ROOM_ID, null, CREATED_AT))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("value must not be null.");
     }
@@ -100,7 +104,7 @@ class SeatTest {
     @Test
     @DisplayName("생성 시점이 null이면 좌석을 생성할 수 없다")
     void rejectsNullCreatedAt() {
-        assertThatThrownBy(() -> Seat.of(UUID.randomUUID(), UUID.randomUUID(), CODE, null))
+        assertThatThrownBy(() -> Seat.of(SEAT_ID, ROOM_ID, CODE, null))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -500,7 +504,7 @@ class SeatTest {
     }
 
     private static Seat seat() {
-        return Seat.of(UUID.randomUUID(), UUID.randomUUID(), CODE, CREATED_AT);
+        return Seat.of(SEAT_ID, ROOM_ID, CODE, CREATED_AT);
     }
 
     private static Instant coalesce(Instant updatedAt, Instant createdAt) {
