@@ -1,6 +1,5 @@
 # Flyway owns the schema, so Hibernate validates it instead of creating one.
-# With no datasource URL configured, the H2 on the test classpath is
-# auto-configured as the embedded datasource.
+# The PostgreSQL container registered as a test bean supplies the datasource.
 spring:
   jpa:
     open-in-view: false
