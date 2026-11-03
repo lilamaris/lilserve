@@ -11,6 +11,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.CreateRoom
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
+import com.lilamaris.lilserve.reservation.persistence.testfixture.PostgresTestConfiguration;
 import com.lilamaris.lilserve.reservation.web.controller.SeatController;
 import java.time.Clock;
 import java.time.ZoneId;
@@ -19,9 +20,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Import;
 
 @DisplayName("예약 서비스 실행 모듈")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@Import(PostgresTestConfiguration.class)
 class LauncherApplicationTest {
     private static final ZoneId UTC = ZoneId.of("UTC");
 
