@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.persistence.jpa.repository;
 
 import com.lilamaris.lilserve.reservation.domain.ReservedSchedule;
 import com.lilamaris.lilserve.reservation.domain.id.ReservedScheduleId;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -65,4 +66,26 @@ public interface ReservedScheduleRepository
     int insertFromSchedules(
             @Param("reservationId") UUID reservationId,
             @Param("scheduleIds") Collection<UUID> schedules);
+
+    /**
+     * Flushes pending changes and marks all active allocations of the reservation as cancelled.
+     * Already cancelled rows are left unchanged. The caller owns the transaction; this method does
+     * not commit independently.
+     *
+     * @param reservationId the reservation header identifier
+     * @param deletedAt the cancellation time, at or after the allocations' creation times
+     * @return the number of allocations changed by this statement
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(
+            value =
+                    """
+                    UPDATE reserved_schedule rs
+                    SET deleted_at = :deletedAt
+                    WHERE rs.reservation_id = :reservationId
+                        AND rs.deleted_at IS NULL
+                    """,
+            nativeQuery = true)
+    int markAsDeletedByReservationId(
+            @Param("reservationId") UUID reservationId, @Param("deletedAt") Instant deletedAt);
 }

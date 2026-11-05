@@ -64,6 +64,133 @@ class ReservedScheduleJpaAdapterTest {
         seat = persistSeat();
     }
 
+    @ParameterizedTest
+    @ValueSource(longs = {-1, 0, 1})
+    @DisplayName("예약 조회는 첫 점유 시작 직전까지만 허용하고 시작 시각부터 거부한다")
+    void findsReservationOnlyBeforeEarliestAllocationStarts(long secondsFromStart) {
+        var morning = persistSchedule(10, 12);
+        var afternoon = persistSchedule(14, 16);
+        var reservation = saveReservation();
+        adapter.reserve(reservation.getId(), Set.of(morning.getId(), afternoon.getId()));
+        var now = Instant.parse("2026-11-09T01:00:00Z").plusSeconds(secondsFromStart);
+        entityManager.clear();
+
+        var found = reservationAdapter.findNotStartedById(reservation.getId(), now);
+
+        if (secondsFromStart < 0) {
+            assertThat(found).isPresent();
+            assertThat(found.orElseThrow().getId()).isEqualTo(reservation.getId());
+        } else {
+            assertThat(found).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("다른 예약의 과거 점유가 있어도 대상 예약의 미래 점유만으로 조회한다")
+    void findsFutureReservationIndependentlyOfOtherReservations() {
+        var schedule = persistSchedule(10, 12);
+        var earlier = saveReservation();
+        adapter.reserve(earlier.getId(), Set.of(schedule.getId()));
+        var future = saveReservation(seat, SERVICE_DATE.plusWeeks(1));
+        adapter.reserve(future.getId(), Set.of(schedule.getId()));
+        entityManager.clear();
+
+        var found =
+                reservationAdapter.findNotStartedById(
+                        future.getId(), Instant.parse("2026-11-16T00:00:00Z"));
+
+        assertThat(found).isPresent();
+        assertThat(found.orElseThrow().getId()).isEqualTo(future.getId());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 예약은 조회하지 않는다")
+    void doesNotFindMissingReservation() {
+        assertThat(
+                        reservationAdapter.findNotStartedById(
+                                ReservationId.of(UUID.randomUUID()), RESERVED_AT))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("활성 점유가 없는 예약 헤더는 조회하지 않는다")
+    void doesNotFindReservationWithoutAllocations() {
+        var reservation = saveReservation();
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(reservationAdapter.findNotStartedById(reservation.getId(), RETIRED_AT))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("미래 점유가 있어도 취소된 예약 헤더는 조회하지 않는다")
+    void doesNotFindCancelledHeaderWithFutureAllocations() {
+        var schedule = persistSchedule(10, 12);
+        var reservation = saveReservation();
+        adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
+        reservation.delete(RETIRED_AT);
+        reservationAdapter.save(reservation);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(reservationAdapter.findNotStartedById(reservation.getId(), RETIRED_AT))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("모든 점유가 해제된 예약은 조회하지 않는다")
+    void doesNotFindReservationWithOnlyReleasedAllocations() {
+        var schedule = persistSchedule(10, 12);
+        var reservation = saveReservation();
+        adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
+        adapter.release(reservation.getId(), RETIRED_AT);
+        entityManager.clear();
+
+        assertThat(reservationAdapter.findNotStartedById(reservation.getId(), RETIRED_AT))
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("전체 점유 해제는 대상 예약만 취소하고 다른 예약의 점유는 유지한다")
+    void releasesAllAllocationsWithoutChangingOtherReservations() {
+        var morning = persistSchedule(10, 12);
+        var afternoon = persistSchedule(14, 16);
+        var reservation = saveReservation();
+        adapter.reserve(reservation.getId(), Set.of(morning.getId(), afternoon.getId()));
+        var otherReservation = saveReservation(persistSeat(), SERVICE_DATE);
+        adapter.reserve(otherReservation.getId(), Set.of(morning.getId()));
+
+        adapter.release(reservation.getId(), RETIRED_AT);
+        entityManager.clear();
+
+        var released = allocations(reservation.getId());
+        assertThat(released).hasSize(2);
+        assertThat(released)
+                .allSatisfy(
+                        allocation -> assertThat(allocation.getDeletedAt()).isEqualTo(RETIRED_AT));
+        assertThat(allocations(otherReservation.getId()))
+                .singleElement()
+                .satisfies(allocation -> assertThat(allocation.getDeletedAt()).isNull());
+    }
+
+    @Test
+    @DisplayName("점유 해제를 재호출해도 최초 취소 시각을 유지한다")
+    void preservesOriginalCancellationTimeWhenReleasedAgain() {
+        var schedule = persistSchedule(10, 12);
+        var reservation = saveReservation();
+        adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
+        adapter.release(reservation.getId(), RETIRED_AT);
+
+        adapter.release(reservation.getId(), RETIRED_AT.plusSeconds(60));
+        entityManager.clear();
+
+        assertThat(allocations(reservation.getId()))
+                .singleElement()
+                .satisfies(
+                        allocation -> assertThat(allocation.getDeletedAt()).isEqualTo(RETIRED_AT));
+    }
+
     @Test
     @DisplayName("요청한 모든 슬롯을 예약하면 전체 성공을 반환하고 시간과 예약 범위를 복사한다")
     void reservesAllRequestedSchedulesWithSnapshots() {
