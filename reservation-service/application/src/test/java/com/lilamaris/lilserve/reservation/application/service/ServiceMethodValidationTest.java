@@ -6,8 +6,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.lilamaris.lilserve.reservation.application.model.id.IdGenerator;
+import com.lilamaris.lilserve.reservation.application.model.time.LocalTimeRange;
+import com.lilamaris.lilserve.reservation.application.port.in.CreateReservationUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateRoomUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.CreateScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateSeatUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.DeleteReservationUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindRoomUseCase;
@@ -17,8 +21,12 @@ import com.lilamaris.lilserve.reservation.application.port.in.RestoreSeatUseCase
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadataUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.command.CreateReservationCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateRoomCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.command.CreateScheduleCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSchedulesCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSeatCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteReservationCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoomCommand;
@@ -28,14 +36,26 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoom
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSeatCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.application.port.out.ReleaseSchedulePort;
+import com.lilamaris.lilserve.reservation.application.port.out.ReservationFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePort;
+import com.lilamaris.lilserve.reservation.application.port.out.ReserveSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomSavePort;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -51,7 +71,12 @@ class ServiceMethodValidationTest {
     private static final UUID ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("invalidRequests")
+    @MethodSource({
+        "invalidRequests",
+        "invalidReservationRequests",
+        "invalidDeleteReservationRequests",
+        "invalidScheduleRequests"
+    })
     @DisplayName("잘못된 요청은 외부 포트를 호출하기 전에 거부한다")
     void rejectsInvalidRequestBeforeCallingPorts(
             String name, Consumer<AnnotationConfigApplicationContext> invocation) {
@@ -59,17 +84,30 @@ class ServiceMethodValidationTest {
         var roomSavePort = mock(RoomSavePort.class);
         var seatFindPort = mock(SeatFindPort.class);
         var seatSavePort = mock(SeatSavePort.class);
+        var reservationSavePort = mock(ReservationSavePort.class);
+        var reservationFindPort = mock(ReservationFindPort.class);
+        var releaseSchedulePort = mock(ReleaseSchedulePort.class);
+        var reserveSchedulePort = mock(ReserveSchedulePort.class);
+        var scheduleSavePort = mock(ScheduleSavePort.class);
         try (var context = new AnnotationConfigApplicationContext()) {
             context.registerBean(MethodValidationPostProcessor.class);
             context.registerBean(RoomFindPort.class, () -> roomFindPort);
             context.registerBean(RoomSavePort.class, () -> roomSavePort);
             context.registerBean(SeatFindPort.class, () -> seatFindPort);
             context.registerBean(SeatSavePort.class, () -> seatSavePort);
+            context.registerBean(ReservationSavePort.class, () -> reservationSavePort);
+            context.registerBean(ReservationFindPort.class, () -> reservationFindPort);
+            context.registerBean(ReleaseSchedulePort.class, () -> releaseSchedulePort);
+            context.registerBean(ReserveSchedulePort.class, () -> reserveSchedulePort);
+            context.registerBean(ScheduleSavePort.class, () -> scheduleSavePort);
             context.registerBean(Clock.class, Clock::systemUTC);
             context.registerBean(IdGenerator.class, () -> (IdGenerator<UUID>) () -> ID);
             context.register(
                     CreateRoomService.class,
                     CreateSeatService.class,
+                    CreateReservationService.class,
+                    DeleteReservationService.class,
+                    CreateScheduleService.class,
                     FindRoomService.class,
                     FindSeatService.class,
                     UpdateRoomService.class,
@@ -79,8 +117,85 @@ class ServiceMethodValidationTest {
             assertThatThrownBy(() -> invocation.accept(context))
                     .isInstanceOf(ConstraintViolationException.class);
 
-            verifyNoInteractions(roomFindPort, roomSavePort, seatFindPort, seatSavePort);
+            verifyNoInteractions(
+                    roomFindPort,
+                    roomSavePort,
+                    seatFindPort,
+                    seatSavePort,
+                    reservationSavePort,
+                    reservationFindPort,
+                    releaseSchedulePort,
+                    reserveSchedulePort,
+                    scheduleSavePort);
         }
+    }
+
+    private static Stream<Arguments> invalidReservationRequests() {
+        var room = RoomId.of(ID);
+        var seat = SeatId.of(ID);
+        var slots = Set.of(ScheduleId.of(ID));
+        var date = LocalDate.of(2026, 11, 9);
+        return Stream.of(
+                reservationRequest("nullRequest", null),
+                reservationRequest(
+                        "nullRoom", new CreateReservationCommand(null, seat, slots, date)),
+                reservationRequest(
+                        "nullSeat", new CreateReservationCommand(room, null, slots, date)),
+                reservationRequest(
+                        "emptySlots", new CreateReservationCommand(room, seat, Set.of(), date)),
+                reservationRequest(
+                        "nullDate", new CreateReservationCommand(room, seat, slots, null)));
+    }
+
+    private static Stream<Arguments> invalidDeleteReservationRequests() {
+        return Stream.of(
+                deleteReservationRequest("nullRequest", null),
+                deleteReservationRequest("nullReservation", new DeleteReservationCommand(null)));
+    }
+
+    private static Arguments deleteReservationRequest(
+            String scenario, DeleteReservationCommand command) {
+        return arguments(
+                "DeleteReservation." + scenario,
+                (Consumer<AnnotationConfigApplicationContext>)
+                        context -> context.getBean(DeleteReservationUseCase.class).delete(command));
+    }
+
+    private static Stream<Arguments> invalidScheduleRequests() {
+        var room = RoomId.of(ID);
+        var range = LocalTimeRange.of(LocalTime.of(10, 0), LocalTime.of(12, 0));
+        var slots = Map.of(DayOfWeek.MONDAY, List.of(range));
+        return Stream.of(
+                scheduleRequest("nullRequest", null),
+                scheduleRequest(
+                        "nullRoom", new CreateScheduleCommand(null, range, DayOfWeek.MONDAY)),
+                scheduleRequest(
+                        "nullRange", new CreateScheduleCommand(room, null, DayOfWeek.MONDAY)),
+                scheduleRequest("nullWeekday", new CreateScheduleCommand(room, range, null)),
+                schedulesRequest("nullRequest", null),
+                schedulesRequest("nullRoom", new CreateSchedulesCommand(null, slots)),
+                schedulesRequest("emptyMap", new CreateSchedulesCommand(room, Map.of())));
+    }
+
+    private static Arguments reservationRequest(String scenario, CreateReservationCommand command) {
+        return arguments(
+                "CreateReservation." + scenario,
+                (Consumer<AnnotationConfigApplicationContext>)
+                        context -> context.getBean(CreateReservationUseCase.class).create(command));
+    }
+
+    private static Arguments scheduleRequest(String scenario, CreateScheduleCommand command) {
+        return arguments(
+                "CreateSchedule." + scenario,
+                (Consumer<AnnotationConfigApplicationContext>)
+                        context -> context.getBean(CreateScheduleUseCase.class).create(command));
+    }
+
+    private static Arguments schedulesRequest(String scenario, CreateSchedulesCommand command) {
+        return arguments(
+                "CreateSchedules." + scenario,
+                (Consumer<AnnotationConfigApplicationContext>)
+                        context -> context.getBean(CreateScheduleUseCase.class).create(command));
     }
 
     private static Stream<Arguments> invalidRequests() {
