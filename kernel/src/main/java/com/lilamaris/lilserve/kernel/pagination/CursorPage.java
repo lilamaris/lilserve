@@ -44,9 +44,10 @@ public record CursorPage<T, I>(List<T> items, Cursor<I> nextCursor) {
      * @param <T> the item type
      * @param <I> the cursor id type
      * @return a page with at most {@code limit} items and the cursor of the last returned item
-     * @throws IllegalValueConditionExceptior if {@code limit} is not positive
-     * @throws IllegalComparisonConditionException if {@code limit} leaves no room for the extra
-     *     fetch
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     limit} is not positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     limit} leaves no room for the extra fetch
      * @throws NullPointerException if {@code fetched} or {@code cursorExtractor} is null, if a
      *     fetched item is null, or if the extracted cursor is null
      */

@@ -37,7 +37,7 @@ class UpdateRoomMetadataCommandTest {
     }
 
     @Test
-    @DisplayName("팩터리는 식별자와 메타데이터를 그대로 보관한다")
+    @DisplayName("팩토리는 식별자와 메타데이터를 그대로 보관한다")
     void createsValidCommand() {
         var command = UpdateRoomMetadataCommand.of(ID, NAME, DESCRIPTION);
 
@@ -48,7 +48,7 @@ class UpdateRoomMetadataCommandTest {
     }
 
     @Test
-    @DisplayName("팩터리로 생성한 null 식별자는 검증에서 거부한다")
+    @DisplayName("팩토리로 생성한 null 식별자는 검증에서 거부한다")
     void flagsNullIdentifier() {
         var command = UpdateRoomMetadataCommand.of(null, NAME, DESCRIPTION);
 

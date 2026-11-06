@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateSeatR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that changes a seat's code. The code is unique in the database. */
+/** Changes seat codes. */
 public interface UpdateSeatCodeUseCase {
 
     /**

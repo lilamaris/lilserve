@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-/** Handles {@link FindSeatUseCase} by reading a non-deleted seat through {@link SeatFindPort}. */
+/**
+ * Implements {@link FindSeatUseCase} by loading a non-deleted seat through {@link SeatFindPort}.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor

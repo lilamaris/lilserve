@@ -2,7 +2,7 @@ package com.lilamaris.lilserve.reservation.application.port.out;
 
 import com.lilamaris.lilserve.reservation.domain.Room;
 
-/** Writes rooms. Implemented by the persistence adapter. */
+/** Persists rooms within the caller's transaction. */
 public interface RoomSavePort {
 
     /**

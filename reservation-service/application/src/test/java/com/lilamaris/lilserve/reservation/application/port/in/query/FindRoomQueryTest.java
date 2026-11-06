@@ -31,7 +31,7 @@ class FindRoomQueryTest {
     }
 
     @Test
-    @DisplayName("팩터리는 식별자를 변환하고 유효한 요청을 생성한다")
+    @DisplayName("팩토리는 식별자를 변환하고 유효한 요청을 생성한다")
     void createsValidRequest() {
         var request = FindRoomQuery.of(ID);
 
@@ -40,7 +40,7 @@ class FindRoomQueryTest {
     }
 
     @Test
-    @DisplayName("팩터리에 null 식별자를 전달하면 예외가 발생한다")
+    @DisplayName("팩토리에 null 식별자를 전달하면 예외가 발생한다")
     void rejectsNullIdentifierInFactory() {
         assertThatNullPointerException().isThrownBy(() -> FindRoomQuery.of(null));
     }

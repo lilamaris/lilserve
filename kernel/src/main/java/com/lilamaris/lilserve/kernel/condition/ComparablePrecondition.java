@@ -15,7 +15,8 @@ final class ComparablePrecondition {
      * @param minimum the inclusive lower bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is below {@code minimum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is below {@code minimum}
      * @throws NullPointerException if {@code value} or {@code minimum} is null
      */
     static <T extends Comparable<? super T>> T requireAtLeast(T value, T minimum) {
@@ -35,7 +36,8 @@ final class ComparablePrecondition {
      * @param maximum the inclusive upper bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is above {@code maximum}
      * @throws NullPointerException if {@code value} or {@code maximum} is null
      */
     static <T extends Comparable<? super T>> T requireAtMost(T value, T maximum) {
@@ -57,8 +59,10 @@ final class ComparablePrecondition {
      * @param maximum the inclusive upper bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is outside the range
-     * @throws IllegalBoundsException if {@code minimum} is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is outside the range
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalBoundsException if {@code minimum} is
+     *     above {@code maximum}
      * @throws NullPointerException if any argument is null
      */
     static <T extends Comparable<? super T>> T requireBetween(T value, T minimum, T maximum) {

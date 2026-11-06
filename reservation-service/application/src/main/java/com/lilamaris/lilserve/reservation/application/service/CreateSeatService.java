@@ -17,9 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Handles {@link CreateSeatUseCase}: finds the non-deleted parent room, generates a seat
- * identifier, reads the creation time from {@link Clock}, and saves the new {@link Seat} through
- * {@link SeatSavePort} in one transaction.
+ * Implements {@link CreateSeatUseCase} by loading the parent room, generating an identifier, and
+ * saving a seat in one transaction. Creation time comes from {@link Clock}.
  */
 @Service
 @Validated

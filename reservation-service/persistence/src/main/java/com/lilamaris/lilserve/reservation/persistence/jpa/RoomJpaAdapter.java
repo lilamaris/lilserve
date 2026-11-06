@@ -9,26 +9,31 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/** Implements room persistence ports using Spring Data JPA within the caller's transaction. */
 @Component
 @RequiredArgsConstructor
 public class RoomJpaAdapter implements RoomFindPort, RoomSavePort {
     private final RoomRepository repository;
 
+    /** {@inheritDoc} */
     @Override
     public Optional<Room> findById(RoomId roomId) {
         return repository.findById(roomId);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Optional<Room> findNotDeletedById(RoomId roomId) {
         return repository.findById(roomId).filter(room -> !room.isDeleted());
     }
 
+    /** {@inheritDoc} */
     @Override
     public Optional<Room> findDeletedById(RoomId roomId) {
         return repository.findById(roomId).filter(Room::isDeleted);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void save(Room room) {
         repository.save(room);

@@ -9,7 +9,18 @@ import java.time.LocalDate;
 import java.util.Set;
 
 /**
- * A request for one seat and service date; service entry validates required fields and selection.
+ * A request to reserve one seat on one service date.
+ *
+ * <p>Record construction does not run Bean Validation. The constraints are checked when this
+ * command is explicitly validated or passed to a use case with method validation active.
+ *
+ * <p>The slot identifiers are copied at construction; null collections and elements are rejected
+ * immediately.
+ *
+ * @param roomId the requested room, must not be null when validated
+ * @param seatId the requested seat, must not be null when validated
+ * @param scheduleIds the selected slots, non-empty when validated and without null elements
+ * @param reservationDate the service date, must not be null when validated
  */
 public record CreateReservationCommand(
         @NotNull RoomId roomId,
@@ -19,23 +30,24 @@ public record CreateReservationCommand(
     /**
      * Takes an immutable snapshot of the selected slot identifiers.
      *
-     * @param roomId the requested room, required at the service boundary
-     * @param seatId the requested seat, required at the service boundary
+     * @param roomId the requested room, must not be null when validated
+     * @param seatId the requested seat, must not be null when validated
      * @param scheduleIds selected slots; null collections and elements are rejected immediately
-     * @param reservationDate the service date, required at the service boundary
+     * @param reservationDate the service date, must not be null when validated
      */
     public CreateReservationCommand {
         scheduleIds = Set.copyOf(scheduleIds);
     }
 
     /**
-     * Creates a request with an immutable slot selection.
+     * Creates a command with an immutable slot selection.
      *
      * @param roomId the requested room
      * @param seatId the requested seat
-     * @param scheduleIds selected slots; must be non-empty at the service boundary
+     * @param scheduleIds selected slots; must be non-empty when validated
      * @param reservationDate the service date
-     * @return the request
+     * @return the command
+     * @throws NullPointerException if {@code scheduleIds} or any element is null
      */
     public static CreateReservationCommand of(
             RoomId roomId, SeatId seatId, Set<ScheduleId> scheduleIds, LocalDate reservationDate) {

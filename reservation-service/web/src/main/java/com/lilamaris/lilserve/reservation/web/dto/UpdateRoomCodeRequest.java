@@ -9,8 +9,8 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 /**
- * The JSON body that changes a room's code. The code is unique in the database, so a duplicate is
- * reported as 409 by the persistence layer.
+ * The JSON body that changes a room's code. The code is unique in the database, and the web
+ * exception handler maps a persistence integrity violation to HTTP 409.
  *
  * @param code the new code, non-blank and within {@link Room#MAX_CODE_LENGTH}
  */

@@ -14,7 +14,7 @@ import jakarta.validation.constraints.NotNull;
 public record DeleteRoomCommand(@NotNull RoomId roomId) {
 
     /**
-     * Creates a command from the room identifier.
+     * Creates a command from the room identifier. Required fields are checked by Bean Validation.
      *
      * @param roomId the room identifier
      * @return the command

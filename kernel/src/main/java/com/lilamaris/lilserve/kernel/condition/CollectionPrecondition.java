@@ -20,7 +20,8 @@ public final class CollectionPrecondition {
      * @param <E> the element type
      * @param <C> the collection type
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} contains a null element
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} contains a null element
      * @throws NullPointerException if {@code value} is null
      */
     public static <E, C extends Collection<E>> C requireNonNullElements(C value) {
@@ -39,7 +40,8 @@ public final class CollectionPrecondition {
      * @param <E> the element type
      * @param <C> the collection type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if the size is below {@code minimum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if the
+     *     size is below {@code minimum}
      * @throws IllegalArgumentException if {@code minimum} is negative
      * @throws NullPointerException if {@code value} is null
      */
@@ -61,7 +63,8 @@ public final class CollectionPrecondition {
      * @param <E> the element type
      * @param <C> the collection type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if the size is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if the
+     *     size is above {@code maximum}
      * @throws IllegalArgumentException if {@code maximum} is negative
      * @throws NullPointerException if {@code value} is null
      */
@@ -85,8 +88,10 @@ public final class CollectionPrecondition {
      * @param <E> the element type
      * @param <C> the collection type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if the size is outside the range
-     * @throws IllegalBoundsException if {@code minimum} is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if the
+     *     size is outside the range
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalBoundsException if {@code minimum} is
+     *     above {@code maximum}
      * @throws IllegalArgumentException if {@code minimum} or {@code maximum} is negative
      * @throws NullPointerException if {@code value} is null
      */

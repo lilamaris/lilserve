@@ -107,7 +107,7 @@ public class Reservation {
     }
 
     /**
-     * Checks whether the reservation has been cancelled.
+     * Returns whether the reservation has been cancelled.
      *
      * @return true if the reservation has a deletion time
      */

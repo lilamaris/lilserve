@@ -4,7 +4,7 @@ import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionExcepti
 import com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException;
 import java.util.Objects;
 
-/** Checks conditions on a string value. Every check requires the value to be non-blank first. */
+/** Checks string content and length constraints. Null and blank handling depends on the check. */
 public final class StringPrecondition {
     private StringPrecondition() {}
 
@@ -13,7 +13,8 @@ public final class StringPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is blank
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is blank
      * @throws NullPointerException if {@code value} is null
      */
     public static String requireNonBlank(String value) {
@@ -30,8 +31,10 @@ public final class StringPrecondition {
      * @param value the value to check
      * @param text the text that must not occur in {@code value}
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is blank
-     * @throws IllegalComparisonConditionException if {@code value} contains {@code text}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is blank
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} contains {@code text}
      * @throws NullPointerException if {@code value} or {@code text} is null
      */
     public static String requireNotContain(String value, String text) {
@@ -51,7 +54,8 @@ public final class StringPrecondition {
      * @param value the value to check, not null
      * @param maxLen the inclusive maximum length
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if the length is above {@code maxLen}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if the
+     *     length is above {@code maxLen}
      * @throws NullPointerException if {@code value} is null
      */
     public static String requireNonNullMaxLen(String value, int maxLen) {
@@ -66,8 +70,10 @@ public final class StringPrecondition {
      * @param value the value to check
      * @param maxLen the inclusive maximum length
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is blank
-     * @throws IllegalComparisonConditionException if the length is above {@code maxLen}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is blank
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if the
+     *     length is above {@code maxLen}
      * @throws NullPointerException if {@code value} is null
      */
     public static String requireMaxLen(String value, int maxLen) {

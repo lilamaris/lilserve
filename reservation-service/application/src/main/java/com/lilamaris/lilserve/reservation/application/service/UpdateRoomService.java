@@ -21,10 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Handles {@link UpdateRoomCodeUseCase}, {@link UpdateRoomMetadataUseCase}, {@link
- * DeleteRoomUseCase}, and {@link RestoreRoomUseCase}. Each operation loads a room in the required
- * deletion state, applies the change using {@link Clock}, and saves it through {@link RoomSavePort}
- * in one transaction.
+ * Implements room update, deletion, and restoration use cases. Each operation loads a room in the
+ * required deletion state, applies the change using {@link Clock}, and saves it through {@link
+ * RoomSavePort} in one transaction.
  */
 @Service
 @Validated

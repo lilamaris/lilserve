@@ -5,6 +5,7 @@ import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
 import java.time.Instant;
 import java.util.Optional;
 
+/** Finds reservations eligible for cancellation within the caller's transaction. */
 public interface ReservationFindPort {
     /**
      * Finds an active reservation with active allocations that have not started yet.

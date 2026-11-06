@@ -41,10 +41,11 @@ public record CreateSeatRequest(
                 String code) {
 
     /**
-     * Converts this body to the create command. Value constraints are checked by Bean Validation at
-     * the web boundary, not here.
+     * Converts this body to a create command, wrapping the room UUID in {@link RoomId}. Bean
+     * Validation checks request constraints at the web boundary.
      *
-     * @return the create command with the same values
+     * @return the create command
+     * @throws NullPointerException if {@code roomId} is null
      */
     public CreateSeatCommand toCommand() {
         return CreateSeatCommand.of(RoomId.of(roomId), code);

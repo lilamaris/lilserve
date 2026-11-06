@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Handles {@link FindRoomUseCase} by reading a non-deleted room through {@link RoomFindPort} in a
- * read-only transaction.
+ * Implements {@link FindRoomUseCase} by loading a non-deleted room through {@link RoomFindPort} in
+ * a read-only transaction.
  */
 @Service
 @Validated

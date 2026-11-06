@@ -3,15 +3,14 @@ package com.lilamaris.lilserve.kernel.exception;
 /**
  * Invalid definition of the bounds themselves, not a violation of a value. It is separated from the
  * condition-violation family because the meanings differ.
- *
- * @param minimum the reported lower bound
- * @param maximum the reported upper bound
  */
 public final class IllegalBoundsException extends IllegalArgumentException {
     private final Object minimum;
     private final Object maximum;
 
     /**
+     * Creates an exception describing invalid bounds.
+     *
      * @param minimum the lower bound
      * @param maximum the upper bound
      */

@@ -9,10 +9,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * The identifier of a seat, embedded as the primary key of the seat row. Two seats are the same
- * seat exactly when their values are equal, and equality is the value alone.
- */
+/** The identifier of a seat, embedded as its primary key. Equality is based on the UUID value. */
 @Embeddable
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)

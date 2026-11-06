@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/** The identifier of a room, embedded as its primary key. Equality is based on the UUID value. */
 @Embeddable
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)

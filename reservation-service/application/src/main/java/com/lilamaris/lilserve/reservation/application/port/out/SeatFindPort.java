@@ -5,17 +5,10 @@ import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.util.Optional;
 
 /**
- * The driven port that reads one seat, implemented by the persistence adapter.
- *
- * <p>Deletion is soft: a deleted seat keeps its row and carries its {@code deletedAt}, so reading
- * with deleted seats and reading without them are separate operations. Callers pick the operation
- * that matches their rule, for example restore needs the deleted seat itself and a code change must
- * reject it.
+ * Finds seats by identifier and deletion state within the caller's transaction.
  *
  * <p>Implementations return {@link Optional#empty()} when no seat matches and never return {@code
- * null}; a missing seat is not an error at this port. What a missing seat means is the caller's
- * decision, and the port takes no transaction boundary of its own: it runs inside the caller's
- * transaction.
+ * null}. The caller decides how to handle a missing seat.
  *
  * @see SeatSavePort
  */

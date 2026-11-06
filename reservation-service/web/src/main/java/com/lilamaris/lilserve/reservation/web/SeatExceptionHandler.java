@@ -10,21 +10,16 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Maps seat failures to HTTP status codes, as RFC 9457 problem details. The use cases report a
- * missing seat, a seat in the wrong deletion state, and a duplicate code, and none of those is the
- * web layer's decision to make, so each is translated here.
+ * Maps seat application failures to HTTP status codes and RFC 9457 problem details.
  *
- * <p>The advice is scoped to {@link SeatController}, so the room advice keeps answering room
- * failures with the room wording.
- *
- * <p>Request bodies that fail Bean Validation are answered with 400 by Spring MVC itself, so this
- * advice handles only the failures that come out of the application layer.
+ * <p>This advice applies to {@link SeatController}. Spring MVC handles request body validation
+ * failures before the use case runs.
  */
 @RestControllerAdvice(assignableTypes = SeatController.class)
 public class SeatExceptionHandler {
 
     /**
-     * Reports a seat the operation can not act on as 404: it does not exist, or it is not in the
+     * Maps an unavailable seat to a 404 problem detail: it does not exist, or it is not in the
      * deletion state the operation requires. The parent room of a new seat is reported here too, as
      * 404 is the answer for a target that is not there.
      *
@@ -37,7 +32,7 @@ public class SeatExceptionHandler {
     }
 
     /**
-     * Reports a code that is already used by another seat as 409, the database uniqueness rule.
+     * Maps persistence integrity violations to a 409 problem detail.
      *
      * @param exception the integrity violation raised by persistence
      * @return the 409 problem detail
@@ -48,7 +43,7 @@ public class SeatExceptionHandler {
     }
 
     /**
-     * Reports a value the domain rejected, including a malformed identifier, as 400.
+     * Maps rejected application values to a 400 problem detail.
      *
      * @param exception the rejected value, whose message is the detail
      * @return the 400 problem detail

@@ -31,7 +31,7 @@ class RestoreRoomCommandTest {
     }
 
     @Test
-    @DisplayName("팩터리는 식별자를 보관하고 유효한 요청을 생성한다")
+    @DisplayName("팩토리는 식별자를 보관하고 유효한 요청을 생성한다")
     void createsValidRequest() {
         var request = RestoreRoomCommand.of(ID);
 
@@ -40,7 +40,7 @@ class RestoreRoomCommandTest {
     }
 
     @Test
-    @DisplayName("팩터리로 생성한 null 식별자는 검증에서 거부한다")
+    @DisplayName("팩토리로 생성한 null 식별자는 검증에서 거부한다")
     void flagsNullIdentifier() {
         var request = RestoreRoomCommand.of(null);
 

@@ -11,6 +11,10 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * Implements slot allocation persistence ports using Spring Data JPA within the caller's
+ * transaction.
+ */
 @Component
 @RequiredArgsConstructor
 public class ReservedScheduleJpaAdapter implements ReserveSchedulePort, ReleaseSchedulePort {

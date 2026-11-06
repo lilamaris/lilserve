@@ -38,17 +38,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * The web driven adapter for seats. Each endpoint maps one request to one seat use case and returns
- * the result as JSON, so no business rule is implemented here.
+ * Maps HTTP requests for seats to application use cases and returns their results as JSON.
  *
- * <p>A seat belongs to one room, so the create body carries the room identifier and the use case
- * loads that room. Deletion is soft: delete records {@code deletedAt} and leaves the row, restore
- * clears it. A seat that does not exist, or is not in the deletion state the operation requires, is
- * reported as 404 by {@link SeatExceptionHandler}.
- *
- * <p>The path carries the API version as a segment, and the mapping declares version {@code 1}, so
- * a request for a version this layer does not declare, and a request with no version at that
- * position, is answered with 400 by {@link ApiVersionConfiguration} and no use case runs.
+ * <p>Deletion is soft: deletion records {@code deletedAt}, and restoration clears it. {@link
+ * SeatExceptionHandler} maps application failures to HTTP problem details. {@link
+ * ApiVersionConfiguration} resolves the API version from the request path.
  */
 @RestController
 @RequestMapping(path = "/api/{version}/seats", version = ApiVersionConfiguration.CURRENT)

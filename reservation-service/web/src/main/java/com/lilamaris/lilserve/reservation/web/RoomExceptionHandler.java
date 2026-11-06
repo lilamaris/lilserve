@@ -10,21 +10,16 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Maps room failures to HTTP status codes, as RFC 9457 problem details. The use cases report a
- * missing room, a room in the wrong deletion state, and a duplicate code, and none of those is the
- * web layer's decision to make, so each is translated here.
+ * Maps room application failures to HTTP status codes and RFC 9457 problem details.
  *
- * <p>The advice is scoped to {@link RoomController}, so the seat advice keeps answering seat
- * failures with the seat wording.
- *
- * <p>Request bodies that fail Bean Validation are answered with 400 by Spring MVC itself, so this
- * advice handles only the failures that come out of the application layer.
+ * <p>This advice applies to {@link RoomController}. Spring MVC handles request body validation
+ * failures before the use case runs.
  */
 @RestControllerAdvice(assignableTypes = RoomController.class)
 public class RoomExceptionHandler {
 
     /**
-     * Reports a room the operation can not act on as 404: it does not exist, or it is not in the
+     * Maps an unavailable room to a 404 problem detail: it does not exist, or it is not in the
      * deletion state the operation requires.
      *
      * @param exception the missing target
@@ -36,7 +31,7 @@ public class RoomExceptionHandler {
     }
 
     /**
-     * Reports a code that is already used by another room as 409, the database uniqueness rule.
+     * Maps persistence integrity violations to a 409 problem detail.
      *
      * @param exception the integrity violation raised by persistence
      * @return the 409 problem detail
@@ -47,7 +42,7 @@ public class RoomExceptionHandler {
     }
 
     /**
-     * Reports a value the domain rejected, including a malformed identifier, as 400.
+     * Maps rejected application values to a 400 problem detail.
      *
      * @param exception the rejected value, whose message is the detail
      * @return the 400 problem detail

@@ -173,7 +173,7 @@ public class ReservedSchedule {
     }
 
     /**
-     * Checks whether the allocation has been cancelled.
+     * Returns whether the allocation has been cancelled.
      *
      * @return true if the allocation has a deletion time
      */
@@ -225,7 +225,7 @@ public class ReservedSchedule {
     }
 
     /**
-     * Checks whether this allocation occupies part of the given interval. Intervals are half-open,
+     * Returns whether this allocation occupies part of the given interval. Intervals are half-open,
      * so an interval starting exactly at this allocation's end does not overlap.
      *
      * @param otherStart the inclusive start of the other interval
@@ -240,7 +240,7 @@ public class ReservedSchedule {
     }
 
     /**
-     * Checks whether this allocation occupies the same seat over the same interval as another
+     * Returns whether this allocation occupies the same seat over the same interval as another
      * allocation.
      *
      * @param other the allocation to compare

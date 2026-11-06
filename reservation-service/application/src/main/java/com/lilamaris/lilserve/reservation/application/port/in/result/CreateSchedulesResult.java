@@ -16,7 +16,7 @@ public record CreateSchedulesResult(List<CreateScheduleResult> schedules) {
     }
 
     /**
-     * Maps all created slots to immutable result snapshots.
+     * Creates immutable result snapshots from the recurring slots.
      *
      * @param schedules the created slots
      * @return the result, with an empty list when no slots were created

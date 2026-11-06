@@ -14,7 +14,7 @@ import jakarta.validation.constraints.NotNull;
 public record DeleteSeatCommand(@NotNull SeatId seatId) {
 
     /**
-     * Creates a command from the seat identifier.
+     * Creates a command from the seat identifier. Required fields are checked by Bean Validation.
      *
      * @param seatId the seat identifier
      * @return the command

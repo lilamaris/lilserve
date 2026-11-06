@@ -15,6 +15,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Implements {@link CreateReservationUseCase} by loading the room and seat, saving the reservation,
+ * and allocating its requested slots in one transaction. A failed allocation rolls back the
+ * reservation.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor

@@ -19,6 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Implements {@link CreateScheduleUseCase} by loading the parent room and saving recurring slots in
+ * one transaction. Identifiers are generated for each slot, and creation time comes from {@link
+ * Clock}.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor

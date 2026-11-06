@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/** Provides JPA persistence operations for dated slot allocations. */
 public interface ReservedScheduleRepository
         extends JpaRepository<ReservedSchedule, ReservedScheduleId> {
     /**

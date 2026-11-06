@@ -9,7 +9,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Slot requests grouped by weekday; service entry requires a non-empty map and a room. */
+/**
+ * A request to create recurring room slots grouped by weekday.
+ *
+ * <p>Record construction does not run Bean Validation. The constraints are checked when this
+ * command is explicitly validated or passed to a use case with method validation active.
+ *
+ * <p>The weekday map and its range lists are copied at construction; null collections, keys,
+ * values, and range elements are rejected immediately.
+ *
+ * @param roomId the room offering the slots, must not be null when validated
+ * @param schedules the requested ranges grouped by weekday, non-empty when validated
+ */
 public record CreateSchedulesCommand(
         @NotNull RoomId roomId,
         @NotEmpty Map<@NotNull DayOfWeek, @NotNull List<@NotNull LocalTimeRange>> schedules) {
@@ -26,11 +37,12 @@ public record CreateSchedulesCommand(
     }
 
     /**
-     * Creates a request with immutable weekday and time range snapshots.
+     * Creates a command with immutable weekday and time range snapshots.
      *
      * @param roomId the room offering the slots
-     * @param schedules the requested ranges; must be non-empty at the service boundary
-     * @return the request
+     * @param schedules the requested ranges; must be non-empty when validated
+     * @return the command
+     * @throws NullPointerException if {@code schedules}, any key, value, or range element is null
      */
     public static CreateSchedulesCommand of(
             RoomId roomId, Map<DayOfWeek, List<LocalTimeRange>> schedules) {

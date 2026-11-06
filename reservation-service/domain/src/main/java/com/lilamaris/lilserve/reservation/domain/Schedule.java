@@ -109,7 +109,7 @@ public class Schedule {
     }
 
     /**
-     * Checks whether the slot has been retired.
+     * Returns whether the slot has been retired.
      *
      * @return true if the slot has a deletion time
      */
