@@ -19,9 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Handles {@link UpdateSeatCodeUseCase}, {@link DeleteSeatUseCase}, and {@link RestoreSeatUseCase}.
- * Each operation loads a seat in the required deletion state, applies the change using {@link
- * Clock}, and saves it through {@link SeatSavePort} in one transaction.
+ * Implements seat update, deletion, and restoration use cases. Each operation loads a seat in the
+ * required deletion state, applies the change using {@link Clock}, and saves it through {@link
+ * SeatSavePort} in one transaction.
  */
 @Service
 @Validated

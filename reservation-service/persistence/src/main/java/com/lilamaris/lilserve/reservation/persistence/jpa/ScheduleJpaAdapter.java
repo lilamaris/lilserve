@@ -7,6 +7,10 @@ import java.util.Collection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * Implements recurring slot persistence ports using Spring Data JPA within the caller's
+ * transaction.
+ */
 @Component
 @RequiredArgsConstructor
 public class ScheduleJpaAdapter implements ScheduleSavePort {

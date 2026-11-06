@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateRoomR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that restores a deleted room. */
+/** Restores deleted rooms. */
 public interface RestoreRoomUseCase {
 
     /**

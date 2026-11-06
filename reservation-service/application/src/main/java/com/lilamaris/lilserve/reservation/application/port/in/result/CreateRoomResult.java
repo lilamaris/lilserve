@@ -17,7 +17,7 @@ public record CreateRoomResult(
         RoomId roomId, String code, String name, String description, Instant createdAt) {
 
     /**
-     * Maps a room to the result.
+     * Creates a result snapshot from the room.
      *
      * @param room the created room
      * @return the result

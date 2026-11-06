@@ -2,7 +2,7 @@ package com.lilamaris.lilserve.reservation.application.port.out;
 
 import com.lilamaris.lilserve.reservation.domain.Seat;
 
-/** Writes seats. Implemented by the persistence adapter. */
+/** Persists seats within the caller's transaction. */
 public interface SeatSavePort {
 
     /**

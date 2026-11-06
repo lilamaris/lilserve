@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateRoomR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that creates a room. */
+/** Creates rooms. */
 public interface CreateRoomUseCase {
 
     /**

@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateSeatR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that restores a deleted seat. */
+/** Restores deleted seats. */
 public interface RestoreSeatUseCase {
 
     /**

@@ -2,7 +2,6 @@ package com.lilamaris.lilserve.reservation.application.port.in.command;
 
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.constraints.NotNull;
-import java.util.UUID;
 
 /**
  * A request to restore a deleted room. Only the target identifier is required.
@@ -15,14 +14,12 @@ import java.util.UUID;
 public record RestoreRoomCommand(@NotNull RoomId roomId) {
 
     /**
-     * Creates a command from the room identifier.
+     * Creates a command from the room identifier. Required fields are checked by Bean Validation.
      *
-     * @param id the room identifier
+     * @param roomId the room identifier
      * @return the command
-     * @throws NullPointerException if {@code id} is null
      */
-    public static RestoreRoomCommand of(UUID id) {
-        var roomId = RoomId.of(id);
+    public static RestoreRoomCommand of(RoomId roomId) {
         return new RestoreRoomCommand(roomId);
     }
 }

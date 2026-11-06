@@ -140,7 +140,7 @@ class RoomControllerTest {
                 """
                 {"name":"small hall","description":"capacity 40"}
                 """;
-        var command = UpdateRoomMetadataCommand.of(ID, "small hall", "capacity 40");
+        var command = UpdateRoomMetadataCommand.of(RoomId.of(ID), "small hall", "capacity 40");
         var room = room();
         room.updateMetadata("small hall", "capacity 40", UPDATED_AT);
         when(updateRoomMetadataUseCase.updateMetadata(command))
@@ -174,7 +174,7 @@ class RoomControllerTest {
             """;
         var room = room();
         room.updateCode("ROOM-02", UPDATED_AT);
-        when(updateRoomCodeUseCase.updateCode(UpdateRoomCodeCommand.of(ID, "ROOM-02")))
+        when(updateRoomCodeUseCase.updateCode(UpdateRoomCodeCommand.of(RoomId.of(ID), "ROOM-02")))
                 .thenReturn(UpdateRoomResult.from(room));
 
         mockMvc.perform(
@@ -193,7 +193,7 @@ class RoomControllerTest {
                 """
             {"code":"ROOM-02"}
             """;
-        when(updateRoomCodeUseCase.updateCode(UpdateRoomCodeCommand.of(ID, "ROOM-02")))
+        when(updateRoomCodeUseCase.updateCode(UpdateRoomCodeCommand.of(RoomId.of(ID), "ROOM-02")))
                 .thenThrow(new DataIntegrityViolationException("uk_room_code"));
 
         mockMvc.perform(
@@ -209,7 +209,7 @@ class RoomControllerTest {
     void deletesRoomWithoutResponseBody() throws Exception {
         var room = room();
         room.delete(UPDATED_AT);
-        when(deleteRoomUseCase.delete(DeleteRoomCommand.of(ID)))
+        when(deleteRoomUseCase.delete(DeleteRoomCommand.of(RoomId.of(ID))))
                 .thenReturn(UpdateRoomResult.from(room));
 
         mockMvc.perform(delete(ROOM_URL))
@@ -223,7 +223,7 @@ class RoomControllerTest {
         var room = room();
         room.delete(UPDATED_AT);
         room.restore(UPDATED_AT.plusSeconds(60));
-        when(restoreRoomUseCase.restore(RestoreRoomCommand.of(ID)))
+        when(restoreRoomUseCase.restore(RestoreRoomCommand.of(RoomId.of(ID))))
                 .thenReturn(UpdateRoomResult.from(room));
 
         mockMvc.perform(post(ROOM_URL + "/restore"))
@@ -235,7 +235,7 @@ class RoomControllerTest {
     @Test
     @DisplayName("삭제되지 않은 룸 복원은 404 problem detail로 답한다")
     void returnsNotFoundWhenRestoreTargetIsNotDeleted() throws Exception {
-        when(restoreRoomUseCase.restore(RestoreRoomCommand.of(ID)))
+        when(restoreRoomUseCase.restore(RestoreRoomCommand.of(RoomId.of(ID))))
                 .thenThrow(new NoSuchElementException("room does not exists."));
 
         mockMvc.perform(post(ROOM_URL + "/restore"))

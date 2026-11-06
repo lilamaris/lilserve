@@ -62,7 +62,7 @@ class CreateSeatServiceTest {
     void savesSeatAndReturnsCreatedResult() {
         givenRoomFound();
 
-        var result = service.create(CreateSeatCommand.of(ROOM_ID, CODE));
+        var result = service.create(CreateSeatCommand.of(ROOM, CODE));
 
         var seat = savedSeat();
         assertThat(seat.getId()).isEqualTo(SeatId.of(SEAT_ID));
@@ -81,7 +81,7 @@ class CreateSeatServiceTest {
         givenRoomFound();
         var code = "a".repeat(Seat.MAX_CODE_LENGTH);
 
-        var result = service.create(CreateSeatCommand.of(ROOM_ID, code));
+        var result = service.create(CreateSeatCommand.of(ROOM, code));
 
         assertThat(savedSeat().getCode()).isEqualTo(code);
         assertThat(result.code()).isEqualTo(code);
@@ -104,7 +104,7 @@ class CreateSeatServiceTest {
     void rejectsMissingRoom() {
         when(roomFindPort.findNotDeletedById(ROOM)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM_ID, CODE)))
+        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM, CODE)))
                 .isInstanceOf(NoSuchElementException.class);
 
         verifyNoInteractions(seatSavePort);
@@ -116,7 +116,7 @@ class CreateSeatServiceTest {
         var failure = new IllegalStateException("Room lookup failed");
         when(roomFindPort.findNotDeletedById(ROOM)).thenThrow(failure);
 
-        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM_ID, CODE)))
+        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM, CODE)))
                 .isSameAs(failure);
 
         verifyNoInteractions(seatSavePort);
@@ -136,7 +136,7 @@ class CreateSeatServiceTest {
                         },
                         CLOCK);
 
-        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM_ID, CODE)))
+        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM, CODE)))
                 .isSameAs(failure);
 
         verifyNoInteractions(seatSavePort);
@@ -149,7 +149,7 @@ class CreateSeatServiceTest {
         var failure = new IllegalStateException("Seat storage failed");
         doThrow(failure).when(seatSavePort).save(any(Seat.class));
 
-        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM_ID, CODE)))
+        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM, CODE)))
                 .isSameAs(failure);
     }
 
@@ -166,11 +166,11 @@ class CreateSeatServiceTest {
 
     private static Stream<Arguments> invalidCommands() {
         return Stream.of(
-                arguments(CreateSeatCommand.of(ROOM_ID, null), NullPointerException.class),
-                arguments(CreateSeatCommand.of(ROOM_ID, ""), IllegalValueConditionException.class),
-                arguments(CreateSeatCommand.of(ROOM_ID, " "), IllegalValueConditionException.class),
+                arguments(CreateSeatCommand.of(ROOM, null), NullPointerException.class),
+                arguments(CreateSeatCommand.of(ROOM, ""), IllegalValueConditionException.class),
+                arguments(CreateSeatCommand.of(ROOM, " "), IllegalValueConditionException.class),
                 arguments(
-                        CreateSeatCommand.of(ROOM_ID, "a".repeat(Seat.MAX_CODE_LENGTH + 1)),
+                        CreateSeatCommand.of(ROOM, "a".repeat(Seat.MAX_CODE_LENGTH + 1)),
                         IllegalComparisonConditionException.class));
     }
 }

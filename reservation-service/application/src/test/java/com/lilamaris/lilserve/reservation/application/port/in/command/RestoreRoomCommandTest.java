@@ -1,7 +1,6 @@
 package com.lilamaris.lilserve.reservation.application.port.in.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.Validation;
@@ -15,7 +14,8 @@ import org.junit.jupiter.api.Test;
 
 @DisplayName("룸 복구 커맨드")
 class RestoreRoomCommandTest {
-    private static final UUID ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final RoomId ID =
+            RoomId.of(UUID.fromString("00000000-0000-0000-0000-000000000001"));
     private static ValidatorFactory validatorFactory;
     private static Validator validator;
 
@@ -31,24 +31,18 @@ class RestoreRoomCommandTest {
     }
 
     @Test
-    @DisplayName("팩터리는 식별자를 변환하고 유효한 요청을 생성한다")
+    @DisplayName("팩토리는 식별자를 보관하고 유효한 요청을 생성한다")
     void createsValidRequest() {
         var request = RestoreRoomCommand.of(ID);
 
-        assertThat(request.roomId()).isEqualTo(RoomId.of(ID));
+        assertThat(request.roomId()).isSameAs(ID);
         assertThat(validator.validate(request)).isEmpty();
     }
 
     @Test
-    @DisplayName("팩터리에 null 식별자를 전달하면 예외가 발생한다")
-    void rejectsNullIdentifierInFactory() {
-        assertThatNullPointerException().isThrownBy(() -> RestoreRoomCommand.of(null));
-    }
-
-    @Test
-    @DisplayName("직접 생성한 null 식별자는 검증에서 거부한다")
+    @DisplayName("팩토리로 생성한 null 식별자는 검증에서 거부한다")
     void flagsNullIdentifier() {
-        var request = new RestoreRoomCommand(null);
+        var request = RestoreRoomCommand.of(null);
 
         assertThat(validator.validate(request))
                 .extracting(violation -> violation.getPropertyPath().toString())

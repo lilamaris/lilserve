@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.FindRoomRes
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that finds one room. */
+/** Finds rooms that are not deleted. */
 public interface FindRoomUseCase {
 
     /**

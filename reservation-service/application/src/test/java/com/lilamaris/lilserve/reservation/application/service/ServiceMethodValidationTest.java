@@ -221,13 +221,13 @@ class ServiceMethodValidationTest {
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(CreateSeatUseCase.class)
-                                                .create(new CreateSeatCommand(null, "A-01"))),
+                                                .create(CreateSeatCommand.of(null, "A-01"))),
                 arguments(
                         "CreateSeat.invalidField",
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(CreateSeatUseCase.class)
-                                                .create(new CreateSeatCommand(RoomId.of(ID), ""))),
+                                                .create(CreateSeatCommand.of(RoomId.of(ID), ""))),
                 arguments(
                         "FindRoom.nullRequest",
                         (Consumer<AnnotationConfigApplicationContext>)
@@ -260,15 +260,14 @@ class ServiceMethodValidationTest {
                                 context ->
                                         context.getBean(UpdateRoomCodeUseCase.class)
                                                 .updateCode(
-                                                        new UpdateRoomCodeCommand(
-                                                                null, "ROOM-01"))),
+                                                        UpdateRoomCodeCommand.of(null, "ROOM-01"))),
                 arguments(
                         "UpdateRoomCode.invalidField",
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(UpdateRoomCodeUseCase.class)
                                                 .updateCode(
-                                                        new UpdateRoomCodeCommand(
+                                                        UpdateRoomCodeCommand.of(
                                                                 RoomId.of(ID), ""))),
                 arguments(
                         "UpdateRoomMetadata.nullRequest",
@@ -282,7 +281,7 @@ class ServiceMethodValidationTest {
                                 context ->
                                         context.getBean(UpdateRoomMetadataUseCase.class)
                                                 .updateMetadata(
-                                                        new UpdateRoomMetadataCommand(
+                                                        UpdateRoomMetadataCommand.of(
                                                                 null, "name", "description"))),
                 arguments(
                         "UpdateRoomMetadata.invalidField",
@@ -290,7 +289,7 @@ class ServiceMethodValidationTest {
                                 context ->
                                         context.getBean(UpdateRoomMetadataUseCase.class)
                                                 .updateMetadata(
-                                                        new UpdateRoomMetadataCommand(
+                                                        UpdateRoomMetadataCommand.of(
                                                                 RoomId.of(ID), "new name", null))),
                 arguments(
                         "UpdateSeatCode.nullRequest",
@@ -304,14 +303,14 @@ class ServiceMethodValidationTest {
                                 context ->
                                         context.getBean(UpdateSeatCodeUseCase.class)
                                                 .updateCode(
-                                                        new UpdateSeatCodeCommand(null, "A-01"))),
+                                                        UpdateSeatCodeCommand.of(null, "A-01"))),
                 arguments(
                         "UpdateSeatCode.invalidField",
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(UpdateSeatCodeUseCase.class)
                                                 .updateCode(
-                                                        new UpdateSeatCodeCommand(
+                                                        UpdateSeatCodeCommand.of(
                                                                 SeatId.of(ID), ""))),
                 arguments(
                         "DeleteRoom.nullRequest",
@@ -322,7 +321,7 @@ class ServiceMethodValidationTest {
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(DeleteRoomUseCase.class)
-                                                .delete(new DeleteRoomCommand(null))),
+                                                .delete(DeleteRoomCommand.of(null))),
                 arguments(
                         "DeleteSeat.nullRequest",
                         (Consumer<AnnotationConfigApplicationContext>)
@@ -332,7 +331,7 @@ class ServiceMethodValidationTest {
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(DeleteSeatUseCase.class)
-                                                .delete(new DeleteSeatCommand(null))),
+                                                .delete(DeleteSeatCommand.of(null))),
                 arguments(
                         "RestoreRoom.nullRequest",
                         (Consumer<AnnotationConfigApplicationContext>)
@@ -342,7 +341,7 @@ class ServiceMethodValidationTest {
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(RestoreRoomUseCase.class)
-                                                .restore(new RestoreRoomCommand(null))),
+                                                .restore(RestoreRoomCommand.of(null))),
                 arguments(
                         "RestoreSeat.nullRequest",
                         (Consumer<AnnotationConfigApplicationContext>)
@@ -352,6 +351,6 @@ class ServiceMethodValidationTest {
                         (Consumer<AnnotationConfigApplicationContext>)
                                 context ->
                                         context.getBean(RestoreSeatUseCase.class)
-                                                .restore(new RestoreSeatCommand(null))));
+                                                .restore(RestoreSeatCommand.of(null))));
     }
 }

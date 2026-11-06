@@ -4,6 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException;
+import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
+import com.lilamaris.lilserve.reservation.domain.id.ReservedScheduleId;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
+import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -29,11 +34,11 @@ class ReservedScheduleTest {
 
     private ReservedSchedule allocation() {
         return ReservedSchedule.of(
-                ALLOCATION_ID,
-                RESERVATION_ID,
-                ROOM_ID,
-                SEAT_ID,
-                SCHEDULE_ID,
+                ReservedScheduleId.of(ALLOCATION_ID),
+                ReservationId.of(RESERVATION_ID),
+                RoomId.of(ROOM_ID),
+                SeatId.of(SEAT_ID),
+                ScheduleId.of(SCHEDULE_ID),
                 START_AT,
                 END_AT,
                 RESERVATION_DATE,
@@ -116,11 +121,11 @@ class ReservedScheduleTest {
         var first = allocation();
         var second =
                 ReservedSchedule.of(
-                        UUID.randomUUID(),
-                        RESERVATION_ID,
-                        ROOM_ID,
-                        SEAT_ID,
-                        UUID.randomUUID(),
+                        ReservedScheduleId.of(UUID.randomUUID()),
+                        ReservationId.of(RESERVATION_ID),
+                        RoomId.of(ROOM_ID),
+                        SeatId.of(SEAT_ID),
+                        ScheduleId.of(UUID.randomUUID()),
                         LocalTime.of(11, 0),
                         LocalTime.of(13, 0),
                         RESERVATION_DATE,
@@ -136,11 +141,11 @@ class ReservedScheduleTest {
         var first = allocation();
         var second =
                 ReservedSchedule.of(
-                        UUID.randomUUID(),
-                        RESERVATION_ID,
-                        ROOM_ID,
-                        UUID.randomUUID(),
-                        UUID.randomUUID(),
+                        ReservedScheduleId.of(UUID.randomUUID()),
+                        ReservationId.of(RESERVATION_ID),
+                        RoomId.of(ROOM_ID),
+                        SeatId.of(UUID.randomUUID()),
+                        ScheduleId.of(UUID.randomUUID()),
                         LocalTime.of(11, 0),
                         LocalTime.of(13, 0),
                         RESERVATION_DATE,
@@ -156,11 +161,11 @@ class ReservedScheduleTest {
         assertThatThrownBy(
                         () ->
                                 ReservedSchedule.of(
-                                        ALLOCATION_ID,
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
-                                        SCHEDULE_ID,
+                                        ReservedScheduleId.of(ALLOCATION_ID),
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
+                                        ScheduleId.of(SCHEDULE_ID),
                                         START_AT,
                                         START_AT,
                                         RESERVATION_DATE,
@@ -175,11 +180,11 @@ class ReservedScheduleTest {
         assertThatThrownBy(
                         () ->
                                 ReservedSchedule.of(
-                                        ALLOCATION_ID,
+                                        ReservedScheduleId.of(ALLOCATION_ID),
                                         null,
-                                        ROOM_ID,
-                                        SEAT_ID,
-                                        SCHEDULE_ID,
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
+                                        ScheduleId.of(SCHEDULE_ID),
                                         START_AT,
                                         END_AT,
                                         RESERVATION_DATE,
@@ -194,11 +199,11 @@ class ReservedScheduleTest {
         assertThatThrownBy(
                         () ->
                                 ReservedSchedule.of(
-                                        ALLOCATION_ID,
-                                        RESERVATION_ID,
+                                        ReservedScheduleId.of(ALLOCATION_ID),
+                                        ReservationId.of(RESERVATION_ID),
                                         null,
-                                        SEAT_ID,
-                                        SCHEDULE_ID,
+                                        SeatId.of(SEAT_ID),
+                                        ScheduleId.of(SCHEDULE_ID),
                                         START_AT,
                                         END_AT,
                                         RESERVATION_DATE,
@@ -213,11 +218,11 @@ class ReservedScheduleTest {
         assertThatThrownBy(
                         () ->
                                 ReservedSchedule.of(
-                                        ALLOCATION_ID,
-                                        RESERVATION_ID,
-                                        ROOM_ID,
+                                        ReservedScheduleId.of(ALLOCATION_ID),
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
                                         null,
-                                        SCHEDULE_ID,
+                                        ScheduleId.of(SCHEDULE_ID),
                                         START_AT,
                                         END_AT,
                                         RESERVATION_DATE,
@@ -232,10 +237,10 @@ class ReservedScheduleTest {
         assertThatThrownBy(
                         () ->
                                 ReservedSchedule.of(
-                                        ALLOCATION_ID,
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
+                                        ReservedScheduleId.of(ALLOCATION_ID),
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
                                         null,
                                         START_AT,
                                         END_AT,
@@ -251,11 +256,11 @@ class ReservedScheduleTest {
         assertThatThrownBy(
                         () ->
                                 ReservedSchedule.of(
-                                        ALLOCATION_ID,
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
-                                        SCHEDULE_ID,
+                                        ReservedScheduleId.of(ALLOCATION_ID),
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
+                                        ScheduleId.of(SCHEDULE_ID),
                                         START_AT,
                                         END_AT,
                                         null,
@@ -270,11 +275,11 @@ class ReservedScheduleTest {
         assertThatThrownBy(
                         () ->
                                 ReservedSchedule.of(
-                                        ALLOCATION_ID,
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
-                                        SCHEDULE_ID,
+                                        ReservedScheduleId.of(ALLOCATION_ID),
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
+                                        ScheduleId.of(SCHEDULE_ID),
                                         START_AT,
                                         END_AT,
                                         RESERVATION_DATE,

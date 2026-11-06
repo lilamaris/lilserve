@@ -10,6 +10,9 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * Implements reservation persistence ports using Spring Data JPA within the caller's transaction.
+ */
 @Component
 @RequiredArgsConstructor
 public class ReservationJpaAdapter implements ReservationSavePort, ReservationFindPort {

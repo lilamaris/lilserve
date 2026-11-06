@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.FindSeatRes
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that finds one seat. */
+/** Finds seats that are not deleted. */
 public interface FindSeatUseCase {
 
     /**

@@ -25,7 +25,7 @@ public record UpdateSeatResult(
         Instant deletedAt) {
 
     /**
-     * Maps a seat to the result.
+     * Creates a result snapshot from the seat.
      *
      * @param seat the changed seat
      * @return the result

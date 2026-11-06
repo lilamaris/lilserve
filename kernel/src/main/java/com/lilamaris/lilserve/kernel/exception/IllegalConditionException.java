@@ -7,9 +7,6 @@ import java.util.stream.Collectors;
 /**
  * Common ancestor of failed condition checks. Carries the checked {@code subject} and the violated
  * {@code condition}. The message describes the condition only, and never the name of the subject.
- *
- * @param subject the checked value
- * @param condition the violated condition
  */
 public abstract sealed class IllegalConditionException extends IllegalArgumentException
         permits IllegalValueConditionException, IllegalComparisonConditionException {
@@ -17,6 +14,8 @@ public abstract sealed class IllegalConditionException extends IllegalArgumentEx
     private final Condition condition;
 
     /**
+     * Creates an exception describing a failed condition check.
+     *
      * @param subject the checked value
      * @param condition the violated condition
      * @param message the failure message

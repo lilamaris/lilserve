@@ -12,7 +12,7 @@ import java.time.Instant;
  */
 public record DeleteReservationResult(ReservationId reservationId, Instant deletedAt) {
     /**
-     * Maps the cancelled header after all of its active allocations have been released.
+     * Creates a result snapshot after all active allocations have been released.
      *
      * @param reservation the cancelled reservation header
      * @return the cancellation result

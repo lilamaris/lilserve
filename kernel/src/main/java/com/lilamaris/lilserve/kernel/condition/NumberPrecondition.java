@@ -1,6 +1,5 @@
 package com.lilamaris.lilserve.kernel.condition;
 
-import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException;
 import com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException;
 import java.util.Objects;
 
@@ -13,7 +12,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is zero or positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is zero or positive
      * @throws NullPointerException if {@code value} is null
      */
     public static Integer requireNegative(Integer value) {
@@ -29,7 +29,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is negative
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is negative
      * @throws NullPointerException if {@code value} is null
      */
     public static Integer requireNonNegative(Integer value) {
@@ -45,7 +46,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is zero or negative
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is zero or negative
      * @throws NullPointerException if {@code value} is null
      */
     public static Integer requirePositive(Integer value) {
@@ -61,7 +63,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is positive
      * @throws NullPointerException if {@code value} is null
      */
     public static Integer requireNonPositive(Integer value) {
@@ -77,7 +80,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is zero or positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is zero or positive
      * @throws NullPointerException if {@code value} is null
      */
     public static Long requireNegative(Long value) {
@@ -93,7 +97,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is negative
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is negative
      * @throws NullPointerException if {@code value} is null
      */
     public static Long requireNonNegative(Long value) {
@@ -109,7 +114,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is zero or negative
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is zero or negative
      * @throws NullPointerException if {@code value} is null
      */
     public static Long requirePositive(Long value) {
@@ -125,7 +131,8 @@ public final class NumberPrecondition {
      *
      * @param value the value to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is positive
      * @throws NullPointerException if {@code value} is null
      */
     public static Long requireNonPositive(Long value) {
@@ -143,7 +150,8 @@ public final class NumberPrecondition {
      * @param minimum the inclusive lower bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is below {@code minimum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is below {@code minimum}
      * @throws NullPointerException if {@code value} or {@code minimum} is null
      */
     public static <T extends Comparable<? super T>> T requireAtLeast(T value, T minimum) {
@@ -157,7 +165,8 @@ public final class NumberPrecondition {
      * @param maximum the inclusive upper bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is above {@code maximum}
      * @throws NullPointerException if {@code value} or {@code maximum} is null
      */
     public static <T extends Comparable<? super T>> T requireAtMost(T value, T maximum) {
@@ -173,8 +182,10 @@ public final class NumberPrecondition {
      * @param maximum the inclusive upper bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is outside the range
-     * @throws IllegalBoundsException if {@code minimum} is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is outside the range
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalBoundsException if {@code minimum} is
+     *     above {@code maximum}
      * @throws NullPointerException if any argument is null
      */
     public static <T extends Comparable<? super T>> T requireBetween(

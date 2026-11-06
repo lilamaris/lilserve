@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/** Provides JPA persistence operations for reservation headers. */
 public interface ReservationRepository extends JpaRepository<Reservation, ReservationId> {
     /**
      * Finds a non-cancelled header whose earliest active allocation starts after the given time.

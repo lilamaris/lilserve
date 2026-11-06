@@ -9,6 +9,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadata
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.RoomExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateRoomRequest;
@@ -40,16 +41,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * The web driven adapter for rooms. Each endpoint maps one request to one room use case and returns
- * the result as JSON, so no business rule is implemented here.
+ * Maps HTTP requests for rooms to application use cases and returns their results as JSON.
  *
- * <p>Deletion is soft: delete records {@code deletedAt} and leaves the row, restore clears it. A
- * room that does not exist, or is not in the deletion state the operation requires, is reported as
- * 404 by {@link RoomExceptionHandler}.
- *
- * <p>The path carries the API version as a segment, and the mapping declares version {@code 1}, so
- * a request for a version this layer does not declare, and a request with no version at that
- * position, is answered with 400 by {@link ApiVersionConfiguration} and no use case runs.
+ * <p>Deletion is soft: deletion records {@code deletedAt}, and restoration clears it. {@link
+ * RoomExceptionHandler} maps application failures to HTTP problem details. {@link
+ * ApiVersionConfiguration} resolves the API version from the request path.
  */
 @RestController
 @RequestMapping(path = "/api/{version}/rooms", version = ApiVersionConfiguration.CURRENT)
@@ -246,7 +242,7 @@ public class RoomController {
                             schema = @Schema(type = "string", format = "uuid"))
                     @PathVariable("roomId")
                     UUID roomId) {
-        deleteRoomUseCase.delete(DeleteRoomCommand.of(roomId));
+        deleteRoomUseCase.delete(DeleteRoomCommand.of(RoomId.of(roomId)));
         return ResponseEntity.noContent().build();
     }
 
@@ -277,6 +273,7 @@ public class RoomController {
                     @PathVariable("roomId")
                     UUID roomId) {
         return ResponseEntity.ok(
-                RoomResponse.from(restoreRoomUseCase.restore(RestoreRoomCommand.of(roomId))));
+                RoomResponse.from(
+                        restoreRoomUseCase.restore(RestoreRoomCommand.of(RoomId.of(roomId)))));
     }
 }

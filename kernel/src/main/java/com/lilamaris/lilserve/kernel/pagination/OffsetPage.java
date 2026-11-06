@@ -19,8 +19,8 @@ public record OffsetPage<T>(List<T> items, int page, int size, long totalElement
      * @param page the zero-based page number
      * @param size the maximum number of items per page
      * @param totalElements the total number of elements across all pages
-     * @throws IllegalValueConditionException if {@code page} or {@code totalElements} is negative,
-     *     or {@code size} is not positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     page} or {@code totalElements} is negative, or {@code size} is not positive
      * @throws IllegalArgumentException if {@code items} has more elements than {@code size}
      * @throws NullPointerException if {@code items} is null, or contains a null item
      */
@@ -43,8 +43,8 @@ public record OffsetPage<T>(List<T> items, int page, int size, long totalElement
      * @param totalElements the total number of elements across all pages
      * @param <T> the item type
      * @return a page holding copies of {@code items} and the given metadata
-     * @throws IllegalValueConditionException if {@code page} or {@code totalElements} is negative,
-     *     or {@code size} is not positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     page} or {@code totalElements} is negative, or {@code size} is not positive
      * @throws IllegalArgumentException if {@code items} has more elements than {@code size}
      * @throws NullPointerException if {@code items} is null, or contains a null item
      */

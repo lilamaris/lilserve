@@ -9,6 +9,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateSched
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
+import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -18,6 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Implements {@link CreateScheduleUseCase} by loading the parent room and saving recurring slots in
+ * one transaction. Identifiers are generated for each slot, and creation time comes from {@link
+ * Clock}.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor
@@ -37,11 +43,11 @@ public class CreateScheduleService implements CreateScheduleUseCase {
                         .orElseThrow(() -> new NoSuchElementException("room does not exists."));
 
         var now = clock.instant();
-        var scheduleId = uuidGenerator.generate();
+        var scheduleId = ScheduleId.of(uuidGenerator.generate());
         var schedule =
                 Schedule.of(
                         scheduleId,
-                        room.getId().getValue(),
+                        room.getId(),
                         command.dayOfWeek(),
                         command.range().startAt(),
                         command.range().endAt(),
@@ -65,15 +71,10 @@ public class CreateScheduleService implements CreateScheduleUseCase {
         for (var dayEntry : command.schedules().entrySet()) {
             var day = dayEntry.getKey();
             for (var entry : dayEntry.getValue()) {
-                var scheduleId = uuidGenerator.generate();
+                var scheduleId = ScheduleId.of(uuidGenerator.generate());
                 var schedule =
                         Schedule.of(
-                                scheduleId,
-                                room.getId().getValue(),
-                                day,
-                                entry.startAt(),
-                                entry.endAt(),
-                                now);
+                                scheduleId, room.getId(), day, entry.startAt(), entry.endAt(), now);
                 schedules.add(schedule);
             }
         }

@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Set;
 
-/** The created reservation header and all successfully requested slot identifiers. */
+/** The created reservation header and its successfully reserved slot identifiers. */
 public record CreateReservationResult(
         ReservationId reservationId,
         RoomId roomId,
@@ -34,7 +34,7 @@ public record CreateReservationResult(
     }
 
     /**
-     * Maps the header after all requested slots have been reserved successfully.
+     * Creates a result snapshot after all requested slots have been reserved successfully.
      *
      * @param reservation the created header
      * @param scheduleIds the successfully reserved slot identifiers

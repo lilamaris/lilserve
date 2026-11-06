@@ -70,7 +70,7 @@ class UpdateRoomServiceTest {
     void updatesCodeAndReturnsSavedRoom() {
         givenRoomFound(UPDATE_CODE);
 
-        var result = service.updateCode(UpdateRoomCodeCommand.of(ID, NEW_CODE));
+        var result = service.updateCode(UpdateRoomCodeCommand.of(ROOM_ID, NEW_CODE));
 
         verify(roomSavePort).save(room);
         assertThat(room.getCode()).isEqualTo(NEW_CODE);
@@ -87,7 +87,8 @@ class UpdateRoomServiceTest {
         givenRoomFound(UPDATE_METADATA);
 
         var result =
-                service.updateMetadata(UpdateRoomMetadataCommand.of(ID, NEW_NAME, NEW_DESCRIPTION));
+                service.updateMetadata(
+                        UpdateRoomMetadataCommand.of(ROOM_ID, NEW_NAME, NEW_DESCRIPTION));
 
         verify(roomSavePort).save(room);
         assertThat(room.getName()).isEqualTo(NEW_NAME);
@@ -105,7 +106,8 @@ class UpdateRoomServiceTest {
     void acceptsBlankDescription(String description) {
         givenRoomFound(UPDATE_METADATA);
 
-        var result = service.updateMetadata(UpdateRoomMetadataCommand.of(ID, NAME, description));
+        var result =
+                service.updateMetadata(UpdateRoomMetadataCommand.of(ROOM_ID, NAME, description));
 
         verify(roomSavePort).save(room);
         assertThat(room.getDescription()).isEqualTo(description);
@@ -117,7 +119,7 @@ class UpdateRoomServiceTest {
     void deletesRoomAndReturnsSavedRoom() {
         givenRoomFound(DELETE);
 
-        var result = service.delete(DeleteRoomCommand.of(ID));
+        var result = service.delete(DeleteRoomCommand.of(ROOM_ID));
 
         verify(roomSavePort).save(room);
         assertThat(room.isDeleted()).isTrue();
@@ -135,7 +137,7 @@ class UpdateRoomServiceTest {
         room = deletedRoom(NOW.minusSeconds(30));
         givenRoomFound(RESTORE);
 
-        var result = service.restore(RestoreRoomCommand.of(ID));
+        var result = service.restore(RestoreRoomCommand.of(ROOM_ID));
 
         verify(roomSavePort).save(room);
         assertThat(room.isDeleted()).isFalse();
@@ -202,7 +204,7 @@ class UpdateRoomServiceTest {
     void rejectsInvalidCode(String code, Class<? extends Throwable> exceptionType) {
         givenRoomFound(UPDATE_CODE);
 
-        assertThatThrownBy(() -> service.updateCode(UpdateRoomCodeCommand.of(ID, code)))
+        assertThatThrownBy(() -> service.updateCode(UpdateRoomCodeCommand.of(ROOM_ID, code)))
                 .isInstanceOf(exceptionType);
 
         verifyNoInteractions(roomSavePort);
@@ -219,7 +221,7 @@ class UpdateRoomServiceTest {
         assertThatThrownBy(
                         () ->
                                 service.updateMetadata(
-                                        UpdateRoomMetadataCommand.of(ID, name, description)))
+                                        UpdateRoomMetadataCommand.of(ROOM_ID, name, description)))
                 .isInstanceOf(exceptionType);
 
         verifyNoInteractions(roomSavePort);
@@ -247,7 +249,7 @@ class UpdateRoomServiceTest {
         givenRoomFound(UPDATE_CODE);
         var code = "a".repeat(Room.MAX_CODE_LENGTH);
 
-        var result = service.updateCode(UpdateRoomCodeCommand.of(ID, code));
+        var result = service.updateCode(UpdateRoomCodeCommand.of(ROOM_ID, code));
 
         verify(roomSavePort).save(room);
         assertThat(result.code()).isEqualTo(code);
@@ -302,7 +304,8 @@ class UpdateRoomServiceTest {
         var name = "a".repeat(Room.MAX_NAME_LENGTH);
         var description = "b".repeat(Room.MAX_DESCRIPTION_LENGTH);
 
-        var result = service.updateMetadata(UpdateRoomMetadataCommand.of(ID, name, description));
+        var result =
+                service.updateMetadata(UpdateRoomMetadataCommand.of(ROOM_ID, name, description));
 
         verify(roomSavePort).save(room);
         assertThat(result.name()).isEqualTo(name);
@@ -352,7 +355,7 @@ class UpdateRoomServiceTest {
                     "updateCode",
                     port -> port.findNotDeletedById(ROOM_ID),
                     UpdateRoomServiceTest::renamedRoom,
-                    target -> target.updateCode(UpdateRoomCodeCommand.of(ID, NEW_CODE)));
+                    target -> target.updateCode(UpdateRoomCodeCommand.of(ROOM_ID, NEW_CODE)));
 
     private static final Operation UPDATE_METADATA =
             new Operation(
@@ -361,21 +364,22 @@ class UpdateRoomServiceTest {
                     UpdateRoomServiceTest::renamedRoom,
                     target ->
                             target.updateMetadata(
-                                    UpdateRoomMetadataCommand.of(ID, NEW_NAME, NEW_DESCRIPTION)));
+                                    UpdateRoomMetadataCommand.of(
+                                            ROOM_ID, NEW_NAME, NEW_DESCRIPTION)));
 
     private static final Operation DELETE =
             new Operation(
                     "delete",
                     port -> port.findNotDeletedById(ROOM_ID),
                     UpdateRoomServiceTest::renamedRoom,
-                    target -> target.delete(DeleteRoomCommand.of(ID)));
+                    target -> target.delete(DeleteRoomCommand.of(ROOM_ID)));
 
     private static final Operation RESTORE =
             new Operation(
                     "restore",
                     port -> port.findDeletedById(ROOM_ID),
                     UpdateRoomServiceTest::deletedRoom,
-                    target -> target.restore(RestoreRoomCommand.of(ID)));
+                    target -> target.restore(RestoreRoomCommand.of(ROOM_ID)));
 
     private static Stream<Arguments> operations() {
         return Stream.of(

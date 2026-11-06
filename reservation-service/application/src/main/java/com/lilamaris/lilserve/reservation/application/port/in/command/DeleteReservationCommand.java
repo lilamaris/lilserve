@@ -6,11 +6,15 @@ import jakarta.validation.constraints.NotNull;
 /**
  * A request to cancel a whole reservation.
  *
- * @param reservationId the reservation identifier, not null
+ * <p>Record construction does not run Bean Validation. The constraints are checked when this
+ * command is explicitly validated or passed to a use case with method validation active.
+ *
+ * @param reservationId the reservation identifier, must not be null when validated
  */
 public record DeleteReservationCommand(@NotNull ReservationId reservationId) {
     /**
-     * Creates a cancellation request. Required fields are validated at the use case boundary.
+     * Creates a command from the reservation identifier. Required fields are checked by Bean
+     * Validation.
      *
      * @param reservationId the reservation identifier
      * @return the cancellation request

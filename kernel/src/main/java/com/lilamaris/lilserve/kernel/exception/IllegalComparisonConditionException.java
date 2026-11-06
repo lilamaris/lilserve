@@ -6,13 +6,13 @@ import java.util.List;
 /**
  * Condition violation judged from the relationship between a value and its references. Holds one or
  * more non-null references, in order.
- *
- * @param references the reference values, in order
  */
 public final class IllegalComparisonConditionException extends IllegalConditionException {
     private final List<?> references;
 
     /**
+     * Creates an exception describing a failed comparison condition.
+     *
      * @param subject the checked value
      * @param condition the violated condition
      * @param references the reference values, in order; at least one, none null

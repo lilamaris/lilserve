@@ -5,7 +5,6 @@ import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.UUID;
 
 /**
  * A request to change a seat's code. The code constraints mirror the rules {@link Seat} enforces.
@@ -20,16 +19,14 @@ public record UpdateSeatCodeCommand(
         @NotNull SeatId seatId, @NotBlank @Size(max = Seat.MAX_CODE_LENGTH) String code) {
 
     /**
-     * Creates a command from the seat identifier and the new code. Code constraints are checked by
-     * Bean Validation, not here.
+     * Creates a command from the seat identifier and the new code. Required fields and code
+     * constraints are checked by Bean Validation, not here.
      *
-     * @param id the seat identifier
+     * @param seatId the seat identifier
      * @param code the new code
      * @return the command
-     * @throws NullPointerException if {@code id} is null
      */
-    public static UpdateSeatCodeCommand of(UUID id, String code) {
-        var seatId = SeatId.of(id);
+    public static UpdateSeatCodeCommand of(SeatId seatId, String code) {
         return new UpdateSeatCodeCommand(seatId, code);
     }
 }

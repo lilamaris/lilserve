@@ -5,7 +5,6 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.UUID;
 
 /**
  * A request to change a room's name and description. The value constraints mirror the rules {@link
@@ -25,17 +24,15 @@ public record UpdateRoomMetadataCommand(
         @NotNull @Size(max = Room.MAX_DESCRIPTION_LENGTH) String description) {
 
     /**
-     * Creates a command from the room identifier and the new metadata. The identifier must be
-     * non-null; name and description constraints are checked by Bean Validation, not here.
+     * Creates a command from the room identifier and the new metadata. Required fields and metadata
+     * constraints are checked by Bean Validation, not here.
      *
-     * @param id the room identifier
+     * @param roomId the room identifier
      * @param name the new name
      * @param description the new description, blank allowed
      * @return the command
-     * @throws NullPointerException if {@code id} is null
      */
-    public static UpdateRoomMetadataCommand of(UUID id, String name, String description) {
-        var roomId = RoomId.of(id);
+    public static UpdateRoomMetadataCommand of(RoomId roomId, String name, String description) {
         return new UpdateRoomMetadataCommand(roomId, name, description);
     }
 }

@@ -69,7 +69,7 @@ class SeatControllerTest {
                 """
                 {"roomId":"00000000-0000-0000-0000-000000000001","code":"SEAT-01"}
                 """;
-        when(createSeatUseCase.create(CreateSeatCommand.of(ROOM_ID, CODE)))
+        when(createSeatUseCase.create(CreateSeatCommand.of(RoomId.of(ROOM_ID), CODE)))
                 .thenReturn(CreateSeatResult.from(seat()));
 
         mockMvc.perform(post(SEATS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
@@ -115,7 +115,7 @@ class SeatControllerTest {
                 """
                 {"roomId":"00000000-0000-0000-0000-000000000001","code":"SEAT-01"}
                 """;
-        when(createSeatUseCase.create(CreateSeatCommand.of(ROOM_ID, CODE)))
+        when(createSeatUseCase.create(CreateSeatCommand.of(RoomId.of(ROOM_ID), CODE)))
                 .thenThrow(new NoSuchElementException("room does not exists."));
 
         mockMvc.perform(post(SEATS_URL).contentType(MediaType.APPLICATION_JSON).content(body))
@@ -164,7 +164,8 @@ class SeatControllerTest {
                 """;
         var seat = seat();
         seat.updateCode("SEAT-02", UPDATED_AT);
-        when(updateSeatCodeUseCase.updateCode(UpdateSeatCodeCommand.of(SEAT_ID, "SEAT-02")))
+        when(updateSeatCodeUseCase.updateCode(
+                        UpdateSeatCodeCommand.of(SeatId.of(SEAT_ID), "SEAT-02")))
                 .thenReturn(UpdateSeatResult.from(seat));
 
         mockMvc.perform(
@@ -183,7 +184,8 @@ class SeatControllerTest {
                 """
                 {"code":"SEAT-02"}
                 """;
-        when(updateSeatCodeUseCase.updateCode(UpdateSeatCodeCommand.of(SEAT_ID, "SEAT-02")))
+        when(updateSeatCodeUseCase.updateCode(
+                        UpdateSeatCodeCommand.of(SeatId.of(SEAT_ID), "SEAT-02")))
                 .thenThrow(new DataIntegrityViolationException("uk_seat_code"));
 
         mockMvc.perform(
@@ -214,7 +216,7 @@ class SeatControllerTest {
     void deletesSeatWithoutResponseBody() throws Exception {
         var seat = seat();
         seat.delete(UPDATED_AT);
-        when(deleteSeatUseCase.delete(DeleteSeatCommand.of(SEAT_ID)))
+        when(deleteSeatUseCase.delete(DeleteSeatCommand.of(SeatId.of(SEAT_ID))))
                 .thenReturn(UpdateSeatResult.from(seat));
 
         mockMvc.perform(delete(SEAT_URL))
@@ -228,7 +230,7 @@ class SeatControllerTest {
         var seat = seat();
         seat.delete(UPDATED_AT);
         seat.restore(UPDATED_AT.plusSeconds(60));
-        when(restoreSeatUseCase.restore(RestoreSeatCommand.of(SEAT_ID)))
+        when(restoreSeatUseCase.restore(RestoreSeatCommand.of(SeatId.of(SEAT_ID))))
                 .thenReturn(UpdateSeatResult.from(seat));
 
         mockMvc.perform(post(SEAT_URL + "/restore"))
@@ -240,7 +242,7 @@ class SeatControllerTest {
     @Test
     @DisplayName("삭제되지 않은 좌석 복원은 404 problem detail로 답한다")
     void returnsNotFoundWhenRestoreTargetIsNotDeleted() throws Exception {
-        when(restoreSeatUseCase.restore(RestoreSeatCommand.of(SEAT_ID)))
+        when(restoreSeatUseCase.restore(RestoreSeatCommand.of(SeatId.of(SEAT_ID))))
                 .thenThrow(new NoSuchElementException("seat does not exists."));
 
         mockMvc.perform(post(SEAT_URL + "/restore"))

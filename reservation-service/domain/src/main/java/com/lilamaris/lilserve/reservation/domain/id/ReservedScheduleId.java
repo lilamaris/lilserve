@@ -10,9 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * The identifier of a dated seat allocation, embedded as the primary key of the reserved_schedule
- * row. Two allocations are the same row exactly when their values are equal, and equality is the
- * value alone.
+ * The identifier of a dated slot allocation, embedded as its primary key. Equality is based on the
+ * UUID value.
  */
 @Embeddable
 @Getter

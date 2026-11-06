@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateSeatR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that creates a seat in a room. */
+/** Creates seats in existing rooms. */
 public interface CreateSeatUseCase {
 
     /**

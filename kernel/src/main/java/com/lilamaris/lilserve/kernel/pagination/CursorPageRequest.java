@@ -15,9 +15,10 @@ public record CursorPageRequest<I>(Cursor<I> cursor, int size) {
     /**
      * @param cursor the position to continue from, or null for the first page
      * @param size the maximum number of items to fetch; must leave room for one extra fetch
-     * @throws IllegalValueConditionException if {@code size} is not positive
-     * @throws IllegalComparisonConditionException if {@code size} leaves no room for the extra
-     *     fetch
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     size} is not positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     size} leaves no room for the extra fetch
      */
     public CursorPageRequest {
         NumberPrecondition.requirePositive(size);
@@ -31,9 +32,10 @@ public record CursorPageRequest<I>(Cursor<I> cursor, int size) {
      * @param size the maximum number of items to fetch
      * @param <I> the cursor id type
      * @return a request with the given cursor and size
-     * @throws IllegalValueConditionException if {@code size} is not positive
-     * @throws IllegalComparisonConditionException if {@code size} leaves no room for the extra
-     *     fetch
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     size} is not positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     size} leaves no room for the extra fetch
      */
     public static <I> CursorPageRequest<I> of(Cursor<I> cursor, int size) {
         return new CursorPageRequest<>(cursor, size);

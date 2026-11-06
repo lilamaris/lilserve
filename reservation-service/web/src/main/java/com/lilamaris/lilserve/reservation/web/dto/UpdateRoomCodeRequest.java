@@ -2,14 +2,15 @@ package com.lilamaris.lilserve.reservation.web.dto;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomCodeCommand;
 import com.lilamaris.lilserve.reservation.domain.Room;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 /**
- * The JSON body that changes a room's code. The code is unique in the database, so a duplicate is
- * reported as 409 by the persistence layer.
+ * The JSON body that changes a room's code. The code is unique in the database, and the web
+ * exception handler maps a persistence integrity violation to HTTP 409.
  *
  * @param code the new code, non-blank and within {@link Room#MAX_CODE_LENGTH}
  */
@@ -31,6 +32,6 @@ public record UpdateRoomCodeRequest(
      * @throws NullPointerException if {@code roomId} is null
      */
     public UpdateRoomCodeCommand toCommand(UUID roomId) {
-        return UpdateRoomCodeCommand.of(roomId, code);
+        return UpdateRoomCodeCommand.of(RoomId.of(roomId), code);
     }
 }

@@ -10,8 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * The identifier of a schedule, embedded as the primary key of the schedule row. Two schedules are
- * the same slot exactly when their values are equal, and equality is the value alone.
+ * The identifier of a recurring slot, embedded as its primary key. Equality is based on the UUID
+ * value.
  */
 @Embeddable
 @Getter

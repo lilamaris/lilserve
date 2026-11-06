@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateRoomR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that changes a room's code. The code is unique in the database. */
+/** Changes room codes. */
 public interface UpdateRoomCodeUseCase {
 
     /**

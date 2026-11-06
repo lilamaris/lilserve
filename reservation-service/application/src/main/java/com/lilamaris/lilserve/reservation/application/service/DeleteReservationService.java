@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Implements {@link DeleteReservationUseCase} by loading an eligible reservation, cancelling its
+ * header, and releasing its allocations in one transaction. All changes use the same instant from
+ * {@link Clock}.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor

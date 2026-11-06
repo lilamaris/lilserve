@@ -17,9 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Handles {@link CreateRoomUseCase}: reads the creation time from {@link Clock}, generates the room
- * identifier with {@link IdGenerator}, builds the {@link Room} so the domain validates the command,
- * and stores it through {@link RoomSavePort}.
+ * Implements {@link CreateRoomUseCase} by generating an identifier and saving a room in one
+ * transaction. Creation time comes from {@link Clock}.
  */
 @Service
 @Validated

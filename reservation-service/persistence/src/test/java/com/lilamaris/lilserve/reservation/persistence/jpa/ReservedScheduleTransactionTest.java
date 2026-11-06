@@ -199,8 +199,8 @@ class ReservedScheduleTransactionTest {
     private ScheduleId persistSchedule(int start, int end) {
         var schedule =
                 Schedule.of(
-                        UUID.randomUUID(),
-                        roomId.getValue(),
+                        ScheduleId.of(UUID.randomUUID()),
+                        roomId,
                         DayOfWeek.MONDAY,
                         LocalTime.of(start, 0),
                         LocalTime.of(end, 0),

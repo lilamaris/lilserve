@@ -5,7 +5,6 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.UUID;
 
 /**
  * A request to create a seat in an existing, non-deleted room. The code constraints mirror the
@@ -21,16 +20,14 @@ public record CreateSeatCommand(
         @NotNull RoomId roomId, @NotBlank @Size(max = Seat.MAX_CODE_LENGTH) String code) {
 
     /**
-     * Creates a command from the room identifier value and the seat code. Code constraints are
-     * checked by Bean Validation, not here.
+     * Creates a command from the room identifier and the seat code. Required fields and code
+     * constraints are checked by Bean Validation, not here.
      *
-     * @param roomIdValue the room the seat belongs to
+     * @param roomId the room the seat belongs to
      * @param code the seat code
      * @return the command
-     * @throws NullPointerException if {@code roomIdValue} is null
      */
-    public static CreateSeatCommand of(UUID roomIdValue, String code) {
-        var roomId = RoomId.of(roomIdValue);
+    public static CreateSeatCommand of(RoomId roomId, String code) {
         return new CreateSeatCommand(roomId, code);
     }
 }

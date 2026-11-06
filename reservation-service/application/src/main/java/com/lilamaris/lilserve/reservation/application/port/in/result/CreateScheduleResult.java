@@ -16,7 +16,7 @@ public record CreateScheduleResult(
         LocalTime endAt,
         Instant createdAt) {
     /**
-     * Maps a created slot to its result snapshot.
+     * Creates a result snapshot from the recurring slot.
      *
      * @param schedule the created slot
      * @return the result

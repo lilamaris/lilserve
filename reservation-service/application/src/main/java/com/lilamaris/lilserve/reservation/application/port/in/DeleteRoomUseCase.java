@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateRoomR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that deletes a room once. */
+/** Deletes rooms. */
 public interface DeleteRoomUseCase {
 
     /**

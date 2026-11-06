@@ -16,7 +16,7 @@ import java.time.Instant;
 public record CreateSeatResult(SeatId seatId, RoomId roomId, String code, Instant createdAt) {
 
     /**
-     * Maps a seat to the result.
+     * Creates a result snapshot from the seat.
      *
      * @param seat the created seat
      * @return the result

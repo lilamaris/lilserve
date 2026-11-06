@@ -3,6 +3,7 @@ package com.lilamaris.lilserve.reservation.application.port.out;
 import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
 import java.time.Instant;
 
+/** Releases slot allocations within the caller's transaction. */
 public interface ReleaseSchedulePort {
     /**
      * Releases every active allocation of the reservation using one cancellation instant. Already

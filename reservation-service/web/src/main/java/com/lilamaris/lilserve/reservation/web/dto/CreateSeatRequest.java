@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.web.dto;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSeatCommand;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,12 +41,13 @@ public record CreateSeatRequest(
                 String code) {
 
     /**
-     * Converts this body to the create command. Value constraints are checked by Bean Validation at
-     * the web boundary, not here.
+     * Converts this body to a create command, wrapping the room UUID in {@link RoomId}. Bean
+     * Validation checks request constraints at the web boundary.
      *
-     * @return the create command with the same values
+     * @return the create command
+     * @throws NullPointerException if {@code roomId} is null
      */
     public CreateSeatCommand toCommand() {
-        return CreateSeatCommand.of(roomId, code);
+        return CreateSeatCommand.of(RoomId.of(roomId), code);
     }
 }

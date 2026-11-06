@@ -15,7 +15,6 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -84,14 +83,13 @@ public class Schedule {
      *     endAt} is not after {@code startAt}
      */
     public static Schedule of(
-            UUID id,
-            UUID roomId,
+            ScheduleId id,
+            RoomId roomId,
             DayOfWeek dayOfWeek,
             LocalTime startAt,
             LocalTime endAt,
             Instant createdAt) {
-        return new Schedule(
-                ScheduleId.of(id), RoomId.of(roomId), dayOfWeek, startAt, endAt, createdAt);
+        return new Schedule(id, roomId, dayOfWeek, startAt, endAt, createdAt);
     }
 
     /**
@@ -111,7 +109,7 @@ public class Schedule {
     }
 
     /**
-     * Checks whether the slot has been retired.
+     * Returns whether the slot has been retired.
      *
      * @return true if the slot has a deletion time
      */

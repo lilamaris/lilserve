@@ -10,9 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * The identifier of a reservation header, embedded as the primary key of the reservation row. Two
- * reservations are the same header exactly when their values are equal, and equality is the value
- * alone.
+ * The identifier of a reservation header, embedded as its primary key. Equality is based on the
+ * UUID value.
  */
 @Embeddable
 @Getter

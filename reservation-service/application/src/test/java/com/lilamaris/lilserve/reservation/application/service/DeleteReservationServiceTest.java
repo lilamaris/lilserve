@@ -14,6 +14,8 @@ import com.lilamaris.lilserve.reservation.application.port.out.ReservationFindPo
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePort;
 import com.lilamaris.lilserve.reservation.domain.Reservation;
 import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -91,9 +93,9 @@ class DeleteReservationServiceTest {
 
     private Reservation reservation() {
         return Reservation.of(
-                RESERVATION_ID.getValue(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
+                RESERVATION_ID,
+                RoomId.of(UUID.randomUUID()),
+                SeatId.of(UUID.randomUUID()),
                 LocalDate.of(2026, 11, 9),
                 "Asia/Seoul",
                 NOW.minusSeconds(60));

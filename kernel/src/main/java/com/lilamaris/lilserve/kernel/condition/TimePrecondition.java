@@ -16,8 +16,8 @@ public final class TimePrecondition {
      * @param upperBound the exclusive upper bound
      * @param <T> the comparable type
      * @return {@code subject} unchanged
-     * @throws IllegalComparisonConditionException if {@code subject} is not before {@code
-     *     upperBound}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     subject} is not before {@code upperBound}
      * @throws NullPointerException if {@code subject} or {@code upperBound} is null
      */
     public static <T extends Comparable<? super T>> T requireBefore(T subject, T upperBound) {
@@ -37,7 +37,8 @@ public final class TimePrecondition {
      * @param upperBound the inclusive upper bound
      * @param <T> the comparable type
      * @return {@code subject} unchanged
-     * @throws IllegalComparisonConditionException if {@code subject} is after {@code upperBound}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     subject} is after {@code upperBound}
      * @throws NullPointerException if {@code subject} or {@code upperBound} is null
      */
     public static <T extends Comparable<? super T>> T requireBeforeOrEqual(
@@ -58,8 +59,8 @@ public final class TimePrecondition {
      * @param lowerBound the exclusive lower bound
      * @param <T> the comparable type
      * @return {@code subject} unchanged
-     * @throws IllegalComparisonConditionException if {@code subject} is not after {@code
-     *     lowerBound}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     subject} is not after {@code lowerBound}
      * @throws NullPointerException if {@code subject} or {@code lowerBound} is null
      */
     public static <T extends Comparable<? super T>> T requireAfter(T subject, T lowerBound) {
@@ -79,7 +80,8 @@ public final class TimePrecondition {
      * @param lowerBound the inclusive lower bound
      * @param <T> the comparable type
      * @return {@code subject} unchanged
-     * @throws IllegalComparisonConditionException if {@code subject} is before {@code lowerBound}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     subject} is before {@code lowerBound}
      * @throws NullPointerException if {@code subject} or {@code lowerBound} is null
      */
     public static <T extends Comparable<? super T>> T requireAfterOrEqual(T subject, T lowerBound) {
@@ -99,7 +101,8 @@ public final class TimePrecondition {
      * @param minimum the inclusive lower bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is below {@code minimum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is below {@code minimum}
      * @throws NullPointerException if {@code value} or {@code minimum} is null
      */
     public static <T extends Comparable<? super T>> T requireAtLeast(T value, T minimum) {
@@ -113,7 +116,8 @@ public final class TimePrecondition {
      * @param maximum the inclusive upper bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is above {@code maximum}
      * @throws NullPointerException if {@code value} or {@code maximum} is null
      */
     public static <T extends Comparable<? super T>> T requireAtMost(T value, T maximum) {
@@ -129,8 +133,10 @@ public final class TimePrecondition {
      * @param maximum the inclusive upper bound
      * @param <T> the comparable type
      * @return {@code value} unchanged
-     * @throws IllegalComparisonConditionException if {@code value} is outside the range
-     * @throws IllegalBoundsException if {@code minimum} is above {@code maximum}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if {@code
+     *     value} is outside the range
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalBoundsException if {@code minimum} is
+     *     above {@code maximum}
      * @throws NullPointerException if any argument is null
      */
     public static <T extends Comparable<? super T>> T requireBetween(
@@ -143,7 +149,8 @@ public final class TimePrecondition {
      *
      * @param value the duration to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is zero or positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is zero or positive
      * @throws NullPointerException if {@code value} is null
      */
     public static Duration requireNegative(Duration value) {
@@ -159,7 +166,8 @@ public final class TimePrecondition {
      *
      * @param value the duration to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is negative
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is negative
      * @throws NullPointerException if {@code value} is null
      */
     public static Duration requireNonNegative(Duration value) {
@@ -175,7 +183,8 @@ public final class TimePrecondition {
      *
      * @param value the duration to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is zero or negative
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is zero or negative
      * @throws NullPointerException if {@code value} is null
      */
     public static Duration requirePositive(Duration value) {
@@ -191,7 +200,8 @@ public final class TimePrecondition {
      *
      * @param value the duration to check
      * @return {@code value} unchanged
-     * @throws IllegalValueConditionException if {@code value} is positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     value} is positive
      * @throws NullPointerException if {@code value} is null
      */
     public static Duration requireNonPositive(Duration value) {

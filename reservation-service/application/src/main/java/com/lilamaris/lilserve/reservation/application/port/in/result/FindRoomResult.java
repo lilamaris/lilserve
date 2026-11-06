@@ -5,8 +5,7 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import java.time.Instant;
 
 /**
- * One found room. Every change moves {@code updatedAt} forward, and deletion is recorded in {@code
- * deletedAt}.
+ * The retrieved room, including its creation, last update, and deletion timestamps.
  *
  * @param roomId the room identifier
  * @param code the room code
@@ -26,7 +25,7 @@ public record FindRoomResult(
         Instant deletedAt) {
 
     /**
-     * Maps a room to the result.
+     * Creates a result snapshot from the room.
      *
      * @param room the found room
      * @return the result

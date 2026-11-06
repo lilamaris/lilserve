@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateRoomR
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** The driving port that changes a room's name and description. */
+/** Changes room names and descriptions. */
 public interface UpdateRoomMetadataUseCase {
 
     /**

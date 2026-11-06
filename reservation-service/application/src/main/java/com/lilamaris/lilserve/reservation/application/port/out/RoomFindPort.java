@@ -5,17 +5,10 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import java.util.Optional;
 
 /**
- * The driven port that reads one room, implemented by the persistence adapter.
- *
- * <p>Deletion is soft: a deleted room keeps its row and carries {@link Room#isDeleted()}, so
- * reading with deleted rooms and reading without them are separate operations. Callers pick the
- * operation that matches their rule, for example restore needs the deleted room itself and an
- * update must reject it.
+ * Finds rooms by identifier and deletion state within the caller's transaction.
  *
  * <p>Implementations return {@link Optional#empty()} when no room matches and never return {@code
- * null}; a missing room is not an error at this port. What a missing room means is the caller's
- * decision, and the port takes no transaction boundary of its own: it runs inside the caller's
- * transaction.
+ * null}. The caller decides how to handle a missing room.
  *
  * @see RoomSavePort
  */

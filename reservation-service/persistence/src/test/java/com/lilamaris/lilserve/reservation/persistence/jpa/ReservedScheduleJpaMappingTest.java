@@ -9,6 +9,7 @@ import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
 import com.lilamaris.lilserve.reservation.domain.Seat;
 import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
+import com.lilamaris.lilserve.reservation.domain.id.ReservedScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
@@ -59,26 +60,14 @@ class ReservedScheduleJpaMappingTest {
     private ScheduleId persistSlot(LocalTime startAt, LocalTime endAt) {
         var scheduleId = ScheduleId.of(UUID.randomUUID());
         entityManager.persist(
-                Schedule.of(
-                        scheduleId.getValue(),
-                        roomId.getValue(),
-                        DayOfWeek.MONDAY,
-                        startAt,
-                        endAt,
-                        CREATED_AT));
+                Schedule.of(scheduleId, roomId, DayOfWeek.MONDAY, startAt, endAt, CREATED_AT));
         return scheduleId;
     }
 
     private ReservationId persistReservation() {
         var reservationId = ReservationId.of(UUID.randomUUID());
         entityManager.persist(
-                Reservation.of(
-                        reservationId.getValue(),
-                        roomId.getValue(),
-                        seatId.getValue(),
-                        SERVICE_DATE,
-                        TIME_ZONE,
-                        CREATED_AT));
+                Reservation.of(reservationId, roomId, seatId, SERVICE_DATE, TIME_ZONE, CREATED_AT));
         return reservationId;
     }
 
@@ -89,11 +78,11 @@ class ReservedScheduleJpaMappingTest {
             LocalTime endAt) {
         var allocation =
                 ReservedSchedule.of(
-                        UUID.randomUUID(),
-                        reservationId.getValue(),
-                        roomId.getValue(),
-                        seatId.getValue(),
-                        scheduleId.getValue(),
+                        ReservedScheduleId.of(UUID.randomUUID()),
+                        reservationId,
+                        roomId,
+                        seatId,
+                        scheduleId,
                         startAt,
                         endAt,
                         SERVICE_DATE,

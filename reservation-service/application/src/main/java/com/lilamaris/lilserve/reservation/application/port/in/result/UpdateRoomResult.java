@@ -26,7 +26,7 @@ public record UpdateRoomResult(
         Instant deletedAt) {
 
     /**
-     * Maps a room to the result.
+     * Creates a result snapshot from the room.
      *
      * @param room the changed room
      * @return the result

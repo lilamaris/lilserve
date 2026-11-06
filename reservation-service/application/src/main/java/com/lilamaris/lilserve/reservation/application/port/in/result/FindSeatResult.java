@@ -6,7 +6,7 @@ import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.Instant;
 
 /**
- * One found seat, including its creation, last update, and deletion timestamps.
+ * The retrieved seat, including its creation, last update, and deletion timestamps.
  *
  * @param seatId the seat identifier
  * @param roomId the room the seat belongs to
@@ -23,7 +23,7 @@ public record FindSeatResult(
         Instant updatedAt,
         Instant deletedAt) {
     /**
-     * Maps a seat to the result.
+     * Creates a result snapshot from the seat.
      *
      * @param seat the found seat
      * @return the result

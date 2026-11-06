@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException;
+import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -25,7 +28,12 @@ class ReservationTest {
 
     private Reservation reservation() {
         return Reservation.of(
-                RESERVATION_ID, ROOM_ID, SEAT_ID, RESERVATION_DATE, TIME_ZONE, CREATED_AT);
+                ReservationId.of(RESERVATION_ID),
+                RoomId.of(ROOM_ID),
+                SeatId.of(SEAT_ID),
+                RESERVATION_DATE,
+                TIME_ZONE,
+                CREATED_AT);
     }
 
     @Test
@@ -63,7 +71,13 @@ class ReservationTest {
     @DisplayName("유효한 시간대는 정규화되어 저장된다")
     void normalizesTimeZoneId() {
         var reservation =
-                Reservation.of(RESERVATION_ID, ROOM_ID, SEAT_ID, RESERVATION_DATE, "Z", CREATED_AT);
+                Reservation.of(
+                        ReservationId.of(RESERVATION_ID),
+                        RoomId.of(ROOM_ID),
+                        SeatId.of(SEAT_ID),
+                        RESERVATION_DATE,
+                        "Z",
+                        CREATED_AT);
 
         assertThat(reservation.getTimeZone()).isEqualTo("Z");
         assertThat(reservation.zone()).isEqualTo(ZoneId.of("Z"));
@@ -76,8 +90,8 @@ class ReservationTest {
                         () ->
                                 Reservation.of(
                                         null,
-                                        ROOM_ID,
-                                        SEAT_ID,
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
                                         RESERVATION_DATE,
                                         TIME_ZONE,
                                         CREATED_AT))
@@ -90,9 +104,9 @@ class ReservationTest {
         assertThatThrownBy(
                         () ->
                                 Reservation.of(
-                                        RESERVATION_ID,
+                                        ReservationId.of(RESERVATION_ID),
                                         null,
-                                        SEAT_ID,
+                                        SeatId.of(SEAT_ID),
                                         RESERVATION_DATE,
                                         TIME_ZONE,
                                         CREATED_AT))
@@ -105,8 +119,8 @@ class ReservationTest {
         assertThatThrownBy(
                         () ->
                                 Reservation.of(
-                                        RESERVATION_ID,
-                                        ROOM_ID,
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
                                         null,
                                         RESERVATION_DATE,
                                         TIME_ZONE,
@@ -120,9 +134,9 @@ class ReservationTest {
         assertThatThrownBy(
                         () ->
                                 Reservation.of(
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
                                         null,
                                         TIME_ZONE,
                                         CREATED_AT))
@@ -135,9 +149,9 @@ class ReservationTest {
         assertThatThrownBy(
                         () ->
                                 Reservation.of(
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
                                         RESERVATION_DATE,
                                         null,
                                         CREATED_AT))
@@ -150,9 +164,9 @@ class ReservationTest {
         assertThatThrownBy(
                         () ->
                                 Reservation.of(
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
                                         RESERVATION_DATE,
                                         "Asia/Seoull",
                                         CREATED_AT))
@@ -165,9 +179,9 @@ class ReservationTest {
         assertThatThrownBy(
                         () ->
                                 Reservation.of(
-                                        RESERVATION_ID,
-                                        ROOM_ID,
-                                        SEAT_ID,
+                                        ReservationId.of(RESERVATION_ID),
+                                        RoomId.of(ROOM_ID),
+                                        SeatId.of(SEAT_ID),
                                         RESERVATION_DATE,
                                         TIME_ZONE,
                                         null))

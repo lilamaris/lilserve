@@ -13,9 +13,10 @@ public record OffsetPageRequest(int page, int size) {
     /**
      * @param page the zero-based page number
      * @param size the maximum number of items per page
-     * @throws IllegalValueConditionException if {@code page} is negative, or {@code size} is not
-     *     positive
-     * @throws IllegalComparisonConditionException if the offset exceeds {@code Integer.MAX_VALUE}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     page} is negative, or {@code size} is not positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if the
+     *     offset exceeds {@code Integer.MAX_VALUE}
      */
     public OffsetPageRequest {
         NumberPrecondition.requireNonNegative(page);
@@ -29,9 +30,10 @@ public record OffsetPageRequest(int page, int size) {
      * @param page the zero-based page number
      * @param size the maximum number of items per page
      * @return a request with the given page and size
-     * @throws IllegalValueConditionException if {@code page} is negative, or {@code size} is not
-     *     positive
-     * @throws IllegalComparisonConditionException if the offset exceeds {@code Integer.MAX_VALUE}
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException if {@code
+     *     page} is negative, or {@code size} is not positive
+     * @throws com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException if the
+     *     offset exceeds {@code Integer.MAX_VALUE}
      */
     public static OffsetPageRequest of(int page, int size) {
         return new OffsetPageRequest(page, size);
