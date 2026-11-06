@@ -6,6 +6,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.CreateRese
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateReservationResult;
 import com.lilamaris.lilserve.reservation.application.port.out.*;
 import com.lilamaris.lilserve.reservation.domain.Reservation;
+import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
 import java.time.Clock;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -46,12 +47,12 @@ public class CreateReservationService implements CreateReservationUseCase {
 
         var timezone = clock.getZone();
 
-        var reservationId = uuidGenerator.generate();
+        var reservationId = ReservationId.of(uuidGenerator.generate());
         var reservation =
                 Reservation.of(
                         reservationId,
-                        room.getId().getValue(),
-                        seat.getId().getValue(),
+                        room.getId(),
+                        seat.getId(),
                         command.reservationDate(),
                         timezone.getId(),
                         now);

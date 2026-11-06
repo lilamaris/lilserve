@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -133,22 +132,22 @@ public class ReservedSchedule {
      * @throws java.time.DateTimeException if {@code timeZone} is not a valid timezone
      */
     public static ReservedSchedule of(
-            UUID id,
-            UUID reservationId,
-            UUID roomId,
-            UUID seatId,
-            UUID scheduleId,
+            ReservedScheduleId id,
+            ReservationId reservationId,
+            RoomId roomId,
+            SeatId seatId,
+            ScheduleId scheduleId,
             LocalTime startAt,
             LocalTime endAt,
             LocalDate reservationDate,
             String timeZone,
             Instant createdAt) {
         return new ReservedSchedule(
-                ReservedScheduleId.of(id),
-                ReservationId.of(reservationId),
-                RoomId.of(roomId),
-                SeatId.of(seatId),
-                ScheduleId.of(scheduleId),
+                id,
+                reservationId,
+                roomId,
+                seatId,
+                scheduleId,
                 startAt,
                 endAt,
                 reservationDate,

@@ -12,7 +12,9 @@ import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
 import com.lilamaris.lilserve.reservation.domain.Seat;
 import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
+import com.lilamaris.lilserve.reservation.domain.id.ReservedScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
@@ -169,9 +171,9 @@ class DeleteReservationTransactionTest {
                         status -> {
                             var reservation =
                                     Reservation.of(
-                                            UUID.randomUUID(),
-                                            roomId.getValue(),
-                                            seatId.getValue(),
+                                            ReservationId.of(UUID.randomUUID()),
+                                            roomId,
+                                            seatId,
                                             DATE,
                                             TIME_ZONE,
                                             CREATED_AT);
@@ -185,8 +187,8 @@ class DeleteReservationTransactionTest {
     private void persistAllocation(Reservation reservation, int startHour, Instant createdAt) {
         var schedule =
                 Schedule.of(
-                        UUID.randomUUID(),
-                        roomId.getValue(),
+                        ScheduleId.of(UUID.randomUUID()),
+                        roomId,
                         DayOfWeek.MONDAY,
                         LocalTime.of(startHour, 0),
                         LocalTime.of(startHour + 1, 0),
@@ -194,11 +196,11 @@ class DeleteReservationTransactionTest {
         entityManager.persist(schedule);
         entityManager.persist(
                 ReservedSchedule.of(
-                        UUID.randomUUID(),
-                        reservation.getId().getValue(),
-                        roomId.getValue(),
-                        seatId.getValue(),
-                        schedule.getId().getValue(),
+                        ReservedScheduleId.of(UUID.randomUUID()),
+                        reservation.getId(),
+                        roomId,
+                        seatId,
+                        schedule.getId(),
                         schedule.getStartAt(),
                         schedule.getEndAt(),
                         DATE,

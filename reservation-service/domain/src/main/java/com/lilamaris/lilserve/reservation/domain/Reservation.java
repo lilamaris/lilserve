@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -82,19 +81,13 @@ public class Reservation {
      * @throws java.time.DateTimeException if {@code timeZone} is not a valid timezone
      */
     public static Reservation of(
-            UUID id,
-            UUID roomId,
-            UUID seatId,
+            ReservationId id,
+            RoomId roomId,
+            SeatId seatId,
             LocalDate reservationDate,
             String timeZone,
             Instant createdAt) {
-        return new Reservation(
-                ReservationId.of(id),
-                RoomId.of(roomId),
-                SeatId.of(seatId),
-                reservationDate,
-                timeZone,
-                createdAt);
+        return new Reservation(id, roomId, seatId, reservationDate, timeZone, createdAt);
     }
 
     /**

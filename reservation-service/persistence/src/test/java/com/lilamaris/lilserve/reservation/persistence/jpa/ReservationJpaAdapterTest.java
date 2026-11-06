@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.lilamaris.lilserve.reservation.domain.Reservation;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.Instant;
@@ -43,9 +44,9 @@ class ReservationJpaAdapterTest {
         entityManager.persist(Seat.of(seatId, roomId, "SEAT-01", CREATED_AT));
         var reservation =
                 Reservation.of(
-                        UUID.randomUUID(),
-                        roomId.getValue(),
-                        seatId.getValue(),
+                        ReservationId.of(UUID.randomUUID()),
+                        roomId,
+                        seatId,
                         SERVICE_DATE,
                         "Asia/Seoul",
                         CREATED_AT);

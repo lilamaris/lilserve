@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import com.lilamaris.lilserve.kernel.condition.ComparisonCondition;
 import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -27,7 +29,13 @@ class ScheduleTest {
     @DisplayName("스케줄은 입력한 값을 그대로 유지한다")
     void retainsSuppliedValues() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
 
         assertThat(schedule.getId().getValue()).isEqualTo(SCHEDULE_ID);
         assertThat(schedule.getRoomId().getValue()).isEqualTo(ROOM_ID);
@@ -47,8 +55,8 @@ class ScheduleTest {
                         IllegalComparisonConditionException.class,
                         () ->
                                 Schedule.of(
-                                        SCHEDULE_ID,
-                                        ROOM_ID,
+                                        ScheduleId.of(SCHEDULE_ID),
+                                        RoomId.of(ROOM_ID),
                                         DayOfWeek.MONDAY,
                                         START_AT,
                                         START_AT,
@@ -65,8 +73,8 @@ class ScheduleTest {
         assertThatThrownBy(
                         () ->
                                 Schedule.of(
-                                        SCHEDULE_ID,
-                                        ROOM_ID,
+                                        ScheduleId.of(SCHEDULE_ID),
+                                        RoomId.of(ROOM_ID),
                                         DayOfWeek.MONDAY,
                                         END_AT,
                                         START_AT,
@@ -81,7 +89,7 @@ class ScheduleTest {
                         () ->
                                 Schedule.of(
                                         null,
-                                        ROOM_ID,
+                                        RoomId.of(ROOM_ID),
                                         DayOfWeek.MONDAY,
                                         START_AT,
                                         END_AT,
@@ -95,7 +103,7 @@ class ScheduleTest {
         assertThatThrownBy(
                         () ->
                                 Schedule.of(
-                                        SCHEDULE_ID,
+                                        ScheduleId.of(SCHEDULE_ID),
                                         null,
                                         DayOfWeek.MONDAY,
                                         START_AT,
@@ -108,7 +116,14 @@ class ScheduleTest {
     @DisplayName("요일이 null이면 스케줄을 생성할 수 없다")
     void rejectsNullDayOfWeek() {
         assertThatThrownBy(
-                        () -> Schedule.of(SCHEDULE_ID, ROOM_ID, null, START_AT, END_AT, CREATED_AT))
+                        () ->
+                                Schedule.of(
+                                        ScheduleId.of(SCHEDULE_ID),
+                                        RoomId.of(ROOM_ID),
+                                        null,
+                                        START_AT,
+                                        END_AT,
+                                        CREATED_AT))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -118,8 +133,8 @@ class ScheduleTest {
         assertThatThrownBy(
                         () ->
                                 Schedule.of(
-                                        SCHEDULE_ID,
-                                        ROOM_ID,
+                                        ScheduleId.of(SCHEDULE_ID),
+                                        RoomId.of(ROOM_ID),
                                         DayOfWeek.MONDAY,
                                         null,
                                         END_AT,
@@ -133,8 +148,8 @@ class ScheduleTest {
         assertThatThrownBy(
                         () ->
                                 Schedule.of(
-                                        SCHEDULE_ID,
-                                        ROOM_ID,
+                                        ScheduleId.of(SCHEDULE_ID),
+                                        RoomId.of(ROOM_ID),
                                         DayOfWeek.MONDAY,
                                         START_AT,
                                         null,
@@ -148,8 +163,8 @@ class ScheduleTest {
         assertThatThrownBy(
                         () ->
                                 Schedule.of(
-                                        SCHEDULE_ID,
-                                        ROOM_ID,
+                                        ScheduleId.of(SCHEDULE_ID),
+                                        RoomId.of(ROOM_ID),
                                         DayOfWeek.MONDAY,
                                         START_AT,
                                         END_AT,
@@ -161,7 +176,13 @@ class ScheduleTest {
     @DisplayName("삭제 시점 유지하면 삭제된 스케줄이 된다")
     void marksDeletedAtDeletion() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
 
         schedule.delete(DELETED_AT);
 
@@ -173,7 +194,13 @@ class ScheduleTest {
     @DisplayName("삭제 시점이 생성 시점과 같으면 삭제할 수 있다")
     void acceptsDeletionAtCreatedAt() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
 
         schedule.delete(CREATED_AT);
 
@@ -184,7 +211,13 @@ class ScheduleTest {
     @DisplayName("삭제 시점이 생성 시점보다 앞이면 삭제할 수 없다")
     void rejectsDeletionBeforeCreatedAt() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
         Instant beforeCreatedAt = CREATED_AT.minusSeconds(1);
 
         assertThatThrownBy(() -> schedule.delete(beforeCreatedAt))
@@ -197,7 +230,13 @@ class ScheduleTest {
     @DisplayName("삭제 시점이 null이면 삭제할 수 없다")
     void rejectsNullDeletedAt() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
 
         assertThatThrownBy(() -> schedule.delete(null)).isInstanceOf(NullPointerException.class);
 
@@ -208,7 +247,13 @@ class ScheduleTest {
     @DisplayName("이미 삭제된 스케줄은 다시 삭제할 수 없다")
     void rejectsSecondDeletion() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
         schedule.delete(DELETED_AT);
 
         assertThatThrownBy(() -> schedule.delete(DELETED_AT.plusSeconds(1)))
@@ -221,7 +266,13 @@ class ScheduleTest {
     @DisplayName("삭제되지 않은 스케줄은 사용 검증에 통과한다")
     void passesNotDeletedValidationWhenNotDeleted() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
 
         schedule.validateNotDeleted();
         assertThat(schedule.isDeleted()).isFalse();
@@ -231,7 +282,13 @@ class ScheduleTest {
     @DisplayName("삭제된 스케줄은 사용 검증에 통과하지 못한다")
     void failsNotDeletedValidationWhenDeleted() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
         schedule.delete(DELETED_AT);
 
         assertThatThrownBy(schedule::validateNotDeleted).isInstanceOf(IllegalStateException.class);
@@ -241,7 +298,13 @@ class ScheduleTest {
     @DisplayName("삭제된 스케줄은 삭제 검증에 통과한다")
     void passesDeletedValidationWhenDeleted() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
         schedule.delete(DELETED_AT);
 
         schedule.validateDeleted();
@@ -252,7 +315,13 @@ class ScheduleTest {
     @DisplayName("삭제되지 않은 스케줄은 삭제 검증에 통과하지 못한다")
     void failsDeletedValidationWhenNotDeleted() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.MONDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.MONDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
 
         assertThatThrownBy(schedule::validateDeleted).isInstanceOf(IllegalStateException.class);
     }
@@ -261,7 +330,13 @@ class ScheduleTest {
     @DisplayName("일요일 스케줄은 ISO 요일 7을 유지한다")
     void retainsSundayAsIsoDaySeven() {
         var schedule =
-                Schedule.of(SCHEDULE_ID, ROOM_ID, DayOfWeek.SUNDAY, START_AT, END_AT, CREATED_AT);
+                Schedule.of(
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
+                        DayOfWeek.SUNDAY,
+                        START_AT,
+                        END_AT,
+                        CREATED_AT);
 
         assertThat(schedule.getDayOfWeek().getValue()).isEqualTo(7);
     }
@@ -271,8 +346,8 @@ class ScheduleTest {
     void acceptsLateNightSlot() {
         var schedule =
                 Schedule.of(
-                        SCHEDULE_ID,
-                        ROOM_ID,
+                        ScheduleId.of(SCHEDULE_ID),
+                        RoomId.of(ROOM_ID),
                         DayOfWeek.FRIDAY,
                         LocalTime.of(23, 0),
                         LocalTime.of(23, 30),

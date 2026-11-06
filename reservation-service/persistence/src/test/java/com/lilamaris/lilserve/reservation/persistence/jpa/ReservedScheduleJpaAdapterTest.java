@@ -10,6 +10,7 @@ import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
 import com.lilamaris.lilserve.reservation.domain.Seat;
 import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
+import com.lilamaris.lilserve.reservation.domain.id.ReservedScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
@@ -327,9 +328,9 @@ class ReservedScheduleJpaAdapterTest {
         var schedule = persistSchedule(10, 12);
         var reservation =
                 Reservation.of(
-                        UUID.randomUUID(),
-                        room.getId().getValue(),
-                        seat.getId().getValue(),
+                        ReservationId.of(UUID.randomUUID()),
+                        room.getId(),
+                        seat.getId(),
                         SERVICE_DATE,
                         timezone,
                         RESERVED_AT);
@@ -637,8 +638,8 @@ class ReservedScheduleJpaAdapterTest {
     private Schedule persistSchedule(RoomId roomId, DayOfWeek day, int startHour, int endHour) {
         return entityManager.persist(
                 Schedule.of(
-                        UUID.randomUUID(),
-                        roomId.getValue(),
+                        ScheduleId.of(UUID.randomUUID()),
+                        roomId,
                         day,
                         LocalTime.of(startHour, 0),
                         LocalTime.of(endHour, 0),
@@ -657,22 +658,17 @@ class ReservedScheduleJpaAdapterTest {
 
     private Reservation reservation(RoomId roomId, SeatId seatId, LocalDate date) {
         return Reservation.of(
-                UUID.randomUUID(),
-                roomId.getValue(),
-                seatId.getValue(),
-                date,
-                TIME_ZONE,
-                RESERVED_AT);
+                ReservationId.of(UUID.randomUUID()), roomId, seatId, date, TIME_ZONE, RESERVED_AT);
     }
 
     private ReservedSchedule persistAllocation(Reservation reservation, Schedule schedule) {
         var allocation =
                 ReservedSchedule.of(
-                        UUID.randomUUID(),
-                        reservation.getId().getValue(),
-                        reservation.getRoomId().getValue(),
-                        reservation.getSeatId().getValue(),
-                        schedule.getId().getValue(),
+                        ReservedScheduleId.of(UUID.randomUUID()),
+                        reservation.getId(),
+                        reservation.getRoomId(),
+                        reservation.getSeatId(),
+                        schedule.getId(),
                         schedule.getStartAt(),
                         schedule.getEndAt(),
                         reservation.getReservationDate(),
