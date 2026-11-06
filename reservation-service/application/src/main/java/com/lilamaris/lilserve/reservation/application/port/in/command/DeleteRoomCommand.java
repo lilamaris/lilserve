@@ -2,7 +2,6 @@ package com.lilamaris.lilserve.reservation.application.port.in.command;
 
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.constraints.NotNull;
-import java.util.UUID;
 
 /**
  * A request to delete a room. Only the target identifier is required.
@@ -17,12 +16,10 @@ public record DeleteRoomCommand(@NotNull RoomId roomId) {
     /**
      * Creates a command from the room identifier.
      *
-     * @param id the room identifier
+     * @param roomId the room identifier
      * @return the command
-     * @throws NullPointerException if {@code id} is null
      */
-    public static DeleteRoomCommand of(UUID id) {
-        var roomId = RoomId.of(id);
+    public static DeleteRoomCommand of(RoomId roomId) {
         return new DeleteRoomCommand(roomId);
     }
 }

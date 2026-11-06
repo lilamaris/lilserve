@@ -5,7 +5,6 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.UUID;
 
 /**
  * A request to change a room's code. The code constraints mirror the rules {@link Room} enforces.
@@ -20,16 +19,14 @@ public record UpdateRoomCodeCommand(
         @NotNull RoomId roomId, @NotBlank @Size(max = Room.MAX_CODE_LENGTH) String code) {
 
     /**
-     * Creates a command from the room identifier and the new code. Code constraints are checked by
-     * Bean Validation, not here.
+     * Creates a command from the room identifier and the new code. Required fields and code
+     * constraints are checked by Bean Validation, not here.
      *
-     * @param id the room identifier
+     * @param roomId the room identifier
      * @param code the new code
      * @return the command
-     * @throws NullPointerException if {@code id} is null
      */
-    public static UpdateRoomCodeCommand of(UUID id, String code) {
-        var roomId = RoomId.of(id);
+    public static UpdateRoomCodeCommand of(RoomId roomId, String code) {
         return new UpdateRoomCodeCommand(roomId, code);
     }
 }

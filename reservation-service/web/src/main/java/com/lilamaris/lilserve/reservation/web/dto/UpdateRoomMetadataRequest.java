@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.web.dto;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomMetadataCommand;
 import com.lilamaris.lilserve.reservation.domain.Room;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -46,6 +47,6 @@ public record UpdateRoomMetadataRequest(
      * @throws NullPointerException if {@code roomId} is null
      */
     public UpdateRoomMetadataCommand toCommand(UUID roomId) {
-        return UpdateRoomMetadataCommand.of(roomId, name, description);
+        return UpdateRoomMetadataCommand.of(RoomId.of(roomId), name, description);
     }
 }

@@ -67,7 +67,7 @@ class UpdateSeatServiceTest {
     void updatesCodeAndReturnsSavedSeat() {
         givenSeatFound(UPDATE_CODE);
 
-        var result = service.updateCode(UpdateSeatCodeCommand.of(SEAT_ID, NEW_CODE));
+        var result = service.updateCode(UpdateSeatCodeCommand.of(SEAT, NEW_CODE));
 
         verify(seatSavePort).save(seat);
         assertThat(seat.getCode()).isEqualTo(NEW_CODE);
@@ -82,7 +82,7 @@ class UpdateSeatServiceTest {
     void deletesSeatAndReturnsSavedSeat() {
         givenSeatFound(DELETE);
 
-        var result = service.delete(DeleteSeatCommand.of(SEAT_ID));
+        var result = service.delete(DeleteSeatCommand.of(SEAT));
 
         verify(seatSavePort).save(seat);
         assertThat(seat.isDeleted()).isTrue();
@@ -97,7 +97,7 @@ class UpdateSeatServiceTest {
         seat = deletedSeat(NOW.minusSeconds(30));
         givenSeatFound(RESTORE);
 
-        var result = service.restore(RestoreSeatCommand.of(SEAT_ID));
+        var result = service.restore(RestoreSeatCommand.of(SEAT));
 
         verify(seatSavePort).save(seat);
         assertThat(seat.isDeleted()).isFalse();
@@ -161,7 +161,7 @@ class UpdateSeatServiceTest {
     void rejectsInvalidCode(String code, Class<? extends Throwable> exceptionType) {
         givenSeatFound(UPDATE_CODE);
 
-        assertThatThrownBy(() -> service.updateCode(UpdateSeatCodeCommand.of(SEAT_ID, code)))
+        assertThatThrownBy(() -> service.updateCode(UpdateSeatCodeCommand.of(SEAT, code)))
                 .isInstanceOf(exceptionType);
 
         verifyNoInteractions(seatSavePort);
@@ -174,7 +174,7 @@ class UpdateSeatServiceTest {
         seat = deletedSeat(NOW.minusSeconds(30));
         givenSeatFound(UPDATE_CODE);
 
-        assertThatThrownBy(() -> service.updateCode(UpdateSeatCodeCommand.of(SEAT_ID, NEW_CODE)))
+        assertThatThrownBy(() -> service.updateCode(UpdateSeatCodeCommand.of(SEAT, NEW_CODE)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Already deleted.");
 
@@ -200,7 +200,7 @@ class UpdateSeatServiceTest {
         givenSeatFound(UPDATE_CODE);
         var code = "a".repeat(Seat.MAX_CODE_LENGTH);
 
-        var result = service.updateCode(UpdateSeatCodeCommand.of(SEAT_ID, code));
+        var result = service.updateCode(UpdateSeatCodeCommand.of(SEAT, code));
 
         verify(seatSavePort).save(seat);
         assertThat(result.code()).isEqualTo(code);
@@ -288,21 +288,21 @@ class UpdateSeatServiceTest {
                     "updateCode",
                     port -> port.findNotDeletedById(SEAT),
                     UpdateSeatServiceTest::updatedSeat,
-                    target -> target.updateCode(UpdateSeatCodeCommand.of(SEAT_ID, NEW_CODE)));
+                    target -> target.updateCode(UpdateSeatCodeCommand.of(SEAT, NEW_CODE)));
 
     private static final Operation DELETE =
             new Operation(
                     "delete",
                     port -> port.findNotDeletedById(SEAT),
                     UpdateSeatServiceTest::updatedSeat,
-                    target -> target.delete(DeleteSeatCommand.of(SEAT_ID)));
+                    target -> target.delete(DeleteSeatCommand.of(SEAT)));
 
     private static final Operation RESTORE =
             new Operation(
                     "restore",
                     port -> port.findDeletedById(SEAT),
                     UpdateSeatServiceTest::deletedSeat,
-                    target -> target.restore(RestoreSeatCommand.of(SEAT_ID)));
+                    target -> target.restore(RestoreSeatCommand.of(SEAT)));
 
     private static Stream<Arguments> operations() {
         return Stream.of(

@@ -2,7 +2,6 @@ package com.lilamaris.lilserve.reservation.application.port.in.command;
 
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import jakarta.validation.constraints.NotNull;
-import java.util.UUID;
 
 /**
  * A request to delete a seat. Only the target identifier is required.
@@ -17,12 +16,10 @@ public record DeleteSeatCommand(@NotNull SeatId seatId) {
     /**
      * Creates a command from the seat identifier.
      *
-     * @param id the seat identifier
+     * @param seatId the seat identifier
      * @return the command
-     * @throws NullPointerException if {@code id} is null
      */
-    public static DeleteSeatCommand of(UUID id) {
-        var seatId = SeatId.of(id);
+    public static DeleteSeatCommand of(SeatId seatId) {
         return new DeleteSeatCommand(seatId);
     }
 }

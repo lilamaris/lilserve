@@ -51,8 +51,7 @@ class LauncherApplicationTest {
                 createRoomUseCase.create(
                         CreateRoomCommand.of("ROOM-01", "main hall", "capacity 100"));
 
-        var created =
-                createSeatUseCase.create(CreateSeatCommand.of(room.roomId().getValue(), "SEAT-01"));
+        var created = createSeatUseCase.create(CreateSeatCommand.of(room.roomId(), "SEAT-01"));
 
         var found = findSeatUseCase.find(FindSeatQuery.of(created.seatId().getValue()));
 

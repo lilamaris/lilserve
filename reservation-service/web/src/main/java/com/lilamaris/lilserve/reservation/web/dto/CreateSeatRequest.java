@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.web.dto;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSeatCommand;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -46,6 +47,6 @@ public record CreateSeatRequest(
      * @return the create command with the same values
      */
     public CreateSeatCommand toCommand() {
-        return CreateSeatCommand.of(roomId, code);
+        return CreateSeatCommand.of(RoomId.of(roomId), code);
     }
 }

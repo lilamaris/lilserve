@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.web.dto;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomCodeCommand;
 import com.lilamaris.lilserve.reservation.domain.Room;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -31,6 +32,6 @@ public record UpdateRoomCodeRequest(
      * @throws NullPointerException if {@code roomId} is null
      */
     public UpdateRoomCodeCommand toCommand(UUID roomId) {
-        return UpdateRoomCodeCommand.of(roomId, code);
+        return UpdateRoomCodeCommand.of(RoomId.of(roomId), code);
     }
 }

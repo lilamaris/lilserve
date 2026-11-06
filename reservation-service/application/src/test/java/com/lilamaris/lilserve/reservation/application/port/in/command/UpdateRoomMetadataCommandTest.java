@@ -1,7 +1,6 @@
 package com.lilamaris.lilserve.reservation.application.port.in.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
@@ -19,7 +18,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("룸 메타데이터 변경 커맨드")
 class UpdateRoomMetadataCommandTest {
-    private static final UUID ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final RoomId ID =
+            RoomId.of(UUID.fromString("00000000-0000-0000-0000-000000000001"));
     private static final String NAME = "main hall";
     private static final String DESCRIPTION = "capacity 100";
     private static ValidatorFactory validatorFactory;
@@ -37,27 +37,20 @@ class UpdateRoomMetadataCommandTest {
     }
 
     @Test
-    @DisplayName("팩터리는 식별자를 변환하고 메타데이터를 보관한다")
+    @DisplayName("팩터리는 식별자와 메타데이터를 그대로 보관한다")
     void createsValidCommand() {
         var command = UpdateRoomMetadataCommand.of(ID, NAME, DESCRIPTION);
 
-        assertThat(command.roomId()).isEqualTo(RoomId.of(ID));
+        assertThat(command.roomId()).isSameAs(ID);
         assertThat(command.name()).isEqualTo(NAME);
         assertThat(command.description()).isEqualTo(DESCRIPTION);
         assertThat(validator.validate(command)).isEmpty();
     }
 
     @Test
-    @DisplayName("팩터리에 null 식별자를 전달하면 예외가 발생한다")
-    void rejectsNullIdentifierInFactory() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> UpdateRoomMetadataCommand.of(null, NAME, DESCRIPTION));
-    }
-
-    @Test
-    @DisplayName("직접 생성한 null 식별자는 검증에서 거부한다")
+    @DisplayName("팩터리로 생성한 null 식별자는 검증에서 거부한다")
     void flagsNullIdentifier() {
-        var command = new UpdateRoomMetadataCommand(null, NAME, DESCRIPTION);
+        var command = UpdateRoomMetadataCommand.of(null, NAME, DESCRIPTION);
 
         assertThat(validator.validate(command))
                 .extracting(violation -> violation.getPropertyPath().toString())

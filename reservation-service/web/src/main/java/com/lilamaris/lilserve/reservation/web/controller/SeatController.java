@@ -8,6 +8,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseC
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.SeatExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateSeatRequest;
@@ -209,7 +210,7 @@ public class SeatController {
                             schema = @Schema(type = "string", format = "uuid"))
                     @PathVariable("seatId")
                     UUID seatId) {
-        deleteSeatUseCase.delete(DeleteSeatCommand.of(seatId));
+        deleteSeatUseCase.delete(DeleteSeatCommand.of(SeatId.of(seatId)));
         return ResponseEntity.noContent().build();
     }
 
@@ -239,6 +240,7 @@ public class SeatController {
                     @PathVariable("seatId")
                     UUID seatId) {
         return ResponseEntity.ok(
-                SeatResponse.from(restoreSeatUseCase.restore(RestoreSeatCommand.of(seatId))));
+                SeatResponse.from(
+                        restoreSeatUseCase.restore(RestoreSeatCommand.of(SeatId.of(seatId)))));
     }
 }

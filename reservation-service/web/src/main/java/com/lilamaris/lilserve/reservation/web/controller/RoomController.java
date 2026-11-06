@@ -9,6 +9,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadata
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.RoomExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateRoomRequest;
@@ -246,7 +247,7 @@ public class RoomController {
                             schema = @Schema(type = "string", format = "uuid"))
                     @PathVariable("roomId")
                     UUID roomId) {
-        deleteRoomUseCase.delete(DeleteRoomCommand.of(roomId));
+        deleteRoomUseCase.delete(DeleteRoomCommand.of(RoomId.of(roomId)));
         return ResponseEntity.noContent().build();
     }
 
@@ -277,6 +278,7 @@ public class RoomController {
                     @PathVariable("roomId")
                     UUID roomId) {
         return ResponseEntity.ok(
-                RoomResponse.from(restoreRoomUseCase.restore(RestoreRoomCommand.of(roomId))));
+                RoomResponse.from(
+                        restoreRoomUseCase.restore(RestoreRoomCommand.of(RoomId.of(roomId)))));
     }
 }

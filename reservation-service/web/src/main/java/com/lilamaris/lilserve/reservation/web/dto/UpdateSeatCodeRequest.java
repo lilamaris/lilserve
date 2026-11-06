@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.web.dto;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSeatCodeCommand;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -31,6 +32,6 @@ public record UpdateSeatCodeRequest(
      * @throws NullPointerException if {@code seatId} is null
      */
     public UpdateSeatCodeCommand toCommand(UUID seatId) {
-        return UpdateSeatCodeCommand.of(seatId, code);
+        return UpdateSeatCodeCommand.of(SeatId.of(seatId), code);
     }
 }
