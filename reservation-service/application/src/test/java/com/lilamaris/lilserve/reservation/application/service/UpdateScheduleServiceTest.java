@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionException;
 import com.lilamaris.lilserve.reservation.application.model.time.LocalTimeRange;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateScheduleCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.out.RetireSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
@@ -35,7 +36,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("스케줄 수정 유스케이스")
+@DisplayName("스케줄 수정 및 삭제 유스케이스")
 class UpdateScheduleServiceTest {
     private static final RoomId ROOM = RoomId.of(UUID.randomUUID());
     private static final ScheduleId ORIGINAL_ID = ScheduleId.of(UUID.randomUUID());
@@ -156,6 +157,18 @@ class UpdateScheduleServiceTest {
         doThrow(failure).when(scheduleSavePort).save(any(Schedule.class));
 
         assertThatThrownBy(() -> service.update(command())).isSameAs(failure);
+    }
+
+    @Test
+    @DisplayName("삭제한 스케줄의 식별자와 저장된 삭제 시각을 반환한다")
+    void returnsDeletedScheduleResult() {
+        var schedule = givenScheduleFound(CREATED_AT);
+
+        var result = service.delete(ORIGINAL_ID);
+
+        assertThat(result).isEqualTo(new DeleteScheduleResult(ORIGINAL_ID, REPLACED_AT));
+        assertThat(schedule.getDeletedAt()).isEqualTo(result.deletedAt());
+        verify(scheduleSavePort).save(schedule);
     }
 
     private Schedule givenScheduleFound(Instant createdAt) {
