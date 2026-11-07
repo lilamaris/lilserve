@@ -1,8 +1,10 @@
 package com.lilamaris.lilserve.reservation.application.service;
 
 import com.lilamaris.lilserve.reservation.application.model.id.IdGenerator;
+import com.lilamaris.lilserve.reservation.application.port.in.DeleteScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateScheduleCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.out.RetireSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
@@ -26,7 +28,7 @@ import org.springframework.validation.annotation.Validated;
 @Service
 @Validated
 @RequiredArgsConstructor
-public class UpdateScheduleService implements UpdateScheduleUseCase {
+public class UpdateScheduleService implements UpdateScheduleUseCase, DeleteScheduleUseCase {
     private final ScheduleFindPort scheduleFindPort;
     private final ScheduleSavePort scheduleSavePort;
     private final RetireSchedulePort retireSchedulePort;
@@ -65,5 +67,23 @@ public class UpdateScheduleService implements UpdateScheduleUseCase {
         retireSchedulePort.retire(oldSchedule.getId(), now);
         scheduleSavePort.save(newSchedule);
         return UpdateScheduleResult.from(newSchedule);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional
+    public DeleteScheduleResult delete(ScheduleId scheduleId) {
+        var schedule =
+                scheduleFindPort
+                        .findNotDeletedById(scheduleId)
+                        .orElseThrow(() -> new NoSuchElementException("schedule does not exists."));
+
+        var now = clock.instant();
+
+        schedule.delete(now);
+
+        scheduleSavePort.save(schedule);
+
+        return DeleteScheduleResult.from(schedule);
     }
 }
