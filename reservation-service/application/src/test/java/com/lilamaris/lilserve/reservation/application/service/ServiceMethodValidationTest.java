@@ -20,6 +20,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.RestoreRoomUseCase
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadataUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.UpdateScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateReservationCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateRoomCommand;
@@ -33,6 +34,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoo
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomMetadataCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateScheduleCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSeatCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
@@ -40,8 +42,10 @@ import com.lilamaris.lilserve.reservation.application.port.out.ReleaseSchedulePo
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveSchedulePort;
+import com.lilamaris.lilserve.reservation.application.port.out.RetireSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomSavePort;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
@@ -75,7 +79,8 @@ class ServiceMethodValidationTest {
         "invalidRequests",
         "invalidReservationRequests",
         "invalidDeleteReservationRequests",
-        "invalidScheduleRequests"
+        "invalidScheduleRequests",
+        "invalidUpdateScheduleRequests"
     })
     @DisplayName("잘못된 요청은 외부 포트를 호출하기 전에 거부한다")
     void rejectsInvalidRequestBeforeCallingPorts(
@@ -89,6 +94,8 @@ class ServiceMethodValidationTest {
         var releaseSchedulePort = mock(ReleaseSchedulePort.class);
         var reserveSchedulePort = mock(ReserveSchedulePort.class);
         var scheduleSavePort = mock(ScheduleSavePort.class);
+        var scheduleFindPort = mock(ScheduleFindPort.class);
+        var retireSchedulePort = mock(RetireSchedulePort.class);
         try (var context = new AnnotationConfigApplicationContext()) {
             context.registerBean(MethodValidationPostProcessor.class);
             context.registerBean(RoomFindPort.class, () -> roomFindPort);
@@ -100,6 +107,8 @@ class ServiceMethodValidationTest {
             context.registerBean(ReleaseSchedulePort.class, () -> releaseSchedulePort);
             context.registerBean(ReserveSchedulePort.class, () -> reserveSchedulePort);
             context.registerBean(ScheduleSavePort.class, () -> scheduleSavePort);
+            context.registerBean(ScheduleFindPort.class, () -> scheduleFindPort);
+            context.registerBean(RetireSchedulePort.class, () -> retireSchedulePort);
             context.registerBean(Clock.class, Clock::systemUTC);
             context.registerBean(IdGenerator.class, () -> (IdGenerator<UUID>) () -> ID);
             context.register(
@@ -108,6 +117,7 @@ class ServiceMethodValidationTest {
                     CreateReservationService.class,
                     DeleteReservationService.class,
                     CreateScheduleService.class,
+                    UpdateScheduleService.class,
                     FindRoomService.class,
                     FindSeatService.class,
                     UpdateRoomService.class,
@@ -126,8 +136,28 @@ class ServiceMethodValidationTest {
                     reservationFindPort,
                     releaseSchedulePort,
                     reserveSchedulePort,
-                    scheduleSavePort);
+                    scheduleSavePort,
+                    scheduleFindPort,
+                    retireSchedulePort);
         }
+    }
+
+    private static Stream<Arguments> invalidUpdateScheduleRequests() {
+        var id = ScheduleId.of(ID);
+        var range = LocalTimeRange.of(LocalTime.of(10, 0), LocalTime.of(12, 0));
+        return Stream.of(
+                        null,
+                        UpdateScheduleCommand.of(null, range, DayOfWeek.MONDAY),
+                        UpdateScheduleCommand.of(id, null, DayOfWeek.MONDAY),
+                        UpdateScheduleCommand.of(id, range, null))
+                .map(
+                        command ->
+                                arguments(
+                                        "UpdateSchedule." + command,
+                                        (Consumer<AnnotationConfigApplicationContext>)
+                                                context ->
+                                                        context.getBean(UpdateScheduleUseCase.class)
+                                                                .update(command)));
     }
 
     private static Stream<Arguments> invalidReservationRequests() {
