@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteReservationUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteReservationCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteReservationResult;
 import com.lilamaris.lilserve.reservation.application.service.DeleteReservationService;
 import com.lilamaris.lilserve.reservation.domain.Reservation;
 import com.lilamaris.lilserve.reservation.domain.ReservedSchedule;
@@ -26,6 +27,10 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,6 +73,8 @@ class DeleteReservationTransactionTest {
     @Autowired private DeleteReservationUseCase service;
     @Autowired private EntityManager entityManager;
     @Autowired private PlatformTransactionManager transactionManager;
+    @Autowired private ReservationJpaAdapter reservationAdapter;
+    @Autowired private ReservedScheduleJpaAdapter allocationAdapter;
 
     private final RoomId roomId = RoomId.of(UUID.randomUUID());
     private final SeatId seatId = SeatId.of(UUID.randomUUID());
@@ -157,6 +164,123 @@ class DeleteReservationTransactionTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
 
         assertActive(reservationId);
+    }
+
+    @Test
+    @DisplayName("일부 점유만 해제되면 취소를 거부하고 헤더와 모든 점유의 기존 상태를 보존한다")
+    void rollsBackHeaderAndRemainingAllocationWhenOnlySomeAllocationsAreReleased() {
+        var reservationId = commitReservation(10, CREATED_AT);
+        var previousCancellation = NOW.minusSeconds(60);
+        transaction()
+                .executeWithoutResult(
+                        status ->
+                                entityManager
+                                        .createQuery(
+                                                """
+                                                SELECT rs FROM ReservedSchedule rs
+                                                WHERE rs.reservationId = :reservationId
+                                                ORDER BY rs.startsAt
+                                                """,
+                                                ReservedSchedule.class)
+                                        .setParameter("reservationId", reservationId)
+                                        .setMaxResults(1)
+                                        .getSingleResult()
+                                        .delete(previousCancellation));
+        var beforeCancellation = snapshot(reservationId);
+        assertThat(beforeCancellation.headerDeletedAt()).isNull();
+        assertThat(beforeCancellation.allocationDeletedAt())
+                .containsExactly(previousCancellation, null);
+
+        assertThatThrownBy(() -> service.delete(DeleteReservationCommand.of(reservationId)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("failed to delete reservation.");
+
+        assertThat(snapshot(reservationId)).isEqualTo(beforeCancellation);
+    }
+
+    @Test
+    @DisplayName("동시에 조회한 예약의 후속 취소가 먼저 확정된 헤더와 모든 점유의 취소 시각을 바꾸지 않는다")
+    void preservesFirstCommittedCancellationWhenRequestsReadSameActiveReservation()
+            throws Exception {
+        var reservationId = commitReservation(10, CREATED_AT);
+        var bothRead = new CyclicBarrier(2);
+        var firstCommitted = new CountDownLatch(1);
+        var later = NOW.plusSeconds(1);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var first =
+                    executor.submit(
+                            () -> {
+                                try {
+                                    return cancelAfterReading(
+                                            reservationId, NOW, () -> awaitBothReads(bothRead));
+                                } finally {
+                                    firstCommitted.countDown();
+                                }
+                            });
+            var second =
+                    executor.submit(
+                            () -> {
+                                assertThatThrownBy(
+                                                () ->
+                                                        cancelAfterReading(
+                                                                reservationId,
+                                                                later,
+                                                                () -> {
+                                                                    awaitBothReads(bothRead);
+                                                                    awaitFirstCommit(
+                                                                            firstCommitted);
+                                                                }))
+                                        .isInstanceOf(IllegalStateException.class)
+                                        .hasMessage("failed to delete reservation.");
+                            });
+
+            assertThat(first.get(20, TimeUnit.SECONDS).deletedAt()).isEqualTo(NOW);
+            second.get(20, TimeUnit.SECONDS);
+            var persisted = snapshot(reservationId);
+
+            assertThat(persisted.headerDeletedAt()).isEqualTo(NOW);
+            assertThat(persisted.allocationDeletedAt()).containsExactly(NOW, NOW);
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(20, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    private DeleteReservationResult cancelAfterReading(
+            ReservationId reservationId, Instant cancelledAt, Runnable afterRead) {
+        // Own the transaction here so the real adapters keep their managed, pre-commit header.
+        var cancellation =
+                new DeleteReservationService(
+                        (id, now) -> {
+                            var reservation = reservationAdapter.findNotStartedById(id, now);
+                            assertThat(reservation).isPresent();
+                            afterRead.run();
+                            return reservation;
+                        },
+                        reservationAdapter,
+                        allocationAdapter,
+                        Clock.fixed(cancelledAt, ZoneId.of(TIME_ZONE)));
+        return transaction()
+                .execute(status -> cancellation.delete(DeleteReservationCommand.of(reservationId)));
+    }
+
+    private void awaitBothReads(CyclicBarrier bothRead) {
+        try {
+            bothRead.await(5, TimeUnit.SECONDS);
+        } catch (Exception exception) {
+            throw new AssertionError(
+                    "Both transactions must read the active reservation", exception);
+        }
+    }
+
+    private void awaitFirstCommit(CountDownLatch firstCommitted) {
+        try {
+            assertThat(firstCommitted.await(5, TimeUnit.SECONDS)).isTrue();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for the first commit", exception);
+        }
     }
 
     private void assertActive(ReservationId reservationId) {

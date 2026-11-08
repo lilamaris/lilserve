@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.persistence.jpa.repository;
 
 import com.lilamaris.lilserve.reservation.domain.ReservedSchedule;
 import com.lilamaris.lilserve.reservation.domain.id.ReservedScheduleId;
+import com.lilamaris.lilserve.reservation.persistence.jpa.row.ReservedScheduleRow;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
@@ -69,24 +70,42 @@ public interface ReservedScheduleRepository
             @Param("scheduleIds") Collection<UUID> schedules);
 
     /**
-     * Flushes pending changes and marks all active allocations of the reservation as cancelled.
-     * Already cancelled rows are left unchanged. The caller owns the transaction; this method does
-     * not commit independently.
+     * Marks all active allocations of the reservation as cancelled and returns both the total and
+     * updated allocation counts. Already cancelled rows retain their original cancellation times
+     * and contribute only to the total count.
+     *
+     * <p>A PostgreSQL data-modifying CTE counts updated rows through {@code RETURNING} in the same
+     * statement that counts all allocations. The caller owns the transaction, must flush pending
+     * header changes before invoking this method, and must roll back an incomplete release. This
+     * method does not commit independently.
      *
      * @param reservationId the reservation header identifier
      * @param deletedAt the cancellation time, at or after the allocations' creation times
-     * @return the number of allocations changed by this statement
+     * @return the total allocation count and the number changed by this statement; both counts are
+     *     zero if the reservation has no allocations
      */
-    @Modifying(flushAutomatically = true)
     @Query(
             value =
                     """
-                    UPDATE reserved_schedule rs
-                    SET deleted_at = :deletedAt
-                    WHERE rs.reservation_id = :reservationId
-                        AND rs.deleted_at IS NULL
+                    WITH released AS (
+                        UPDATE reserved_schedule rs
+                        SET deleted_at = :deletedAt
+                        WHERE rs.reservation_id = :reservationId
+                            AND rs.deleted_at IS NULL
+                        RETURNING id
+                    )
+                    SELECT
+                        (
+                            SELECT COUNT(*)
+                            FROM reserved_schedule
+                            WHERE reservation_id = :reservationId
+                        ) AS total_count,
+                        (
+                            SELECT COUNT(*)
+                            FROM released
+                        ) AS updated_count
                     """,
             nativeQuery = true)
-    int markAsDeletedByReservationId(
+    ReservedScheduleRow.ReleasedSchedule markAsDeletedByReservationId(
             @Param("reservationId") UUID reservationId, @Param("deletedAt") Instant deletedAt);
 }
