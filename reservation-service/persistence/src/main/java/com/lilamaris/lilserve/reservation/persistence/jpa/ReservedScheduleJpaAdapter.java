@@ -1,6 +1,7 @@
 package com.lilamaris.lilserve.reservation.persistence.jpa;
 
 import com.lilamaris.lilserve.reservation.application.port.out.ReleaseSchedulePort;
+import com.lilamaris.lilserve.reservation.application.port.out.ReleaseScheduleStatus;
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveScheduleStatus;
 import com.lilamaris.lilserve.reservation.domain.id.ReservationId;
@@ -31,9 +32,22 @@ public class ReservedScheduleJpaAdapter implements ReserveSchedulePort, ReleaseS
         return ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Flushes pending entity changes, including the reservation header, before releasing
+     * allocations. Compares the total allocation count, including previously released rows, with
+     * the rows changed by this request. Reports the outcome without committing or rolling back; the
+     * caller decides whether the transaction may commit.
+     */
     @Override
-    public void release(ReservationId reservationId, Instant releasedAt) {
-        repository.markAsDeletedByReservationId(reservationId.getValue(), releasedAt);
+    public ReleaseScheduleStatus release(ReservationId reservationId, Instant releasedAt) {
+        repository.flush();
+        var row = repository.markAsDeletedByReservationId(reservationId.getValue(), releasedAt);
+
+        if (row.updatedCount() == 0) return ReleaseScheduleStatus.NONE_RELEASED;
+        return row.totalCount() == row.updatedCount()
+                ? ReleaseScheduleStatus.ALL_RELEASED
+                : ReleaseScheduleStatus.PARTIAL_RELEASED;
     }
 }

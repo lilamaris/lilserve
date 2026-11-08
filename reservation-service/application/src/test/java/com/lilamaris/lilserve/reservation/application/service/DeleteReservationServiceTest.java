@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteReservationCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteReservationResult;
 import com.lilamaris.lilserve.reservation.application.port.out.ReleaseSchedulePort;
+import com.lilamaris.lilserve.reservation.application.port.out.ReleaseScheduleStatus;
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePort;
 import com.lilamaris.lilserve.reservation.domain.Reservation;
@@ -58,6 +59,8 @@ class DeleteReservationServiceTest {
         var reservation = reservation();
         when(reservationFindPort.findNotStartedById(RESERVATION_ID, NOW))
                 .thenReturn(Optional.of(reservation));
+        when(releaseSchedulePort.release(RESERVATION_ID, NOW))
+                .thenReturn(ReleaseScheduleStatus.ALL_RELEASED);
 
         var result = service.delete(DeleteReservationCommand.of(RESERVATION_ID));
 
