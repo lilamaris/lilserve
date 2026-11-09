@@ -28,8 +28,9 @@ public class ReservedScheduleJpaAdapter implements ReserveSchedulePort, ReleaseS
 
         var insertedCount = repository.insertFromSchedules(reservationId.getValue(), ids);
 
-        if (insertedCount != ids.size()) return ReserveScheduleStatus.FAILED;
-        return ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED;
+        if (insertedCount == 0) return ReserveScheduleStatus.NONE_RESERVED;
+        if (insertedCount != ids.size()) return ReserveScheduleStatus.PARTIAL_RESERVED;
+        return ReserveScheduleStatus.ALL_RESERVED;
     }
 
     /**

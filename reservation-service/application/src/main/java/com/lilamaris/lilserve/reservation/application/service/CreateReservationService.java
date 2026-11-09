@@ -66,7 +66,8 @@ public class CreateReservationService implements CreateReservationUseCase {
 
         var reserveStatus = reserveSchedulePort.reserve(reservation.getId(), command.scheduleIds());
 
-        if (reserveStatus == ReserveScheduleStatus.FAILED) {
+        if (reserveStatus == ReserveScheduleStatus.NONE_RESERVED
+                || reserveStatus == ReserveScheduleStatus.PARTIAL_RESERVED) {
             throw new IllegalStateException("failed to reserve schedules.");
         }
         return CreateReservationResult.from(reservation, command.scheduleIds());

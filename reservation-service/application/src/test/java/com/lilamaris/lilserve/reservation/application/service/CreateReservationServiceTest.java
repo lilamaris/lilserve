@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -92,7 +93,7 @@ class CreateReservationServiceTest {
                         () -> GENERATED_ID,
                         Clock.fixed(NOW, ZoneId.of(timezone)));
         when(reserveSchedulePort.reserve(RESERVATION_ID, schedules))
-                .thenReturn(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+                .thenReturn(ReserveScheduleStatus.ALL_RESERVED);
 
         var result = service.create(command(schedules));
 
@@ -210,16 +211,20 @@ class CreateReservationServiceTest {
         verifyNoInteractions(reserveSchedulePort);
     }
 
-    @Test
-    @DisplayName("점유 포트가 전체 확보 실패를 반환하면 호출자에게 예외를 전파한다")
-    void rejectsFailedReservationStatus() {
+    @ParameterizedTest
+    @EnumSource(
+            value = ReserveScheduleStatus.class,
+            names = {"NONE_RESERVED", "PARTIAL_RESERVED"})
+    @DisplayName("점유 포트가 미점유 또는 부분 점유를 반환하면 호출자에게 예외를 전파한다")
+    void rejectsIncompleteReservationStatus(ReserveScheduleStatus status) {
         givenRoomFound();
         givenSeatFound(ROOM_ID);
         when(reserveSchedulePort.reserve(RESERVATION_ID, Set.of(MORNING, AFTERNOON)))
-                .thenReturn(ReserveScheduleStatus.FAILED);
+                .thenReturn(status);
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING, AFTERNOON))))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("failed to reserve schedules.");
     }
 
     @Test
