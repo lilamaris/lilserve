@@ -202,7 +202,7 @@ class ReservedScheduleJpaAdapterTest {
         var status =
                 adapter.reserve(reservation.getId(), Set.of(morning.getId(), afternoon.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         var saved = allocations(reservation.getId());
         assertThat(saved)
                 .extracting(ReservedSchedule::getScheduleId)
@@ -244,7 +244,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(entityManager.find(Reservation.class, reservation.getId())).isNotNull();
         assertThat(allocations(reservation.getId())).hasSize(1);
     }
@@ -258,7 +258,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(selected.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .extracting(ReservedSchedule::getScheduleId)
                 .containsExactly(selected.getId());
@@ -266,15 +266,15 @@ class ReservedScheduleJpaAdapterTest {
 
     @ParameterizedTest
     @EnumSource(UnavailableSchedule.class)
-    @DisplayName("요청 중 일부 슬롯만 예약할 수 있으면 실패를 반환한다")
-    void returnsFailedWhenOnlySomeSchedulesAreAvailable(UnavailableSchedule reason) {
+    @DisplayName("요청 중 일부 슬롯만 예약할 수 있으면 부분 점유를 반환한다")
+    void returnsPartialReservedWhenOnlySomeSchedulesAreAvailable(UnavailableSchedule reason) {
         var available = persistSchedule(10, 12);
         var unavailable = unavailableSchedule(reason);
         var reservation = saveReservation();
 
         var status = adapter.reserve(reservation.getId(), Set.of(available.getId(), unavailable));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.PARTIAL_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .extracting(ReservedSchedule::getScheduleId)
                 .containsExactly(available.getId());
@@ -289,7 +289,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(unavailable));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.NONE_RESERVED);
         assertThat(allocations(reservation.getId())).isEmpty();
     }
 
@@ -302,7 +302,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(attempted.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.NONE_RESERVED);
         assertThat(allocations(attempted.getId())).isEmpty();
     }
 
@@ -315,7 +315,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.NONE_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .extracting(ReservedSchedule::getId)
                 .containsExactly(original.getId());
@@ -338,7 +338,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         var zone = ZoneId.of(timezone);
         assertThat(allocations(reservation.getId()))
                 .singleElement()
@@ -353,8 +353,8 @@ class ReservedScheduleJpaAdapterTest {
     }
 
     @Test
-    @DisplayName("요청 중 하나라도 기존 점유와 충돌하면 전체 실패를 반환한다")
-    void returnsFailedWhenAnyRequestedScheduleConflicts() {
+    @DisplayName("요청 중 일부 슬롯이 기존 점유와 충돌하면 부분 점유를 반환한다")
+    void returnsPartialReservedWhenSomeRequestedSchedulesConflict() {
         var occupied = persistSchedule(10, 12);
         var available = persistSchedule(14, 16);
         var existing = saveReservation();
@@ -364,7 +364,7 @@ class ReservedScheduleJpaAdapterTest {
         var status =
                 adapter.reserve(attempted.getId(), Set.of(available.getId(), occupied.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.PARTIAL_RESERVED);
         assertThat(allocations(attempted.getId()))
                 .extracting(ReservedSchedule::getScheduleId)
                 .containsExactly(available.getId());
@@ -374,8 +374,8 @@ class ReservedScheduleJpaAdapterTest {
     }
 
     @Test
-    @DisplayName("슬롯 버전이 달라도 같은 좌석의 이용 시간이 겹치면 실패를 반환한다")
-    void returnsFailedForOverlapWithRetiredScheduleAllocation() {
+    @DisplayName("일부 슬롯이 이전 버전 슬롯의 점유 시간과 겹치면 부분 점유를 반환한다")
+    void returnsPartialReservedWhenSomeSchedulesOverlapRetiredScheduleAllocation() {
         var original = persistSchedule(10, 12);
         persistAllocation(saveReservation(), original);
         original.delete(RETIRED_AT);
@@ -387,7 +387,7 @@ class ReservedScheduleJpaAdapterTest {
         var status =
                 adapter.reserve(attempted.getId(), Set.of(available.getId(), replacement.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.PARTIAL_RESERVED);
         assertThat(allocations(attempted.getId()))
                 .extracting(ReservedSchedule::getScheduleId)
                 .containsExactly(available.getId());
@@ -415,7 +415,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(missing, Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.NONE_RESERVED);
         assertThat(allocations(missing)).isEmpty();
     }
 
@@ -429,7 +429,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.NONE_RESERVED);
         assertThat(allocations(reservation.getId())).isEmpty();
     }
 
@@ -442,7 +442,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .singleElement()
                 .satisfies(
@@ -463,7 +463,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .extracting(ReservedSchedule::getSeatId)
                 .containsExactly(otherSeat.getId());
@@ -479,7 +479,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .extracting(ReservedSchedule::getReservationDate)
                 .containsExactly(nextWeek);
@@ -496,7 +496,7 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(adjacent.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .extracting(ReservedSchedule::getScheduleId)
                 .containsExactly(adjacent.getId());
@@ -510,12 +510,12 @@ class ReservedScheduleJpaAdapterTest {
         var afternoon = persistSchedule(14, 15);
         var first = saveReservation();
         assertThat(adapter.reserve(first.getId(), Set.of(morning.getId(), afternoon.getId())))
-                .isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+                .isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         var reservation = saveReservation();
 
         var status = adapter.reserve(reservation.getId(), Set.of(gap.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(allocations(reservation.getId()))
                 .extracting(ReservedSchedule::getScheduleId)
                 .containsExactly(gap.getId());
@@ -535,18 +535,18 @@ class ReservedScheduleJpaAdapterTest {
 
         var status = adapter.reserve(reservation.getId(), Set.of(schedule.getId()));
 
-        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_SCHEDULE_SUCCESSFULLY_RESERVED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.ALL_RESERVED);
         assertThat(allocations(reservation.getId())).hasSize(1);
     }
 
     @Test
-    @DisplayName("요청 수보다 적게 점유되어 실패한 뒤 호출자가 롤백하면 헤더와 점유가 사라진다")
-    void rollsBackHeaderAndAllocationsWithCallerTransaction() {
+    @DisplayName("부분 점유 후 호출자가 롤백하면 헤더와 점유가 사라진다")
+    void rollsBackPartialReservationWithCallerTransaction() {
         var available = persistSchedule(10, 12);
         var reservation = saveReservation();
         var missing = ScheduleId.of(UUID.randomUUID());
         var status = adapter.reserve(reservation.getId(), Set.of(available.getId(), missing));
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.PARTIAL_RESERVED);
         assertThat(allocations(reservation.getId())).hasSize(1);
 
         TestTransaction.flagForRollback();
@@ -558,8 +558,8 @@ class ReservedScheduleJpaAdapterTest {
     }
 
     @Test
-    @DisplayName("점유 충돌로 실패한 뒤 호출자가 롤백하면 새 헤더와 일부 점유가 남지 않는다")
-    void rollsBackAllNewWritesAfterOccupancyConflict() {
+    @DisplayName("점유 충돌로 부분 점유된 뒤 호출자가 롤백하면 새 헤더와 점유가 남지 않는다")
+    void rollsBackPartialReservationAfterOccupancyConflict() {
         var occupied = persistSchedule(10, 12);
         var available = persistSchedule(14, 16);
         persistAllocation(saveReservation(), occupied);
@@ -573,7 +573,7 @@ class ReservedScheduleJpaAdapterTest {
 
         assertThat(entityManager.find(Reservation.class, attempted.getId())).isNull();
         assertThat(allocations(attempted.getId())).isEmpty();
-        assertThat(status).isEqualTo(ReserveScheduleStatus.FAILED);
+        assertThat(status).isEqualTo(ReserveScheduleStatus.PARTIAL_RESERVED);
     }
 
     @Test
