@@ -21,7 +21,13 @@ import org.springframework.stereotype.Component;
 public class ReservedScheduleJpaAdapter implements ReserveSchedulePort, ReleaseSchedulePort {
     private final ReservedScheduleRepository repository;
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Compares the number of allocations inserted by the repository with the number of requested
+     * slots to distinguish complete, partial, and empty allocation outcomes. Reports the outcome
+     * without committing or rolling back; the caller decides whether the transaction may commit.
+     */
     @Override
     public ReserveScheduleStatus reserve(ReservationId reservationId, Set<ScheduleId> scheduleIds) {
         var ids = scheduleIds.stream().map(ScheduleId::getValue).toList();

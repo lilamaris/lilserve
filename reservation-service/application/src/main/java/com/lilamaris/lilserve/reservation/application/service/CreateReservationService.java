@@ -17,8 +17,10 @@ import org.springframework.validation.annotation.Validated;
 
 /**
  * Implements {@link CreateReservationUseCase} by loading the room and seat, saving the reservation,
- * and allocating its requested slots in one transaction. A failed allocation rolls back the
- * reservation.
+ * and allocating its requested slots in one transaction. Creation time comes from {@link Clock}.
+ *
+ * <p>Only a complete allocation succeeds. If no slots or only some requested slots are allocated,
+ * an exception rolls back the reservation header and any allocations inserted by this request.
  */
 @Service
 @Validated

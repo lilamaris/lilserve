@@ -10,6 +10,9 @@ public interface CreateReservationUseCase {
     /**
      * Creates a reservation and all requested allocations in one transaction.
      *
+     * <p>A request that allocates no slots or only some requested slots is rejected. Its header and
+     * any inserted allocations are rolled back together.
+     *
      * @param command the reservation request, must not be null
      * @return the created reservation after every requested slot has been secured
      * @throws java.util.NoSuchElementException if the room or seat does not exist or is deleted
