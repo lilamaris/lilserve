@@ -138,7 +138,7 @@ class RoomJpaAdapterTest {
     void returnsRoomWithSharedLock() {
         var roomId = persist(room("ROOM-01", "main hall", "capacity 100"));
 
-        assertThat(adapter.findLockedById(roomId)).map(Room::getId).contains(roomId);
+        assertThat(adapter.findByIdWithSharedLock(roomId)).map(Room::getId).contains(roomId);
     }
 
     @Test
@@ -148,7 +148,7 @@ class RoomJpaAdapterTest {
         room.delete(DELETED_AT);
         var roomId = persist(room);
 
-        assertThat(adapter.findLockedById(roomId)).map(Room::isDeleted).contains(true);
+        assertThat(adapter.findByIdWithSharedLock(roomId)).map(Room::isDeleted).contains(true);
     }
 
     @Test
@@ -156,7 +156,33 @@ class RoomJpaAdapterTest {
     void reportsEmptySharedLockForUnknownId() {
         var missing = RoomId.of(UUID.randomUUID());
 
-        assertThat(adapter.findLockedById(missing)).isEmpty();
+        assertThat(adapter.findByIdWithSharedLock(missing)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하는 방은 배타 락과 함께 반환된다")
+    void returnsRoomWithExclusiveLock() {
+        var roomId = persist(room("ROOM-01", "main hall", "capacity 100"));
+
+        assertThat(adapter.findByIdWithExclusiveLock(roomId)).map(Room::getId).contains(roomId);
+    }
+
+    @Test
+    @DisplayName("삭제된 방도 배타 락 대상이므로 반환된다")
+    void returnsDeletedRoomWithExclusiveLock() {
+        var room = room("ROOM-01", "main hall", "capacity 100");
+        room.delete(DELETED_AT);
+        var roomId = persist(room);
+
+        assertThat(adapter.findByIdWithExclusiveLock(roomId)).map(Room::isDeleted).contains(true);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 방의 배타 락 획득은 빈 결과로 알린다")
+    void reportsEmptyExclusiveLockForUnknownId() {
+        var missing = RoomId.of(UUID.randomUUID());
+
+        assertThat(adapter.findByIdWithExclusiveLock(missing)).isEmpty();
     }
 
     private Room room(String code, String name, String description) {

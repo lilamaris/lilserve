@@ -15,7 +15,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoo
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomMetadataCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateRoomResult;
-import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomSavePort;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
@@ -53,7 +53,7 @@ class UpdateRoomServiceTest {
     private static final String NEW_NAME = "small hall";
     private static final String NEW_DESCRIPTION = "capacity 20";
 
-    @Mock private RoomFindPort roomFindPort;
+    @Mock private RoomLockFindPort roomLockFindPort;
     @Mock private RoomSavePort roomSavePort;
 
     private UpdateRoomService service;
@@ -61,7 +61,7 @@ class UpdateRoomServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UpdateRoomService(roomFindPort, roomSavePort, CLOCK);
+        service = new UpdateRoomService(roomLockFindPort, roomSavePort, CLOCK);
         room = activeRoom();
     }
 
@@ -153,7 +153,7 @@ class UpdateRoomServiceTest {
     @MethodSource("operations")
     @DisplayName("대상 룸이 없으면 조회 실패 예외를 전파하고 저장하지 않는다")
     void rejectsMissingRoom(String name, Operation operation) {
-        operation.givenRoom(roomFindPort, Optional.empty());
+        operation.givenRoom(roomLockFindPort, Optional.empty());
 
         assertThatThrownBy(() -> operation.apply().apply(service))
                 .isInstanceOf(NoSuchElementException.class);
@@ -166,7 +166,7 @@ class UpdateRoomServiceTest {
     @DisplayName("룸 조회가 실패하면 해당 예외를 전파하고 저장하지 않는다")
     void propagatesFindFailure(String name, Operation operation) {
         var failure = new IllegalStateException("Room lookup failed");
-        when(operation.lookup().apply(roomFindPort)).thenThrow(failure);
+        when(roomLockFindPort.findByIdWithExclusiveLock(ROOM_ID)).thenThrow(failure);
 
         assertThatThrownBy(() -> operation.apply().apply(service)).isSameAs(failure);
 
@@ -178,7 +178,7 @@ class UpdateRoomServiceTest {
     @DisplayName("룸 저장이 실패하면 변경 결과 대신 저장 예외를 전파한다")
     void propagatesSaveFailure(String name, Operation operation) {
         room = operation.roomWithLastUpdate().apply(NOW);
-        operation.givenRoom(roomFindPort, Optional.of(room));
+        operation.givenRoom(roomLockFindPort, Optional.of(room));
         var failure = new IllegalStateException("Room storage failed");
         doThrow(failure).when(roomSavePort).save(room);
 
@@ -190,7 +190,7 @@ class UpdateRoomServiceTest {
     @DisplayName("현재 시각이 마지막 변경보다 이르면 도메인 예외를 전파하고 저장하지 않는다")
     void rejectsTimeBeforeLastUpdate(String name, Operation operation) {
         room = operation.roomWithLastUpdate().apply(NOW.plusSeconds(1));
-        operation.givenRoom(roomFindPort, Optional.of(room));
+        operation.givenRoom(roomLockFindPort, Optional.of(room));
 
         assertThatThrownBy(() -> operation.apply().apply(service))
                 .isInstanceOf(IllegalComparisonConditionException.class);
@@ -235,7 +235,7 @@ class UpdateRoomServiceTest {
     @DisplayName("마지막 변경 시각과 현재 시각이 같으면 변경을 저장한다")
     void acceptsTimeAtLastUpdate(String name, Operation operation) {
         room = operation.roomWithLastUpdate().apply(NOW);
-        operation.givenRoom(roomFindPort, Optional.of(room));
+        operation.givenRoom(roomLockFindPort, Optional.of(room));
 
         var result = operation.apply().apply(service);
 
@@ -262,9 +262,9 @@ class UpdateRoomServiceTest {
     void acceptsTimeAtCreation(String name, Operation operation) {
         service =
                 new UpdateRoomService(
-                        roomFindPort, roomSavePort, Clock.fixed(CREATED_AT, ZoneOffset.UTC));
+                        roomLockFindPort, roomSavePort, Clock.fixed(CREATED_AT, ZoneOffset.UTC));
         room = activeRoom();
-        operation.givenRoom(roomFindPort, Optional.of(room));
+        operation.givenRoom(roomLockFindPort, Optional.of(room));
 
         var result = operation.apply().apply(service);
 
@@ -278,13 +278,39 @@ class UpdateRoomServiceTest {
     void rejectsTimeBeforeCreation(String name, Operation operation) {
         service =
                 new UpdateRoomService(
-                        roomFindPort,
+                        roomLockFindPort,
                         roomSavePort,
                         Clock.fixed(CREATED_AT.minusNanos(1), ZoneOffset.UTC));
-        operation.givenRoom(roomFindPort, Optional.of(room));
+        operation.givenRoom(roomLockFindPort, Optional.of(room));
 
         assertThatThrownBy(() -> operation.apply().apply(service))
                 .isInstanceOf(IllegalComparisonConditionException.class);
+
+        verifyNoInteractions(roomSavePort);
+        assertThat(room.getUpdatedAt()).isNull();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activeOperations")
+    @DisplayName("배타 락으로 조회한 룸이 삭제되어 있으면 수정과 삭제를 거부한다")
+    void rejectsDeletedRoomAfterLock(String name, Operation operation) {
+        room = deletedRoom(NOW.minusSeconds(1));
+        operation.givenRoom(roomLockFindPort, Optional.of(room));
+
+        assertThatThrownBy(() -> operation.apply().apply(service))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(roomSavePort);
+        assertThat(room.getDeletedAt()).isEqualTo(NOW.minusSeconds(1));
+    }
+
+    @Test
+    @DisplayName("배타 락으로 조회한 룸이 활성이면 복구를 거부한다")
+    void rejectsActiveRoomAfterLockOnRestore() {
+        givenRoomFound(RESTORE);
+
+        assertThatThrownBy(() -> service.restore(RestoreRoomCommand.of(ROOM_ID)))
+                .isInstanceOf(NoSuchElementException.class);
 
         verifyNoInteractions(roomSavePort);
         assertThat(room.getUpdatedAt()).isNull();
@@ -314,7 +340,7 @@ class UpdateRoomServiceTest {
     }
 
     private void givenRoomFound(Operation operation) {
-        operation.givenRoom(roomFindPort, Optional.of(room));
+        operation.givenRoom(roomLockFindPort, Optional.of(room));
     }
 
     private static Room activeRoom() {
@@ -333,34 +359,25 @@ class UpdateRoomServiceTest {
         return deleted;
     }
 
-    /**
-     * One change operation: the lookup it reads the target room through, a room whose last change
-     * is at the given instant, and the call that runs the operation. Restore reads the deleted-room
-     * lookup, so an active room is not its target and a lookup failure means there is nothing to
-     * restore.
-     */
     private record Operation(
             String name,
-            Function<RoomFindPort, Optional<Room>> lookup,
             Function<Instant, Room> roomWithLastUpdate,
             Function<UpdateRoomService, UpdateRoomResult> apply) {
 
-        void givenRoom(RoomFindPort port, Optional<Room> found) {
-            when(lookup.apply(port)).thenReturn(found);
+        void givenRoom(RoomLockFindPort port, Optional<Room> found) {
+            when(port.findByIdWithExclusiveLock(ROOM_ID)).thenReturn(found);
         }
     }
 
     private static final Operation UPDATE_CODE =
             new Operation(
                     "updateCode",
-                    port -> port.findNotDeletedById(ROOM_ID),
                     UpdateRoomServiceTest::renamedRoom,
                     target -> target.updateCode(UpdateRoomCodeCommand.of(ROOM_ID, NEW_CODE)));
 
     private static final Operation UPDATE_METADATA =
             new Operation(
                     "updateMetadata",
-                    port -> port.findNotDeletedById(ROOM_ID),
                     UpdateRoomServiceTest::renamedRoom,
                     target ->
                             target.updateMetadata(
@@ -370,14 +387,12 @@ class UpdateRoomServiceTest {
     private static final Operation DELETE =
             new Operation(
                     "delete",
-                    port -> port.findNotDeletedById(ROOM_ID),
                     UpdateRoomServiceTest::renamedRoom,
                     target -> target.delete(DeleteRoomCommand.of(ROOM_ID)));
 
     private static final Operation RESTORE =
             new Operation(
                     "restore",
-                    port -> port.findDeletedById(ROOM_ID),
                     UpdateRoomServiceTest::deletedRoom,
                     target -> target.restore(RestoreRoomCommand.of(ROOM_ID)));
 

@@ -28,4 +28,19 @@ public interface RoomRepository extends JpaRepository<Room, RoomId> {
             FROM Room r
             WHERE r.id = :roomId""")
     Optional<Room> findByIdWithSharedLock(@Param("roomId") RoomId roomId);
+
+    /**
+     * Loads the room, including a deleted room, under an exclusive row lock in one statement. The
+     * caller must have an active transaction; the lock is retained until it ends.
+     *
+     * @param roomId the room identifier to lock
+     * @return the locked room including its deletion state, or empty if no room matches
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(
+            """
+            SELECT r
+            FROM Room r
+            WHERE r.id = :roomId""")
+    Optional<Room> findByIdWithExclusiveLock(@Param("roomId") RoomId roomId);
 }
