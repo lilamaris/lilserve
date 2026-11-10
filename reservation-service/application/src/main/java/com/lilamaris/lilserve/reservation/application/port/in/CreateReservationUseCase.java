@@ -13,9 +13,14 @@ public interface CreateReservationUseCase {
      * <p>A request that allocates no slots or only some requested slots is rejected. Its header and
      * any inserted allocations are rolled back together.
      *
+     * <p>Resources are read under shared row locks, so every validation runs on the state the
+     * transaction protects. A request with a missing room, seat, or slot row is rejected before any
+     * allocation is inserted.
+     *
      * @param command the reservation request, must not be null
      * @return the created reservation after every requested slot has been secured
-     * @throws java.util.NoSuchElementException if the room or seat does not exist or is deleted
+     * @throws java.util.NoSuchElementException if the room or seat does not exist or is deleted, or
+     *     if any requested slot row does not exist
      * @throws IllegalArgumentException if the seat does not belong to the room
      * @throws IllegalStateException if not all requested slots can be allocated
      * @throws jakarta.validation.ConstraintViolationException if method validation is active and

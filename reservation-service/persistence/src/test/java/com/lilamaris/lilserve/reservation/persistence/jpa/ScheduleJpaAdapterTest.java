@@ -7,10 +7,12 @@ import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
+import com.lilamaris.lilserve.reservation.persistence.jpa.repository.ScheduleRepository;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +39,7 @@ class ScheduleJpaAdapterTest {
     private static final Instant RETIRED_AT = Instant.parse("2026-01-02T00:00:00Z");
 
     @Autowired private ScheduleJpaAdapter adapter;
+    @Autowired private ScheduleRepository repository;
     @Autowired private TestEntityManager entityManager;
     private final RoomId roomId = RoomId.of(UUID.randomUUID());
 
@@ -191,6 +194,74 @@ class ScheduleJpaAdapterTest {
 
         assertThat(adapter.findNotDeletedById(original)).isEmpty();
         assertThat(adapter.findNotDeletedById(replacement.getId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("요청한 슬롯 전체가 공유 락과 함께 반환된다")
+    void returnsLockedScheduleIdentifiers() {
+        var morning = persist(schedule(10, 12));
+        var afternoon = persist(schedule(14, 16));
+
+        var locked = adapter.findAllLockedById(Set.of(afternoon, morning)).orElseThrow();
+
+        assertThat(locked).containsExactlyInAnyOrder(morning, afternoon);
+    }
+
+    @Test
+    @DisplayName("삭제된 슬롯도 공유 락 대상이므로 반환된다")
+    void returnsRetiredScheduleWithSharedLock() {
+        var retired = persist(schedule(10, 12));
+        adapter.retire(retired, RETIRED_AT);
+        flushAndClear();
+
+        var locked = adapter.findAllLockedById(Set.of(retired)).orElseThrow();
+
+        assertThat(locked).containsExactly(retired);
+    }
+
+    @Test
+    @DisplayName("요청한 스케줄 중 하나라도 없으면 공유 락 획득을 빈 결과로 알린다")
+    void reportsEmptySharedLocksWhenAnyRequestedScheduleIsMissing() {
+        var existing = persist(schedule(10, 12));
+        var missing = ScheduleId.of(UUID.randomUUID());
+
+        assertThat(adapter.findAllLockedById(Set.of(existing, missing))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("스케줄 공유 락 조회는 삽입 순서와 관계없이 식별자 오름차순으로 처리한다")
+    void loadsSharedLocksInIdentifierOrder() {
+        var lower = ScheduleId.of(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        var higher = ScheduleId.of(UUID.fromString("00000000-0000-0000-0000-000000000002"));
+        persist(
+                Schedule.of(
+                        higher,
+                        roomId,
+                        DayOfWeek.MONDAY,
+                        LocalTime.of(14, 0),
+                        LocalTime.of(15, 0),
+                        CREATED_AT));
+        persist(
+                Schedule.of(
+                        lower,
+                        roomId,
+                        DayOfWeek.MONDAY,
+                        LocalTime.of(10, 0),
+                        LocalTime.of(11, 0),
+                        CREATED_AT));
+        // A sequential scan exposes insertion order unless the locking query explicitly sorts.
+        entityManager
+                .getEntityManager()
+                .createNativeQuery("SET LOCAL enable_indexscan = off")
+                .executeUpdate();
+        entityManager
+                .getEntityManager()
+                .createNativeQuery("SET LOCAL enable_bitmapscan = off")
+                .executeUpdate();
+
+        var locked = repository.findByIdsWithSharedLock(List.of(higher, lower));
+
+        assertThat(locked).extracting(Schedule::getId).containsExactly(lower, higher);
     }
 
     private Schedule schedule(int start, int end) {

@@ -1,6 +1,7 @@
 package com.lilamaris.lilserve.reservation.persistence.jpa;
 
 import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.SeatLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
 import com.lilamaris.lilserve.reservation.domain.Seat;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 /** Implements seat persistence ports using Spring Data JPA within the caller's transaction. */
 @Component
 @RequiredArgsConstructor
-public class SeatJpaAdapter implements SeatFindPort, SeatSavePort {
+public class SeatJpaAdapter implements SeatFindPort, SeatSavePort, SeatLockFindPort {
     private final SeatRepository repository;
 
     /** {@inheritDoc} */
@@ -37,5 +38,16 @@ public class SeatJpaAdapter implements SeatFindPort, SeatSavePort {
     @Override
     public void save(Seat seat) {
         repository.save(seat);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The lock and the read are requested by one query, so the returned seat is the row this
+     * transaction protects. A missing row is reported as an empty result.
+     */
+    @Override
+    public Optional<Seat> findLockedById(SeatId seatId) {
+        return repository.findByIdWithSharedLock(seatId);
     }
 }

@@ -22,6 +22,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 
+/**
+ * Verifies module wiring and room/seat persistence using the real persistence adapters, including
+ * resource lock port implementations.
+ */
 @DisplayName("예약 서비스 실행 모듈")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(PostgresTestConfiguration.class)

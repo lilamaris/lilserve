@@ -1,6 +1,7 @@
 package com.lilamaris.lilserve.reservation.persistence.jpa;
 
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomSavePort;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 /** Implements room persistence ports using Spring Data JPA within the caller's transaction. */
 @Component
 @RequiredArgsConstructor
-public class RoomJpaAdapter implements RoomFindPort, RoomSavePort {
+public class RoomJpaAdapter implements RoomFindPort, RoomSavePort, RoomLockFindPort {
     private final RoomRepository repository;
 
     /** {@inheritDoc} */
@@ -37,5 +38,16 @@ public class RoomJpaAdapter implements RoomFindPort, RoomSavePort {
     @Override
     public void save(Room room) {
         repository.save(room);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The lock and the read are requested by one query, so the returned room is the row this
+     * transaction protects. A missing row is reported as an empty result.
+     */
+    @Override
+    public Optional<Room> findLockedById(RoomId roomId) {
+        return repository.findByIdWithSharedLock(roomId);
     }
 }
