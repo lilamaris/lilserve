@@ -58,7 +58,7 @@ public class CreateReservationService implements CreateReservationUseCase {
 
         var seat =
                 seatLockFindPort
-                        .findLockedById(command.seatId())
+                        .findByIdWithSharedLock(command.seatId())
                         .filter(locked -> !locked.isDeleted())
                         .orElseThrow(() -> new NoSuchElementException("seat does not exists."));
 

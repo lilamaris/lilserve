@@ -136,7 +136,7 @@ class CreateReservationServiceTest {
     @DisplayName("좌석이 없으면 예약을 거부한다")
     void rejectsMissingSeat() {
         givenRoomLocked();
-        when(seatLockFindPort.findLockedById(SEAT_ID)).thenReturn(Optional.empty());
+        when(seatLockFindPort.findByIdWithSharedLock(SEAT_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
                 .isInstanceOf(NoSuchElementException.class);
@@ -150,7 +150,7 @@ class CreateReservationServiceTest {
         givenRoomLocked();
         var deleted = seat(ROOM_ID);
         deleted.delete(NOW);
-        when(seatLockFindPort.findLockedById(SEAT_ID)).thenReturn(Optional.of(deleted));
+        when(seatLockFindPort.findByIdWithSharedLock(SEAT_ID)).thenReturn(Optional.of(deleted));
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
                 .isInstanceOf(NoSuchElementException.class);
@@ -162,7 +162,7 @@ class CreateReservationServiceTest {
     @DisplayName("좌석이 요청한 방에 속하지 않으면 예약을 거부한다")
     void rejectsSeatBelongingToAnotherRoom() {
         givenRoomLocked();
-        when(seatLockFindPort.findLockedById(SEAT_ID))
+        when(seatLockFindPort.findByIdWithSharedLock(SEAT_ID))
                 .thenReturn(Optional.of(seat(RoomId.of(UUID.randomUUID()))));
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
@@ -262,7 +262,8 @@ class CreateReservationServiceTest {
     }
 
     private void givenSeatLocked() {
-        when(seatLockFindPort.findLockedById(SEAT_ID)).thenReturn(Optional.of(seat(ROOM_ID)));
+        when(seatLockFindPort.findByIdWithSharedLock(SEAT_ID))
+                .thenReturn(Optional.of(seat(ROOM_ID)));
     }
 
     private CreateReservationService newService(

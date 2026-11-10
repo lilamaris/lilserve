@@ -47,7 +47,13 @@ public class SeatJpaAdapter implements SeatFindPort, SeatSavePort, SeatLockFindP
      * transaction protects. A missing row is reported as an empty result.
      */
     @Override
-    public Optional<Seat> findLockedById(SeatId seatId) {
+    public Optional<Seat> findByIdWithSharedLock(SeatId seatId) {
         return repository.findByIdWithSharedLock(seatId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<Seat> findByIdWithExclusiveLock(SeatId seatId) {
+        return repository.findByIdWithExclusiveLock(seatId);
     }
 }
