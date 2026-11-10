@@ -202,7 +202,7 @@ class ScheduleJpaAdapterTest {
         var morning = persist(schedule(10, 12));
         var afternoon = persist(schedule(14, 16));
 
-        var locked = adapter.findAllLockedById(Set.of(afternoon, morning)).orElseThrow();
+        var locked = adapter.findAllByIdsWithSharedLock(Set.of(afternoon, morning)).orElseThrow();
 
         assertThat(locked).containsExactlyInAnyOrder(morning, afternoon);
     }
@@ -214,7 +214,7 @@ class ScheduleJpaAdapterTest {
         adapter.retire(retired, RETIRED_AT);
         flushAndClear();
 
-        var locked = adapter.findAllLockedById(Set.of(retired)).orElseThrow();
+        var locked = adapter.findAllByIdsWithSharedLock(Set.of(retired)).orElseThrow();
 
         assertThat(locked).containsExactly(retired);
     }
@@ -225,7 +225,7 @@ class ScheduleJpaAdapterTest {
         var existing = persist(schedule(10, 12));
         var missing = ScheduleId.of(UUID.randomUUID());
 
-        assertThat(adapter.findAllLockedById(Set.of(existing, missing))).isEmpty();
+        assertThat(adapter.findAllByIdsWithSharedLock(Set.of(existing, missing))).isEmpty();
     }
 
     @Test
@@ -262,6 +262,34 @@ class ScheduleJpaAdapterTest {
         var locked = repository.findByIdsWithSharedLock(List.of(higher, lower));
 
         assertThat(locked).extracting(Schedule::getId).containsExactly(lower, higher);
+    }
+
+    @Test
+    @DisplayName("존재하는 스케줄은 배타 락과 함께 반환된다")
+    void returnsScheduleWithExclusiveLock() {
+        var scheduleId = persist(schedule(10, 12));
+
+        assertThat(adapter.findByIdWithExclusiveLock(scheduleId))
+                .map(Schedule::getId)
+                .contains(scheduleId);
+    }
+
+    @Test
+    @DisplayName("폐기된 스케줄도 배타 락 대상이므로 반환된다")
+    void returnsRetiredScheduleWithExclusiveLock() {
+        var scheduleId = persist(schedule(10, 12));
+        adapter.retire(scheduleId, RETIRED_AT);
+        flushAndClear();
+
+        assertThat(adapter.findByIdWithExclusiveLock(scheduleId))
+                .map(Schedule::getDeletedAt)
+                .contains(RETIRED_AT);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 스케줄의 배타 락 획득은 빈 결과로 알린다")
+    void reportsEmptyExclusiveLockForUnknownId() {
+        assertThat(adapter.findByIdWithExclusiveLock(ScheduleId.of(UUID.randomUUID()))).isEmpty();
     }
 
     private Schedule schedule(int start, int end) {

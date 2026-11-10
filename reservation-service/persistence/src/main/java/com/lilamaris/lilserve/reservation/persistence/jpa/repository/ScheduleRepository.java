@@ -6,6 +6,7 @@ import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -58,4 +59,20 @@ public interface ScheduleRepository extends JpaRepository<Schedule, ScheduleId> 
             """)
     List<Schedule> findByIdsWithSharedLock(
             @Param("scheduleIds") Collection<ScheduleId> scheduleIds);
+
+    /**
+     * Loads the slot, including a retired slot, under an exclusive row lock in one statement. The
+     * caller must have an active transaction; the lock is retained until it ends.
+     *
+     * @param scheduleId the slot identifier to lock
+     * @return the locked slot including its retirement state, or empty if no slot matches
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(
+            """
+            SELECT s
+            FROM Schedule s
+            WHERE s.id = :scheduleId
+            """)
+    Optional<Schedule> findByIdWithExclusiveLock(@Param("scheduleId") ScheduleId scheduleId);
 }

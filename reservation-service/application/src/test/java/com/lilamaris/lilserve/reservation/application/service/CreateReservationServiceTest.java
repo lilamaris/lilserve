@@ -176,7 +176,7 @@ class CreateReservationServiceTest {
     void rejectsMissingSchedule() {
         givenRoomLocked();
         givenSeatLocked();
-        when(scheduleLockFindPort.findAllLockedById(Set.of(MORNING, AFTERNOON)))
+        when(scheduleLockFindPort.findAllByIdsWithSharedLock(Set.of(MORNING, AFTERNOON)))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING, AFTERNOON))))
@@ -254,7 +254,8 @@ class CreateReservationServiceTest {
     private void givenResourcesLocked(Set<ScheduleId> schedules) {
         givenRoomLocked();
         givenSeatLocked();
-        when(scheduleLockFindPort.findAllLockedById(schedules)).thenReturn(Optional.of(schedules));
+        when(scheduleLockFindPort.findAllByIdsWithSharedLock(schedules))
+                .thenReturn(Optional.of(schedules));
     }
 
     private void givenRoomLocked() {

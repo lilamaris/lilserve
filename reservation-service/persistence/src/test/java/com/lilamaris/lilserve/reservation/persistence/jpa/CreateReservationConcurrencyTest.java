@@ -7,6 +7,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.CreateRese
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateReservationResult;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.service.CreateReservationService;
 import com.lilamaris.lilserve.reservation.application.service.UpdateRoomService;
 import com.lilamaris.lilserve.reservation.application.service.UpdateScheduleService;
@@ -27,6 +28,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -342,10 +344,19 @@ class CreateReservationConcurrencyTest {
                 allocationAdapter,
                 roomAdapter,
                 seatAdapter,
-                ids -> {
-                    var lockedIds = scheduleAdapter.findAllLockedById(ids);
-                    afterLocks.run();
-                    return lockedIds;
+                new ScheduleLockFindPort() {
+                    @Override
+                    public Optional<Set<ScheduleId>> findAllByIdsWithSharedLock(
+                            Set<ScheduleId> ids) {
+                        var lockedIds = scheduleAdapter.findAllByIdsWithSharedLock(ids);
+                        afterLocks.run();
+                        return lockedIds;
+                    }
+
+                    @Override
+                    public Optional<Schedule> findByIdWithExclusiveLock(ScheduleId id) {
+                        return scheduleAdapter.findByIdWithExclusiveLock(id);
+                    }
                 },
                 UUID::randomUUID,
                 CLOCK);
