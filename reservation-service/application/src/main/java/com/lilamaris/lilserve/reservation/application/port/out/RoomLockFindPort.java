@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import java.util.Optional;
 
 /**
- * Finds a room by identifier under a shared row lock within the caller's transaction.
+ * Finds a room by identifier under a row lock within the caller's transaction.
  *
  * <p>Implementations return {@link Optional#empty()} when no room matches and never return {@code
  * null}. The caller decides how to handle a missing room.
@@ -27,5 +27,18 @@ public interface RoomLockFindPort {
      * @return the locked room with its deletion state, or empty when no room has this identifier
      * @throws NullPointerException if {@code roomId} is null
      */
-    Optional<Room> findLockedById(RoomId roomId);
+    Optional<Room> findByIdWithSharedLock(RoomId roomId);
+
+    /**
+     * Finds a room by identifier under an exclusive row lock until the caller's transaction ends.
+     * Competing room changes must wait and validate the state returned after acquiring the lock.
+     *
+     * <p>Requires an active transaction. The lock and read use one statement. Deleted rooms are
+     * included so callers can decide whether modification, deletion, or restoration is allowed.
+     *
+     * @param roomId the room identifier, not null
+     * @return the locked room including its deletion state, or empty if no room matches
+     * @throws NullPointerException if {@code roomId} is null
+     */
+    Optional<Room> findByIdWithExclusiveLock(RoomId roomId);
 }

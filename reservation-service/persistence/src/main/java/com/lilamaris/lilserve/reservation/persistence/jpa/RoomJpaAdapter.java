@@ -47,7 +47,13 @@ public class RoomJpaAdapter implements RoomFindPort, RoomSavePort, RoomLockFindP
      * transaction protects. A missing row is reported as an empty result.
      */
     @Override
-    public Optional<Room> findLockedById(RoomId roomId) {
+    public Optional<Room> findByIdWithSharedLock(RoomId roomId) {
         return repository.findByIdWithSharedLock(roomId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<Room> findByIdWithExclusiveLock(RoomId roomId) {
+        return repository.findByIdWithExclusiveLock(roomId);
     }
 }

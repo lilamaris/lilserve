@@ -52,7 +52,7 @@ public class CreateReservationService implements CreateReservationUseCase {
     public CreateReservationResult create(CreateReservationCommand command) {
         var room =
                 roomLockFindPort
-                        .findLockedById(command.roomId())
+                        .findByIdWithSharedLock(command.roomId())
                         .filter(locked -> !locked.isDeleted())
                         .orElseThrow(() -> new NoSuchElementException("room does not exists."));
 

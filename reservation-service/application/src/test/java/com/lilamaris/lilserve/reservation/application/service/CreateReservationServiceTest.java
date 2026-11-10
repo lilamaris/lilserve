@@ -109,7 +109,7 @@ class CreateReservationServiceTest {
     @Test
     @DisplayName("방이 없으면 빈 잠금 결과를 예외로 바꾸고 저장을 시작하지 않는다")
     void rejectsMissingRoom() {
-        when(roomLockFindPort.findLockedById(ROOM_ID)).thenReturn(Optional.empty());
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
                 .isInstanceOf(NoSuchElementException.class);
@@ -123,7 +123,7 @@ class CreateReservationServiceTest {
     void rejectsDeletedRoom() {
         var deleted = room();
         deleted.delete(NOW);
-        when(roomLockFindPort.findLockedById(ROOM_ID)).thenReturn(Optional.of(deleted));
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM_ID)).thenReturn(Optional.of(deleted));
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
                 .isInstanceOf(NoSuchElementException.class);
@@ -189,7 +189,7 @@ class CreateReservationServiceTest {
     @DisplayName("잠금 조회 예외를 그대로 전파하고 예약 저장을 시작하지 않는다")
     void propagatesLockedReadFailure() {
         var failure = new IllegalStateException("Room lock query failed");
-        when(roomLockFindPort.findLockedById(ROOM_ID)).thenThrow(failure);
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM_ID)).thenThrow(failure);
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING)))).isSameAs(failure);
 
@@ -258,7 +258,7 @@ class CreateReservationServiceTest {
     }
 
     private void givenRoomLocked() {
-        when(roomLockFindPort.findLockedById(ROOM_ID)).thenReturn(Optional.of(room()));
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM_ID)).thenReturn(Optional.of(room()));
     }
 
     private void givenSeatLocked() {
