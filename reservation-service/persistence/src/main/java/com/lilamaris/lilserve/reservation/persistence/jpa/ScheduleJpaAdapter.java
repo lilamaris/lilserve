@@ -2,13 +2,17 @@ package com.lilamaris.lilserve.reservation.persistence.jpa;
 
 import com.lilamaris.lilserve.reservation.application.port.out.RetireSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.persistence.jpa.repository.ScheduleRepository;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +24,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class ScheduleJpaAdapter implements ScheduleFindPort, ScheduleSavePort, RetireSchedulePort {
+public class ScheduleJpaAdapter
+        implements ScheduleFindPort, ScheduleSavePort, RetireSchedulePort, ScheduleLockFindPort {
     private final ScheduleRepository repository;
 
     /** {@inheritDoc} */
@@ -50,5 +55,25 @@ public class ScheduleJpaAdapter implements ScheduleFindPort, ScheduleSavePort, R
     @Override
     public Optional<Schedule> findNotDeletedById(ScheduleId scheduleId) {
         return repository.findById(scheduleId).filter(schedule -> !schedule.isDeleted());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Slots are loaded by a query that requests the shared lock and sorts by identifier, so
+     * competing transactions acquire rows in the same order. A partial lock is reported as an empty
+     * result.
+     */
+    @Override
+    public Optional<Set<ScheduleId>> findAllLockedById(Set<ScheduleId> scheduleIds) {
+        var lockedIds = lockedIdentifiers(repository.findByIdsWithSharedLock(scheduleIds));
+        if (!lockedIds.containsAll(scheduleIds)) {
+            return Optional.empty();
+        }
+        return Optional.of(lockedIds);
+    }
+
+    private Set<ScheduleId> lockedIdentifiers(List<Schedule> lockedSchedules) {
+        return lockedSchedules.stream().map(Schedule::getId).collect(Collectors.toSet());
     }
 }

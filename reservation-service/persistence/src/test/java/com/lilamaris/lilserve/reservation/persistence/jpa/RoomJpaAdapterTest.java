@@ -133,6 +133,32 @@ class RoomJpaAdapterTest {
         assertThat(adapter.findDeletedById(missing)).isEmpty();
     }
 
+    @Test
+    @DisplayName("존재하는 방은 공유 락과 함께 반환된다")
+    void returnsRoomWithSharedLock() {
+        var roomId = persist(room("ROOM-01", "main hall", "capacity 100"));
+
+        assertThat(adapter.findLockedById(roomId)).map(Room::getId).contains(roomId);
+    }
+
+    @Test
+    @DisplayName("삭제된 방도 공유 락 대상이므로 반환된다")
+    void returnsDeletedRoomWithSharedLock() {
+        var room = room("ROOM-01", "main hall", "capacity 100");
+        room.delete(DELETED_AT);
+        var roomId = persist(room);
+
+        assertThat(adapter.findLockedById(roomId)).map(Room::isDeleted).contains(true);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 방의 공유 락 획득은 빈 결과로 알린다")
+    void reportsEmptySharedLockForUnknownId() {
+        var missing = RoomId.of(UUID.randomUUID());
+
+        assertThat(adapter.findLockedById(missing)).isEmpty();
+    }
+
     private Room room(String code, String name, String description) {
         return Room.of(RoomId.of(UUID.randomUUID()), code, name, description, CREATED_AT);
     }

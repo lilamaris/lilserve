@@ -135,6 +135,32 @@ class SeatJpaAdapterTest {
         assertThat(adapter.findDeletedById(missing)).isEmpty();
     }
 
+    @Test
+    @DisplayName("존재하는 좌석은 공유 락과 함께 반환된다")
+    void returnsSeatWithSharedLock() {
+        var seatId = persist(seat("SEAT-01"));
+
+        assertThat(adapter.findLockedById(seatId)).map(Seat::getId).contains(seatId);
+    }
+
+    @Test
+    @DisplayName("삭제된 좌석도 공유 락 대상이므로 반환된다")
+    void returnsDeletedSeatWithSharedLock() {
+        var seat = seat("SEAT-01");
+        seat.delete(DELETED_AT);
+        var seatId = persist(seat);
+
+        assertThat(adapter.findLockedById(seatId)).map(Seat::isDeleted).contains(true);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 좌석의 공유 락 획득은 빈 결과로 알린다")
+    void reportsEmptySharedLockForUnknownId() {
+        var missing = SeatId.of(UUID.randomUUID());
+
+        assertThat(adapter.findLockedById(missing)).isEmpty();
+    }
+
     private Seat seat(String code) {
         return Seat.of(SeatId.of(UUID.randomUUID()), RoomId.of(ROOM_ID), code, CREATED_AT);
     }

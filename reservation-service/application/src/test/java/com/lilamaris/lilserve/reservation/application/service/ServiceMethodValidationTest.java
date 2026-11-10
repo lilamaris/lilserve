@@ -44,10 +44,13 @@ import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePo
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.RetireSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.SeatLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
@@ -70,6 +73,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
+/**
+ * Verifies that method validation rejects invalid service requests before persistence or lock ports
+ * run.
+ */
 @DisplayName("서비스 진입점 메서드 검증")
 class ServiceMethodValidationTest {
     private static final UUID ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -96,6 +103,9 @@ class ServiceMethodValidationTest {
         var scheduleSavePort = mock(ScheduleSavePort.class);
         var scheduleFindPort = mock(ScheduleFindPort.class);
         var retireSchedulePort = mock(RetireSchedulePort.class);
+        var roomLockPort = mock(RoomLockFindPort.class);
+        var seatLockPort = mock(SeatLockFindPort.class);
+        var scheduleLockPort = mock(ScheduleLockFindPort.class);
         try (var context = new AnnotationConfigApplicationContext()) {
             context.registerBean(MethodValidationPostProcessor.class);
             context.registerBean(RoomFindPort.class, () -> roomFindPort);
@@ -109,6 +119,9 @@ class ServiceMethodValidationTest {
             context.registerBean(ScheduleSavePort.class, () -> scheduleSavePort);
             context.registerBean(ScheduleFindPort.class, () -> scheduleFindPort);
             context.registerBean(RetireSchedulePort.class, () -> retireSchedulePort);
+            context.registerBean(RoomLockFindPort.class, () -> roomLockPort);
+            context.registerBean(SeatLockFindPort.class, () -> seatLockPort);
+            context.registerBean(ScheduleLockFindPort.class, () -> scheduleLockPort);
             context.registerBean(Clock.class, Clock::systemUTC);
             context.registerBean(IdGenerator.class, () -> (IdGenerator<UUID>) () -> ID);
             context.register(
@@ -128,6 +141,9 @@ class ServiceMethodValidationTest {
                     .isInstanceOf(ConstraintViolationException.class);
 
             verifyNoInteractions(
+                    scheduleLockPort,
+                    seatLockPort,
+                    roomLockPort,
                     roomFindPort,
                     roomSavePort,
                     seatFindPort,

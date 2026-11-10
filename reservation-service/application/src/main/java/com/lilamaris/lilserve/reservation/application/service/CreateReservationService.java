@@ -16,8 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Implements {@link CreateReservationUseCase} by loading the room and seat, saving the reservation,
- * and allocating its requested slots in one transaction. Creation time comes from {@link Clock}.
+ * Implements {@link CreateReservationUseCase} by reading resources under shared locks, saving the
+ * reservation, and allocating its requested slots in one transaction. Creation time comes from
+ * {@link Clock} after every resource is protected.
+ *
+ * <p>Resources are protected in room, seat, then slot order, and each protected read returns the
+ * row it locks: a deleted room or seat is rejected with {@link NoSuchElementException}, a seat
+ * belonging to another room with {@link IllegalArgumentException}, and a missing slot row with
+ * {@link NoSuchElementException}. Slots are locked in ascending identifier order, keeping the lock
+ * order identical across transactions.
  *
  * <p>Only a complete allocation succeeds. If no slots or only some requested slots are allocated,
  * an exception rolls back the reservation header and any allocations inserted by this request.
@@ -28,30 +35,41 @@ import org.springframework.validation.annotation.Validated;
 public class CreateReservationService implements CreateReservationUseCase {
     private final ReservationSavePort reservationSavePort;
     private final ReserveSchedulePort reserveSchedulePort;
-    private final RoomFindPort roomFindPort;
-    private final SeatFindPort seatFindPort;
+    private final RoomLockFindPort roomLockFindPort;
+    private final SeatLockFindPort seatLockFindPort;
+    private final ScheduleLockFindPort scheduleLockFindPort;
     private final IdGenerator<UUID> uuidGenerator;
     private final Clock clock;
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Propagates protected read and persistence failures. An incomplete allocation raises an
+     * exception so the transaction rolls back the header and all new slots.
+     */
     @Override
     @Transactional
     public CreateReservationResult create(CreateReservationCommand command) {
-        var now = clock.instant();
-
         var room =
-                roomFindPort
-                        .findNotDeletedById(command.roomId())
+                roomLockFindPort
+                        .findLockedById(command.roomId())
+                        .filter(locked -> !locked.isDeleted())
                         .orElseThrow(() -> new NoSuchElementException("room does not exists."));
 
         var seat =
-                seatFindPort
-                        .findNotDeletedById(command.seatId())
+                seatLockFindPort
+                        .findLockedById(command.seatId())
+                        .filter(locked -> !locked.isDeleted())
                         .orElseThrow(() -> new NoSuchElementException("seat does not exists."));
 
         if (!seat.getRoomId().equals(room.getId()))
             throw new IllegalArgumentException("seat must be belong to room.");
 
+        scheduleLockFindPort
+                .findAllLockedById(command.scheduleIds())
+                .orElseThrow(() -> new NoSuchElementException("schedule does not found."));
+
+        var now = clock.instant();
         var timezone = clock.getZone();
 
         var reservationId = ReservationId.of(uuidGenerator.generate());

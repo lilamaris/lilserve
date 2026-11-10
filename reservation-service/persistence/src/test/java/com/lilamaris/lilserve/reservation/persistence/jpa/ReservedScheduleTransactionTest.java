@@ -38,6 +38,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/**
+ * Verifies header and allocation transactions against PostgreSQL using real persistence and
+ * resource lock adapters. Resource-state races are covered by CreateReservationConcurrencyTest.
+ */
 @DisplayName("예약 슬롯 저장의 서비스 트랜잭션 경계")
 @DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -49,6 +53,7 @@ import org.springframework.transaction.support.TransactionTemplate;
     ReservationJpaAdapter.class,
     RoomJpaAdapter.class,
     SeatJpaAdapter.class,
+    ScheduleJpaAdapter.class,
     ReservedScheduleTransactionTest.Configuration.class
 })
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -101,9 +106,12 @@ class ReservedScheduleTransactionTest {
     }
 
     @Test
-    @DisplayName("일부 슬롯이 없으면 서비스가 예외를 던지고 헤더와 삽입된 점유를 모두 롤백한다")
+    @DisplayName("일부 슬롯이 비활성이면 서비스가 예외를 던지고 헤더와 삽입된 점유를 모두 롤백한다")
     void rollsBackPartialInsertionThroughService() {
-        var command = command(Set.of(morning, ScheduleId.of(UUID.randomUUID())));
+        transaction()
+                .executeWithoutResult(
+                        status -> entityManager.find(Schedule.class, afternoon).delete(NOW));
+        var command = command(Set.of(morning, afternoon));
 
         assertThatThrownBy(() -> service.create(command))
                 .isInstanceOf(IllegalStateException.class)
@@ -219,6 +227,7 @@ class ReservedScheduleTransactionTest {
         return template;
     }
 
+    /** Supplies a fixed clock and random identifiers. */
     @TestConfiguration(proxyBeanMethods = false)
     static class Configuration {
         @Bean

@@ -14,8 +14,9 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateReser
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveScheduleStatus;
-import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
-import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.SeatLockFindPort;
 import com.lilamaris.lilserve.reservation.domain.Reservation;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Seat;
@@ -45,6 +46,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+/** Verifies reservation behavior using locked resource reads and mocked persistence ports. */
 @DisplayName("예약 생성 유스케이스")
 @ExtendWith(MockitoExtension.class)
 class CreateReservationServiceTest {
@@ -60,41 +62,27 @@ class CreateReservationServiceTest {
 
     @Mock private ReservationSavePort reservationSavePort;
     @Mock private ReserveSchedulePort reserveSchedulePort;
-    @Mock private RoomFindPort roomFindPort;
-    @Mock private SeatFindPort seatFindPort;
+    @Mock private RoomLockFindPort roomLockFindPort;
+    @Mock private SeatLockFindPort seatLockFindPort;
+    @Mock private ScheduleLockFindPort scheduleLockFindPort;
 
     private CreateReservationService service;
 
     @BeforeEach
     void setUp() {
-        service =
-                new CreateReservationService(
-                        reservationSavePort,
-                        reserveSchedulePort,
-                        roomFindPort,
-                        seatFindPort,
-                        () -> GENERATED_ID,
-                        CLOCK);
+        service = newService(CLOCK, () -> GENERATED_ID);
     }
 
     @ParameterizedTest
     @MethodSource("successfulRequests")
-    @DisplayName("단건과 복수 슬롯 예약은 생성한 헤더의 범위와 설정 시간대를 유지하고 요청 슬롯 전체를 전달한다")
+    @DisplayName("단건과 복수 슬롯 예약은 생성한 헤더와 시간대를 유지하고 요청 슬롯 전체를 전달한다")
     void savesHeaderAndReservesExactlyRequestedSchedules(
             Set<ScheduleId> schedules, String timezone) {
-        givenRoomFound();
-        givenSeatFound(ROOM_ID);
-        service =
-                new CreateReservationService(
-                        reservationSavePort,
-                        reserveSchedulePort,
-                        roomFindPort,
-                        seatFindPort,
-                        () -> GENERATED_ID,
-                        Clock.fixed(NOW, ZoneId.of(timezone)));
+        givenResourcesLocked(schedules);
         when(reserveSchedulePort.reserve(RESERVATION_ID, schedules))
                 .thenReturn(ReserveScheduleStatus.ALL_RESERVED);
 
+        service = newService(Clock.fixed(NOW, ZoneId.of(timezone)), () -> GENERATED_ID);
         var result = service.create(command(schedules));
 
         var header = savedReservation();
@@ -119,79 +107,107 @@ class CreateReservationServiceTest {
     }
 
     @Test
-    @DisplayName("사용 가능한 룸이 없으면 예약 헤더와 점유를 저장하지 않는다")
-    void rejectsMissingOrDeletedRoom() {
-        when(roomFindPort.findNotDeletedById(ROOM_ID)).thenReturn(Optional.empty());
+    @DisplayName("방이 없으면 빈 잠금 결과를 예외로 바꾸고 저장을 시작하지 않는다")
+    void rejectsMissingRoom() {
+        when(roomLockFindPort.findLockedById(ROOM_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
                 .isInstanceOf(NoSuchElementException.class);
 
-        verifyNoInteractions(reservationSavePort, reserveSchedulePort);
+        verifyNoInteractions(
+                seatLockFindPort, scheduleLockFindPort, reservationSavePort, reserveSchedulePort);
     }
 
     @Test
-    @DisplayName("사용 가능한 좌석이 없으면 예약 헤더와 점유를 저장하지 않는다")
-    void rejectsMissingOrDeletedSeat() {
-        givenRoomFound();
-        when(seatFindPort.findNotDeletedById(SEAT_ID)).thenReturn(Optional.empty());
+    @DisplayName("잠근 방이 삭제된 상태면 예약을 거부한다")
+    void rejectsDeletedRoom() {
+        var deleted = room();
+        deleted.delete(NOW);
+        when(roomLockFindPort.findLockedById(ROOM_ID)).thenReturn(Optional.of(deleted));
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
                 .isInstanceOf(NoSuchElementException.class);
 
-        verifyNoInteractions(reservationSavePort, reserveSchedulePort);
+        verifyNoInteractions(
+                seatLockFindPort, scheduleLockFindPort, reservationSavePort, reserveSchedulePort);
     }
 
     @Test
-    @DisplayName("좌석이 요청 룸에 속하지 않으면 예약 헤더와 점유를 저장하지 않는다")
+    @DisplayName("좌석이 없으면 예약을 거부한다")
+    void rejectsMissingSeat() {
+        givenRoomLocked();
+        when(seatLockFindPort.findLockedById(SEAT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(scheduleLockFindPort, reservationSavePort, reserveSchedulePort);
+    }
+
+    @Test
+    @DisplayName("잠근 좌석이 삭제된 상태면 예약을 거부한다")
+    void rejectsDeletedSeat() {
+        givenRoomLocked();
+        var deleted = seat(ROOM_ID);
+        deleted.delete(NOW);
+        when(seatLockFindPort.findLockedById(SEAT_ID)).thenReturn(Optional.of(deleted));
+
+        assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(scheduleLockFindPort, reservationSavePort, reserveSchedulePort);
+    }
+
+    @Test
+    @DisplayName("좌석이 요청한 방에 속하지 않으면 예약을 거부한다")
     void rejectsSeatBelongingToAnotherRoom() {
-        givenRoomFound();
-        givenSeatFound(RoomId.of(UUID.randomUUID()));
+        givenRoomLocked();
+        when(seatLockFindPort.findLockedById(SEAT_ID))
+                .thenReturn(Optional.of(seat(RoomId.of(UUID.randomUUID()))));
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING))))
                 .isInstanceOf(IllegalArgumentException.class);
 
+        verifyNoInteractions(scheduleLockFindPort, reservationSavePort, reserveSchedulePort);
+    }
+
+    @Test
+    @DisplayName("요청한 슬롯 중 일부라도 없으면 예약을 거부한다")
+    void rejectsMissingSchedule() {
+        givenRoomLocked();
+        givenSeatLocked();
+        when(scheduleLockFindPort.findAllLockedById(Set.of(MORNING, AFTERNOON)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.create(command(Set.of(MORNING, AFTERNOON))))
+                .isInstanceOf(NoSuchElementException.class);
+
         verifyNoInteractions(reservationSavePort, reserveSchedulePort);
     }
 
     @Test
-    @DisplayName("룸 조회 예외를 그대로 전파하고 예약 헤더와 점유를 저장하지 않는다")
-    void propagatesRoomLookupFailure() {
-        var failure = new IllegalStateException("Room lookup failed");
-        when(roomFindPort.findNotDeletedById(ROOM_ID)).thenThrow(failure);
+    @DisplayName("잠금 조회 예외를 그대로 전파하고 예약 저장을 시작하지 않는다")
+    void propagatesLockedReadFailure() {
+        var failure = new IllegalStateException("Room lock query failed");
+        when(roomLockFindPort.findLockedById(ROOM_ID)).thenThrow(failure);
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING)))).isSameAs(failure);
 
-        verifyNoInteractions(reservationSavePort, reserveSchedulePort);
+        verifyNoInteractions(
+                seatLockFindPort, scheduleLockFindPort, reservationSavePort, reserveSchedulePort);
     }
 
     @Test
-    @DisplayName("좌석 조회 예외를 그대로 전파하고 예약 헤더와 점유를 저장하지 않는다")
-    void propagatesSeatLookupFailure() {
-        givenRoomFound();
-        var failure = new IllegalStateException("Seat lookup failed");
-        when(seatFindPort.findNotDeletedById(SEAT_ID)).thenThrow(failure);
-
-        assertThatThrownBy(() -> service.create(command(Set.of(MORNING)))).isSameAs(failure);
-
-        verifyNoInteractions(reservationSavePort, reserveSchedulePort);
-    }
-
-    @Test
-    @DisplayName("식별자 생성 예외를 그대로 전파하고 예약 헤더와 점유를 저장하지 않는다")
+    @DisplayName("식별자 생성 예외를 그대로 전파하고 예약 저장을 시작하지 않는다")
     void propagatesIdGenerationFailure() {
-        givenRoomFound();
-        givenSeatFound(ROOM_ID);
+        givenResourcesLocked(Set.of(MORNING));
         var failure = new IllegalStateException("Identifier generation failed");
         service =
-                new CreateReservationService(
-                        reservationSavePort,
-                        reserveSchedulePort,
-                        roomFindPort,
-                        seatFindPort,
+                newService(
+                        CLOCK,
                         () -> {
                             throw failure;
-                        },
-                        CLOCK);
+                        });
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING)))).isSameAs(failure);
 
@@ -201,8 +217,7 @@ class CreateReservationServiceTest {
     @Test
     @DisplayName("헤더 저장 예외를 그대로 전파하고 슬롯 점유를 시도하지 않는다")
     void propagatesHeaderSaveFailureWithoutReserving() {
-        givenRoomFound();
-        givenSeatFound(ROOM_ID);
+        givenResourcesLocked(Set.of(MORNING));
         var failure = new DataIntegrityViolationException("Header storage failed");
         doThrow(failure).when(reservationSavePort).save(any(Reservation.class));
 
@@ -215,10 +230,9 @@ class CreateReservationServiceTest {
     @EnumSource(
             value = ReserveScheduleStatus.class,
             names = {"NONE_RESERVED", "PARTIAL_RESERVED"})
-    @DisplayName("점유 포트가 미점유 또는 부분 점유를 반환하면 호출자에게 예외를 전파한다")
+    @DisplayName("점유가 없거나 일부만 성공하면 예외로 전체 롤백을 요청한다")
     void rejectsIncompleteReservationStatus(ReserveScheduleStatus status) {
-        givenRoomFound();
-        givenSeatFound(ROOM_ID);
+        givenResourcesLocked(Set.of(MORNING, AFTERNOON));
         when(reserveSchedulePort.reserve(RESERVATION_ID, Set.of(MORNING, AFTERNOON)))
                 .thenReturn(status);
 
@@ -228,24 +242,47 @@ class CreateReservationServiceTest {
     }
 
     @Test
-    @DisplayName("점유 중 발생한 무결성 예외를 다른 실패로 바꾸지 않고 그대로 전파한다")
+    @DisplayName("점유 중 발생한 무결성 예외를 그대로 전파한다")
     void propagatesReservationIntegrityFailure() {
-        givenRoomFound();
-        givenSeatFound(ROOM_ID);
+        givenResourcesLocked(Set.of(MORNING));
         var failure = new DataIntegrityViolationException("Allocation constraint violated");
         when(reserveSchedulePort.reserve(RESERVATION_ID, Set.of(MORNING))).thenThrow(failure);
 
         assertThatThrownBy(() -> service.create(command(Set.of(MORNING)))).isSameAs(failure);
     }
 
-    private void givenRoomFound() {
-        when(roomFindPort.findNotDeletedById(ROOM_ID))
-                .thenReturn(Optional.of(Room.of(ROOM_ID, "ROOM-01", "hall", "test room", NOW)));
+    private void givenResourcesLocked(Set<ScheduleId> schedules) {
+        givenRoomLocked();
+        givenSeatLocked();
+        when(scheduleLockFindPort.findAllLockedById(schedules)).thenReturn(Optional.of(schedules));
     }
 
-    private void givenSeatFound(RoomId roomId) {
-        when(seatFindPort.findNotDeletedById(SEAT_ID))
-                .thenReturn(Optional.of(Seat.of(SEAT_ID, roomId, "SEAT-01", NOW)));
+    private void givenRoomLocked() {
+        when(roomLockFindPort.findLockedById(ROOM_ID)).thenReturn(Optional.of(room()));
+    }
+
+    private void givenSeatLocked() {
+        when(seatLockFindPort.findLockedById(SEAT_ID)).thenReturn(Optional.of(seat(ROOM_ID)));
+    }
+
+    private CreateReservationService newService(
+            Clock clock, java.util.function.Supplier<UUID> ids) {
+        return new CreateReservationService(
+                reservationSavePort,
+                reserveSchedulePort,
+                roomLockFindPort,
+                seatLockFindPort,
+                scheduleLockFindPort,
+                ids::get,
+                clock);
+    }
+
+    private static Room room() {
+        return Room.of(ROOM_ID, "ROOM-01", "hall", "test room", NOW);
+    }
+
+    private static Seat seat(RoomId roomId) {
+        return Seat.of(SEAT_ID, roomId, "SEAT-01", NOW);
     }
 
     private Reservation savedReservation() {
