@@ -140,7 +140,7 @@ class SeatJpaAdapterTest {
     void returnsSeatWithSharedLock() {
         var seatId = persist(seat("SEAT-01"));
 
-        assertThat(adapter.findLockedById(seatId)).map(Seat::getId).contains(seatId);
+        assertThat(adapter.findByIdWithSharedLock(seatId)).map(Seat::getId).contains(seatId);
     }
 
     @Test
@@ -150,7 +150,7 @@ class SeatJpaAdapterTest {
         seat.delete(DELETED_AT);
         var seatId = persist(seat);
 
-        assertThat(adapter.findLockedById(seatId)).map(Seat::isDeleted).contains(true);
+        assertThat(adapter.findByIdWithSharedLock(seatId)).map(Seat::isDeleted).contains(true);
     }
 
     @Test
@@ -158,7 +158,33 @@ class SeatJpaAdapterTest {
     void reportsEmptySharedLockForUnknownId() {
         var missing = SeatId.of(UUID.randomUUID());
 
-        assertThat(adapter.findLockedById(missing)).isEmpty();
+        assertThat(adapter.findByIdWithSharedLock(missing)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하는 좌석은 배타 락과 함께 반환된다")
+    void returnsSeatWithExclusiveLock() {
+        var seatId = persist(seat("SEAT-01"));
+
+        assertThat(adapter.findByIdWithExclusiveLock(seatId)).map(Seat::getId).contains(seatId);
+    }
+
+    @Test
+    @DisplayName("삭제된 좌석도 배타 락 대상이므로 반환된다")
+    void returnsDeletedSeatWithExclusiveLock() {
+        var seat = seat("SEAT-01");
+        seat.delete(DELETED_AT);
+        var seatId = persist(seat);
+
+        assertThat(adapter.findByIdWithExclusiveLock(seatId)).map(Seat::isDeleted).contains(true);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 좌석의 배타 락 획득은 빈 결과로 알린다")
+    void reportsEmptyExclusiveLockForUnknownId() {
+        var missing = SeatId.of(UUID.randomUUID());
+
+        assertThat(adapter.findByIdWithExclusiveLock(missing)).isEmpty();
     }
 
     private Seat seat(String code) {

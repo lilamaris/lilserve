@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.util.Optional;
 
 /**
- * Finds a seat by identifier under a shared row lock within the caller's transaction.
+ * Finds a seat by identifier under a row lock within the caller's transaction.
  *
  * <p>Implementations return {@link Optional#empty()} when no seat matches and never return {@code
  * null}. The caller decides how to handle a missing seat.
@@ -27,5 +27,18 @@ public interface SeatLockFindPort {
      * @return the locked seat with its deletion state, or empty when no seat has this identifier
      * @throws NullPointerException if {@code seatId} is null
      */
-    Optional<Seat> findLockedById(SeatId seatId);
+    Optional<Seat> findByIdWithSharedLock(SeatId seatId);
+
+    /**
+     * Finds a seat by identifier under an exclusive row lock until the caller's transaction ends.
+     * Competing seat changes must wait and validate the state returned after acquiring the lock.
+     *
+     * <p>Requires an active transaction. The lock and read use one statement. Deleted seats are
+     * included so callers can decide whether modification, deletion, or restoration is allowed.
+     *
+     * @param seatId the seat identifier, not null
+     * @return the locked seat including its deletion state, or empty if no seat matches
+     * @throws NullPointerException if {@code seatId} is null
+     */
+    Optional<Seat> findByIdWithExclusiveLock(SeatId seatId);
 }

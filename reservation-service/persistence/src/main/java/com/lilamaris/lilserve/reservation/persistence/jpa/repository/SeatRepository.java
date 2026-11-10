@@ -28,4 +28,19 @@ public interface SeatRepository extends JpaRepository<Seat, SeatId> {
             FROM Seat s
             WHERE s.id = :seatId""")
     Optional<Seat> findByIdWithSharedLock(@Param("seatId") SeatId seatId);
+
+    /**
+     * Loads the seat, including a deleted seat, under an exclusive row lock in one statement. The
+     * caller must have an active transaction; the lock is retained until it ends.
+     *
+     * @param seatId the seat identifier to lock
+     * @return the locked seat including its deletion state, or empty if no seat matches
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(
+            """
+            SELECT s
+            FROM Seat s
+            WHERE s.id = :seatId""")
+    Optional<Seat> findByIdWithExclusiveLock(@Param("seatId") SeatId seatId);
 }

@@ -14,7 +14,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeat
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSeatCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateSeatResult;
-import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.SeatLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
 import com.lilamaris.lilserve.reservation.domain.Seat;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
@@ -50,7 +50,7 @@ class UpdateSeatServiceTest {
     private static final String CODE = "A-01";
     private static final String NEW_CODE = "A-02";
 
-    @Mock private SeatFindPort seatFindPort;
+    @Mock private SeatLockFindPort seatLockFindPort;
     @Mock private SeatSavePort seatSavePort;
 
     private UpdateSeatService service;
@@ -58,7 +58,7 @@ class UpdateSeatServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UpdateSeatService(seatSavePort, seatFindPort, CLOCK);
+        service = new UpdateSeatService(seatLockFindPort, seatSavePort, CLOCK);
         seat = activeSeat();
     }
 
@@ -110,7 +110,7 @@ class UpdateSeatServiceTest {
     @MethodSource("operations")
     @DisplayName("대상 좌석이 없으면 조회 실패 예외를 전파하고 저장하지 않는다")
     void rejectsMissingSeat(String name, Operation operation) {
-        operation.givenSeat(seatFindPort, Optional.empty());
+        operation.givenSeat(seatLockFindPort, Optional.empty());
 
         assertThatThrownBy(() -> operation.apply().apply(service))
                 .isInstanceOf(NoSuchElementException.class);
@@ -123,7 +123,7 @@ class UpdateSeatServiceTest {
     @DisplayName("좌석 조회가 실패하면 해당 예외를 전파하고 저장하지 않는다")
     void propagatesFindFailure(String name, Operation operation) {
         var failure = new IllegalStateException("Seat lookup failed");
-        when(operation.lookup().apply(seatFindPort)).thenThrow(failure);
+        when(seatLockFindPort.findByIdWithExclusiveLock(SEAT)).thenThrow(failure);
 
         assertThatThrownBy(() -> operation.apply().apply(service)).isSameAs(failure);
 
@@ -135,7 +135,7 @@ class UpdateSeatServiceTest {
     @DisplayName("좌석 저장이 실패하면 변경 결과 대신 저장 예외를 전파한다")
     void propagatesSaveFailure(String name, Operation operation) {
         seat = operation.seatWithLastUpdate().apply(NOW);
-        operation.givenSeat(seatFindPort, Optional.of(seat));
+        operation.givenSeat(seatLockFindPort, Optional.of(seat));
         var failure = new IllegalStateException("Seat storage failed");
         doThrow(failure).when(seatSavePort).save(seat);
 
@@ -147,7 +147,7 @@ class UpdateSeatServiceTest {
     @DisplayName("현재 시각이 마지막 변경보다 이르면 도메인 예외를 전파하고 저장하지 않는다")
     void rejectsTimeBeforeLastUpdate(String name, Operation operation) {
         seat = operation.seatWithLastUpdate().apply(NOW.plusSeconds(1));
-        operation.givenSeat(seatFindPort, Optional.of(seat));
+        operation.givenSeat(seatLockFindPort, Optional.of(seat));
 
         assertThatThrownBy(() -> operation.apply().apply(service))
                 .isInstanceOf(IllegalComparisonConditionException.class);
@@ -168,17 +168,32 @@ class UpdateSeatServiceTest {
         assertThat(seat.getCode()).isEqualTo(CODE);
     }
 
-    @Test
-    @DisplayName("삭제된 좌석의 코드 변경은 삭제 상태 예외를 전파하고 저장하지 않는다")
-    void rejectsCodeUpdateOnDeletedSeat() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("activeOperations")
+    @DisplayName("배타 락으로 조회한 좌석이 삭제되어 있으면 수정과 삭제를 거부한다")
+    void rejectsDeletedSeatAfterLock(String name, Operation operation) {
         seat = deletedSeat(NOW.minusSeconds(30));
-        givenSeatFound(UPDATE_CODE);
+        operation.givenSeat(seatLockFindPort, Optional.of(seat));
 
-        assertThatThrownBy(() -> service.updateCode(UpdateSeatCodeCommand.of(SEAT, NEW_CODE)))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Already deleted.");
+        assertThatThrownBy(() -> operation.apply().apply(service))
+                .isInstanceOf(NoSuchElementException.class);
 
         verifyNoInteractions(seatSavePort);
+        assertThat(seat.getDeletedAt()).isEqualTo(NOW.minusSeconds(30));
+        assertThat(seat.getUpdatedAt()).isEqualTo(NOW.minusSeconds(30));
+        assertThat(seat.getCode()).isEqualTo(CODE);
+    }
+
+    @Test
+    @DisplayName("배타 락으로 조회한 좌석이 활성이면 복구를 거부한다")
+    void rejectsActiveSeatAfterLockOnRestore() {
+        givenSeatFound(RESTORE);
+
+        assertThatThrownBy(() -> service.restore(RestoreSeatCommand.of(SEAT)))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(seatSavePort);
+        assertThat(seat.getUpdatedAt()).isNull();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -186,7 +201,7 @@ class UpdateSeatServiceTest {
     @DisplayName("마지막 변경 시각과 현재 시각이 같으면 변경을 저장한다")
     void acceptsTimeAtLastUpdate(String name, Operation operation) {
         seat = operation.seatWithLastUpdate().apply(NOW);
-        operation.givenSeat(seatFindPort, Optional.of(seat));
+        operation.givenSeat(seatLockFindPort, Optional.of(seat));
 
         var result = operation.apply().apply(service);
 
@@ -213,9 +228,9 @@ class UpdateSeatServiceTest {
     void acceptsTimeAtCreation(String name, Operation operation) {
         service =
                 new UpdateSeatService(
-                        seatSavePort, seatFindPort, Clock.fixed(CREATED_AT, ZoneOffset.UTC));
+                        seatLockFindPort, seatSavePort, Clock.fixed(CREATED_AT, ZoneOffset.UTC));
         seat = activeSeat();
-        operation.givenSeat(seatFindPort, Optional.of(seat));
+        operation.givenSeat(seatLockFindPort, Optional.of(seat));
 
         var result = operation.apply().apply(service);
 
@@ -229,10 +244,10 @@ class UpdateSeatServiceTest {
     void rejectsTimeBeforeCreation(String name, Operation operation) {
         service =
                 new UpdateSeatService(
+                        seatLockFindPort,
                         seatSavePort,
-                        seatFindPort,
                         Clock.fixed(CREATED_AT.minusNanos(1), ZoneOffset.UTC));
-        operation.givenSeat(seatFindPort, Optional.of(seat));
+        operation.givenSeat(seatLockFindPort, Optional.of(seat));
 
         assertThatThrownBy(() -> operation.apply().apply(service))
                 .isInstanceOf(IllegalComparisonConditionException.class);
@@ -247,7 +262,7 @@ class UpdateSeatServiceTest {
     }
 
     private void givenSeatFound(Operation operation) {
-        operation.givenSeat(seatFindPort, Optional.of(seat));
+        operation.givenSeat(seatLockFindPort, Optional.of(seat));
     }
 
     private static Seat activeSeat() {
@@ -266,41 +281,31 @@ class UpdateSeatServiceTest {
         return deleted;
     }
 
-    /**
-     * One change operation: the lookup it reads the target seat through, a seat whose last change
-     * is at the given instant, and the call that runs the operation. Restore reads the deleted-seat
-     * lookup, so an active seat is not its target and a lookup failure means there is nothing to
-     * restore.
-     */
     private record Operation(
             String name,
-            Function<SeatFindPort, Optional<Seat>> lookup,
             Function<Instant, Seat> seatWithLastUpdate,
             Function<UpdateSeatService, UpdateSeatResult> apply) {
 
-        void givenSeat(SeatFindPort port, Optional<Seat> found) {
-            when(lookup.apply(port)).thenReturn(found);
+        void givenSeat(SeatLockFindPort port, Optional<Seat> found) {
+            when(port.findByIdWithExclusiveLock(SEAT)).thenReturn(found);
         }
     }
 
     private static final Operation UPDATE_CODE =
             new Operation(
                     "updateCode",
-                    port -> port.findNotDeletedById(SEAT),
                     UpdateSeatServiceTest::updatedSeat,
                     target -> target.updateCode(UpdateSeatCodeCommand.of(SEAT, NEW_CODE)));
 
     private static final Operation DELETE =
             new Operation(
                     "delete",
-                    port -> port.findNotDeletedById(SEAT),
                     UpdateSeatServiceTest::updatedSeat,
                     target -> target.delete(DeleteSeatCommand.of(SEAT)));
 
     private static final Operation RESTORE =
             new Operation(
                     "restore",
-                    port -> port.findDeletedById(SEAT),
                     UpdateSeatServiceTest::deletedSeat,
                     target -> target.restore(RestoreSeatCommand.of(SEAT)));
 
