@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.lilamaris.lilserve.reservation.application.config.ApplicationConfiguration;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateScheduleCommand;
-import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
@@ -38,7 +38,7 @@ class CreateScheduleServiceConfigurationTest {
     @DisplayName("지정된 시간대의 시계와 시간 순 UUID 생성기로 스케줄을 생성한다")
     void createsScheduleWithConfiguredClockAndIdGenerator(String timezone) {
         var scheduleSavePort = mock(ScheduleSavePort.class);
-        var roomFindPort = mock(RoomFindPort.class);
+        var roomLockFindPort = mock(RoomLockFindPort.class);
         var room =
                 Room.of(
                         ROOM,
@@ -46,13 +46,14 @@ class CreateScheduleServiceConfigurationTest {
                         "main hall",
                         "capacity 100",
                         Instant.parse("2026-01-01T00:00:00Z"));
-        when(roomFindPort.findNotDeletedById(any(RoomId.class))).thenReturn(Optional.of(room));
+        when(roomLockFindPort.findByIdWithSharedLock(any(RoomId.class)))
+                .thenReturn(Optional.of(room));
 
         try (var context = new AnnotationConfigApplicationContext()) {
             context.getEnvironment()
                     .getPropertySources()
                     .addFirst(new MapPropertySource("test", Map.of("lilserve.timezone", timezone)));
-            context.registerBean(RoomFindPort.class, () -> roomFindPort);
+            context.registerBean(RoomLockFindPort.class, () -> roomLockFindPort);
             context.registerBean(ScheduleSavePort.class, () -> scheduleSavePort);
             context.register(ApplicationConfiguration.class, CreateScheduleService.class);
             context.refresh();

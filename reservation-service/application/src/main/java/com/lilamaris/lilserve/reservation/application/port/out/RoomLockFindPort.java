@@ -17,7 +17,8 @@ public interface RoomLockFindPort {
 
     /**
      * Finds a room by identifier and keeps a shared lock on its row until the caller's transaction
-     * ends. Use this for operations that validate a room before writing, such as reservation.
+     * ends. Use this for operations that validate a room before writing, such as reservation or
+     * schedule creation.
      *
      * <p>Requires an active transaction. The lock and the read are requested by one statement, so
      * the returned deletion state is the state this transaction protects. A deleted room is
