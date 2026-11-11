@@ -13,7 +13,7 @@ import com.lilamaris.lilserve.kernel.exception.IllegalComparisonConditionExcepti
 import com.lilamaris.lilserve.kernel.exception.IllegalValueConditionException;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateSeatResult;
-import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Seat;
@@ -48,17 +48,17 @@ class CreateSeatServiceTest {
     private static final String CODE = "A-01";
 
     @Mock private SeatSavePort seatSavePort;
-    @Mock private RoomFindPort roomFindPort;
+    @Mock private RoomLockFindPort roomLockFindPort;
 
     private CreateSeatService service;
 
     @BeforeEach
     void setUp() {
-        service = new CreateSeatService(seatSavePort, roomFindPort, () -> SEAT_ID, CLOCK);
+        service = new CreateSeatService(seatSavePort, roomLockFindPort, () -> SEAT_ID, CLOCK);
     }
 
     @Test
-    @DisplayName("부모 룸이 있으면 생성한 식별자와 현재 시각으로 좌석를 저장하고 생성 결과를 반환한다")
+    @DisplayName("부모 룸이 있으면 생성한 식별자와 현재 시각으로 좌석을 저장하고 생성 결과를 반환한다")
     void savesSeatAndReturnsCreatedResult() {
         givenRoomFound();
 
@@ -76,7 +76,7 @@ class CreateSeatServiceTest {
     }
 
     @Test
-    @DisplayName("코드 길이가 상한과 같으면 좌석를 저장하고 생성 결과를 반환한다")
+    @DisplayName("코드 길이가 상한과 같으면 좌석을 저장하고 생성 결과를 반환한다")
     void acceptsCodeAtMaxLength() {
         givenRoomFound();
         var code = "a".repeat(Seat.MAX_CODE_LENGTH);
@@ -89,7 +89,7 @@ class CreateSeatServiceTest {
 
     @ParameterizedTest
     @MethodSource("invalidCommands")
-    @DisplayName("도메인이 커맨드를 거부하면 예외를 전파하고 좌석를 저장하지 않는다")
+    @DisplayName("도메인이 커맨드를 거부하면 예외를 전파하고 좌석을 저장하지 않는다")
     void doesNotSaveWhenDomainRejectsCommand(
             CreateSeatCommand command, Class<? extends Throwable> exceptionType) {
         givenRoomFound();
@@ -100,9 +100,9 @@ class CreateSeatServiceTest {
     }
 
     @Test
-    @DisplayName("부모 룸가 없으면 조회 실패 예외를 전파하고 좌석를 저장하지 않는다")
+    @DisplayName("부모 룸이 없으면 조회 실패 예외를 전파하고 좌석을 저장하지 않는다")
     void rejectsMissingRoom() {
-        when(roomFindPort.findNotDeletedById(ROOM)).thenReturn(Optional.empty());
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM, CODE)))
                 .isInstanceOf(NoSuchElementException.class);
@@ -111,10 +111,23 @@ class CreateSeatServiceTest {
     }
 
     @Test
-    @DisplayName("부모 룸 조회가 실패하면 해당 예외를 전파하고 좌석를 저장하지 않는다")
-    void propagatesRoomFindFailure() {
+    @DisplayName("공유 락으로 조회한 부모 룸이 삭제 상태이면 좌석 생성을 거부한다")
+    void rejectsDeletedRoom() {
+        var room = Room.of(ROOM, "ROOM-01", "main hall", "capacity 100", CREATED_AT);
+        room.delete(CREATED_AT.plusSeconds(1));
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenReturn(Optional.of(room));
+
+        assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM, CODE)))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(seatSavePort);
+    }
+
+    @Test
+    @DisplayName("부모 룸의 공유 락 조회가 실패하면 예외를 전파하고 좌석을 저장하지 않는다")
+    void propagatesRoomLockFailure() {
         var failure = new IllegalStateException("Room lookup failed");
-        when(roomFindPort.findNotDeletedById(ROOM)).thenThrow(failure);
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenThrow(failure);
 
         assertThatThrownBy(() -> service.create(CreateSeatCommand.of(ROOM, CODE)))
                 .isSameAs(failure);
@@ -123,14 +136,14 @@ class CreateSeatServiceTest {
     }
 
     @Test
-    @DisplayName("식별자 생성이 실패하면 예외를 전파하고 좌석를 저장하지 않는다")
+    @DisplayName("식별자 생성이 실패하면 예외를 전파하고 좌석을 저장하지 않는다")
     void propagatesIdGenerationFailureWithoutSaving() {
         givenRoomFound();
         var failure = new IllegalStateException("Identifier generation failed");
         service =
                 new CreateSeatService(
                         seatSavePort,
-                        roomFindPort,
+                        roomLockFindPort,
                         () -> {
                             throw failure;
                         },
@@ -155,7 +168,7 @@ class CreateSeatServiceTest {
 
     private void givenRoomFound() {
         var room = Room.of(ROOM, "ROOM-01", "main hall", "capacity 100", CREATED_AT);
-        when(roomFindPort.findNotDeletedById(ROOM)).thenReturn(Optional.of(room));
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenReturn(Optional.of(room));
     }
 
     private Seat savedSeat() {
