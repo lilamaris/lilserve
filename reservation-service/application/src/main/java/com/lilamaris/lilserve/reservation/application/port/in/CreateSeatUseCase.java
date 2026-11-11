@@ -9,7 +9,11 @@ import jakarta.validation.constraints.NotNull;
 public interface CreateSeatUseCase {
 
     /**
-     * Creates a seat in an existing, non-deleted room from the command.
+     * Creates a seat in an active parent room within one transaction.
+     *
+     * <p>Acquires a shared lock on the parent room before validating its active state and retains
+     * the lock until the transaction ends. A preceding room deletion that commits causes rejection;
+     * if that deletion rolls back, creation can proceed. A runtime failure rolls back creation.
      *
      * @param command the create request, must not be null
      * @return the created seat
