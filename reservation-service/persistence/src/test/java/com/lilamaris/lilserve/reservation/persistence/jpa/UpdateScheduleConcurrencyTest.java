@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.lilamaris.lilserve.reservation.application.model.time.LocalTimeRange;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateScheduleCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateScheduleResult;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.application.service.UpdateScheduleService;
 import com.lilamaris.lilserve.reservation.domain.Reservation;
@@ -29,6 +30,8 @@ import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -57,7 +60,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-@DisplayName("스케줄 교체의 동시성과 트랜잭션")
+@DisplayName("스케줄 교체와 삭제의 동시성과 트랜잭션")
 @DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration(classes = PersistenceJpaTestConfiguration.class)
@@ -73,27 +76,34 @@ class UpdateScheduleConcurrencyTest {
     private static final LocalTime START = LocalTime.of(10, 0);
     private static final LocalTime END = LocalTime.of(11, 0);
 
-    @Autowired private EntityManager entityManager;
-    @Autowired private PlatformTransactionManager transactionManager;
-    @Autowired private ScheduleJpaAdapter adapter;
-
-    @Autowired
-    @Qualifier("replacementService")
-    private UpdateScheduleService service;
-
-    @Autowired
-    @Qualifier("failingSaveService")
-    private UpdateScheduleService failingSaveService;
-
-    @Autowired
-    @Qualifier("failingIdService")
-    private UpdateScheduleService failingIdService;
+    private final EntityManager entityManager;
+    private final PlatformTransactionManager transactionManager;
+    private final ScheduleJpaAdapter adapter;
+    private final UpdateScheduleService service;
+    private final UpdateScheduleService failingSaveService;
+    private final UpdateScheduleService failingIdService;
 
     private final RoomId roomId = RoomId.of(UUID.randomUUID());
     private final SeatId seatId = SeatId.of(UUID.randomUUID());
     private final ScheduleId originalId = ScheduleId.of(UUID.randomUUID());
     private final ReservationId reservationId = ReservationId.of(UUID.randomUUID());
     private final ReservedScheduleId allocationId = ReservedScheduleId.of(UUID.randomUUID());
+
+    @Autowired
+    UpdateScheduleConcurrencyTest(
+            EntityManager entityManager,
+            PlatformTransactionManager transactionManager,
+            ScheduleJpaAdapter adapter,
+            @Qualifier("replacementService") UpdateScheduleService service,
+            @Qualifier("failingSaveService") UpdateScheduleService failingSaveService,
+            @Qualifier("failingIdService") UpdateScheduleService failingIdService) {
+        this.entityManager = entityManager;
+        this.transactionManager = transactionManager;
+        this.adapter = adapter;
+        this.service = service;
+        this.failingSaveService = failingSaveService;
+        this.failingIdService = failingIdService;
+    }
 
     @BeforeEach
     void commitsOriginalAndExistingReservation() {
@@ -178,6 +188,46 @@ class UpdateScheduleConcurrencyTest {
     }
 
     @Test
+    @DisplayName("삭제가 먼저 확정되면 대기한 교체를 거부하고 대체 없이 최초 폐기 시각을 보존한다")
+    void rejectsReplacementAfterDeletionCommits() throws Exception {
+        var replacement = raceWithDeletion(Change.DELETE, Change.REPLACE);
+
+        assertThat(replacement).isEmpty();
+        assertScheduleIds(originalId);
+        assertOriginalAndReservation(NOW);
+    }
+
+    @Test
+    @DisplayName("교체가 먼저 확정되면 대기한 삭제를 거부하고 교체 결과와 최초 폐기 시각을 보존한다")
+    void rejectsDeletionAfterReplacementCommits() throws Exception {
+        var replacement = raceWithDeletion(Change.REPLACE, Change.DELETE).orElseThrow();
+
+        assertReplacement(replacement, Replacement.TUESDAY, NOW);
+        assertOriginalAndReservation(NOW);
+    }
+
+    @Test
+    @DisplayName("중복 삭제의 후속 요청을 거부하고 최초 폐기 시각과 기존 예약 참조를 보존한다")
+    void rejectsDuplicateDeletionAndPreservesFirstTimestamp() throws Exception {
+        var replacement = raceWithDeletion(Change.DELETE, Change.DELETE);
+
+        assertThat(replacement).isEmpty();
+        assertScheduleIds(originalId);
+        assertOriginalAndReservation(NOW);
+    }
+
+    @Test
+    @DisplayName("삭제 저장과 플러시 후 예외가 발생하면 폐기 상태를 롤백하고 기존 예약 참조를 보존한다")
+    void rollsBackFlushedRetirementWhenDeletionFails() {
+        assertThatThrownBy(() -> failingSaveService.delete(originalId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Storage failed after flush");
+
+        assertScheduleIds(originalId);
+        assertOriginalAndReservation(null);
+    }
+
+    @Test
     @DisplayName("원본과 같은 시간으로 교체해도 원본 폐기가 먼저 플러시되어 대체를 저장한다")
     void flushesRetirementBeforeSavingOverlappingReplacement() {
         var replacement = service.update(command(DayOfWeek.MONDAY, START, END));
@@ -232,6 +282,98 @@ class UpdateScheduleConcurrencyTest {
 
         assertScheduleIds(originalId);
         assertOriginalAndReservation(null);
+    }
+
+    private Optional<UpdateScheduleResult> raceWithDeletion(Change first, Change second)
+            throws Exception {
+        var firstLocked = new CountDownLatch(1);
+        var releaseFirst = new CountDownLatch(1);
+        var secondStarted = new CountDownLatch(1);
+        var firstPid = new AtomicInteger();
+        var secondPid = new AtomicInteger();
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var firstRequest =
+                    executor.submit(
+                            () ->
+                                    change(
+                                            first,
+                                            NOW,
+                                            () -> firstPid.set(backendPid()),
+                                            () -> {
+                                                firstLocked.countDown();
+                                                await(releaseFirst);
+                                            }));
+            await(firstLocked);
+            var secondRequest =
+                    executor.submit(
+                            () ->
+                                    rejectWaitingChange(
+                                            second,
+                                            () -> {
+                                                secondPid.set(backendPid());
+                                                secondStarted.countDown();
+                                            }));
+            await(secondStarted);
+            awaitBlockedBy(secondPid.get(), firstPid.get());
+            releaseFirst.countDown();
+            var result = firstRequest.get(20, TimeUnit.SECONDS);
+            secondRequest.get(20, TimeUnit.SECONDS);
+            return result;
+        } finally {
+            releaseFirst.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(20, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    private void rejectWaitingChange(Change change, Runnable beforeLock) {
+        assertThatThrownBy(() -> change(change, LATER, beforeLock, () -> {}))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("schedule does not exists.");
+    }
+
+    private Optional<UpdateScheduleResult> change(
+            Change change, Instant now, Runnable beforeLock, Runnable afterLock) {
+        var changeService =
+                new UpdateScheduleService(
+                        pausingLockPort(afterLock),
+                        adapter,
+                        adapter,
+                        UUID::randomUUID,
+                        Clock.fixed(now, ZoneOffset.UTC));
+        return transaction()
+                .execute(
+                        status -> {
+                            beforeLock.run();
+                            return switch (change) {
+                                case REPLACE ->
+                                        Optional.of(
+                                                changeService.update(command(Replacement.TUESDAY)));
+                                case DELETE -> {
+                                    changeService.delete(originalId);
+                                    yield Optional.empty();
+                                }
+                            };
+                        });
+    }
+
+    private ScheduleLockFindPort pausingLockPort(Runnable afterLock) {
+        return new ScheduleLockFindPort() {
+            @Override
+            public Optional<Set<ScheduleId>> findAllByIdsWithSharedLock(Set<ScheduleId> ids) {
+                return adapter.findAllByIdsWithSharedLock(ids);
+            }
+
+            @Override
+            public Optional<Schedule> findByIdWithExclusiveLock(ScheduleId id) {
+                var locked = adapter.findByIdWithExclusiveLock(id);
+                // Pause before any mutation or flush, so an UPDATE lock cannot mask a missing
+                // exclusive read lock in either the replacement or deletion path.
+                afterLock.run();
+                return locked;
+            }
+        };
     }
 
     private UpdateScheduleResult race(Replacement first, boolean rollback) throws Exception {
@@ -433,6 +575,11 @@ class UpdateScheduleConcurrencyTest {
         var template = new TransactionTemplate(transactionManager);
         template.setTimeout(15);
         return template;
+    }
+
+    private enum Change {
+        REPLACE,
+        DELETE
     }
 
     private enum Replacement {
