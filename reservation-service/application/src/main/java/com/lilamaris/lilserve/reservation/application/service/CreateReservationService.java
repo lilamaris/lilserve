@@ -66,7 +66,7 @@ public class CreateReservationService implements CreateReservationUseCase {
             throw new IllegalArgumentException("seat must be belong to room.");
 
         scheduleLockFindPort
-                .findAllLockedById(command.scheduleIds())
+                .findAllByIdsWithSharedLock(command.scheduleIds())
                 .orElseThrow(() -> new NoSuchElementException("schedule does not found."));
 
         var now = clock.instant();

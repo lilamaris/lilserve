@@ -14,7 +14,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSche
 import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.out.RetireSchedulePort;
-import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
@@ -45,7 +45,7 @@ class UpdateScheduleServiceTest {
     private static final Instant REPLACED_AT = Instant.parse("2026-01-02T00:00:00Z");
     private static final Clock CLOCK = Clock.fixed(REPLACED_AT, ZoneOffset.UTC);
 
-    @Mock private ScheduleFindPort scheduleFindPort;
+    @Mock private ScheduleLockFindPort scheduleLockFindPort;
     @Mock private ScheduleSavePort scheduleSavePort;
     @Mock private RetireSchedulePort retireSchedulePort;
 
@@ -55,7 +55,7 @@ class UpdateScheduleServiceTest {
     void setUp() {
         service =
                 new UpdateScheduleService(
-                        scheduleFindPort,
+                        scheduleLockFindPort,
                         scheduleSavePort,
                         retireSchedulePort,
                         () -> REPLACEMENT_ID,
@@ -98,7 +98,8 @@ class UpdateScheduleServiceTest {
     @Test
     @DisplayName("활성 스케줄을 찾지 못하면 원본을 폐기하거나 대체 스케줄을 저장하지 않는다")
     void rejectsMissingActiveSchedule() {
-        when(scheduleFindPort.findNotDeletedById(ORIGINAL_ID)).thenReturn(Optional.empty());
+        when(scheduleLockFindPort.findByIdWithExclusiveLock(ORIGINAL_ID))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.update(command()))
                 .isInstanceOf(NoSuchElementException.class);
@@ -124,7 +125,7 @@ class UpdateScheduleServiceTest {
         var failure = new IllegalStateException("Identifier generation failed");
         service =
                 new UpdateScheduleService(
-                        scheduleFindPort,
+                        scheduleLockFindPort,
                         scheduleSavePort,
                         retireSchedulePort,
                         () -> {
@@ -171,6 +172,44 @@ class UpdateScheduleServiceTest {
         verify(scheduleSavePort).save(schedule);
     }
 
+    @Test
+    @DisplayName("배타 락으로 조회한 원본이 폐기되어 있으면 교체를 거부하고 최초 폐기 시각을 보존한다")
+    void rejectsRetiredOriginalAfterLock() {
+        var original = givenScheduleFound(CREATED_AT);
+        var retiredAt = REPLACED_AT.minusSeconds(60);
+        original.delete(retiredAt);
+
+        assertThatThrownBy(() -> service.update(command()))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(retireSchedulePort, scheduleSavePort);
+        assertThat(original.getDeletedAt()).isEqualTo(retiredAt);
+    }
+
+    @Test
+    @DisplayName("배타 락 조회가 실패하면 예외를 전파하고 폐기와 대체 저장을 시작하지 않는다")
+    void propagatesExclusiveLockFailure() {
+        var failure = new IllegalStateException("Schedule lock query failed");
+        when(scheduleLockFindPort.findByIdWithExclusiveLock(ORIGINAL_ID)).thenThrow(failure);
+
+        assertThatThrownBy(() -> service.update(command())).isSameAs(failure);
+
+        verifyNoInteractions(retireSchedulePort, scheduleSavePort);
+    }
+
+    @Test
+    @DisplayName("배타 락으로 조회한 스케줄이 이미 폐기되어 있으면 삭제를 거부한다")
+    void rejectsRetiredScheduleOnDeletion() {
+        var original = givenScheduleFound(CREATED_AT);
+        original.delete(REPLACED_AT.minusSeconds(60));
+
+        assertThatThrownBy(() -> service.delete(ORIGINAL_ID))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(retireSchedulePort, scheduleSavePort);
+        assertThat(original.getDeletedAt()).isEqualTo(REPLACED_AT.minusSeconds(60));
+    }
+
     private Schedule givenScheduleFound(Instant createdAt) {
         var schedule =
                 Schedule.of(
@@ -180,7 +219,8 @@ class UpdateScheduleServiceTest {
                         LocalTime.of(10, 0),
                         LocalTime.of(12, 0),
                         createdAt);
-        when(scheduleFindPort.findNotDeletedById(ORIGINAL_ID)).thenReturn(Optional.of(schedule));
+        when(scheduleLockFindPort.findByIdWithExclusiveLock(ORIGINAL_ID))
+                .thenReturn(Optional.of(schedule));
         return schedule;
     }
 

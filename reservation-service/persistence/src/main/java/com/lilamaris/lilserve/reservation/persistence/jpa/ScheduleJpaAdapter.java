@@ -65,12 +65,18 @@ public class ScheduleJpaAdapter
      * result.
      */
     @Override
-    public Optional<Set<ScheduleId>> findAllLockedById(Set<ScheduleId> scheduleIds) {
+    public Optional<Set<ScheduleId>> findAllByIdsWithSharedLock(Set<ScheduleId> scheduleIds) {
         var lockedIds = lockedIdentifiers(repository.findByIdsWithSharedLock(scheduleIds));
         if (!lockedIds.containsAll(scheduleIds)) {
             return Optional.empty();
         }
         return Optional.of(lockedIds);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<Schedule> findByIdWithExclusiveLock(ScheduleId scheduleId) {
+        return repository.findByIdWithExclusiveLock(scheduleId);
     }
 
     private Set<ScheduleId> lockedIdentifiers(List<Schedule> lockedSchedules) {
