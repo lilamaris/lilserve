@@ -38,6 +38,10 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+/**
+ * Verifies blackout mutation results and rejection of missing or deleted resources after locked
+ * reads.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("차단 스케줄 변경 및 삭제 유스케이스")
 class UpdateBlackoutScheduleServiceTest {

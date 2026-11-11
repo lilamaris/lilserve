@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+/** Verifies blackout identifier construction, null rejection, and value-based equality. */
 @DisplayName("차단 스케줄 식별자")
 class BlackoutScheduleIdTest {
     private static final UUID VALUE = UUID.fromString("00000000-0000-0000-0000-000000000001");

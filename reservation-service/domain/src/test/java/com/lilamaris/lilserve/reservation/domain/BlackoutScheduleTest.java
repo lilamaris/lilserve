@@ -14,6 +14,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+/**
+ * Verifies blackout value constraints, lifecycle transitions, and preservation of state on invalid
+ * changes.
+ */
 @DisplayName("스케줄 일시 사용 불가")
 class BlackoutScheduleTest {
     private static final BlackoutScheduleId ID = BlackoutScheduleId.of(UUID.randomUUID());

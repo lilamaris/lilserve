@@ -13,6 +13,12 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * Implements blackout read, exclusive-lock, and save ports using JPA.
+ *
+ * <p>Participates in the caller's transaction. Scalar parent lookup does not load a blackout
+ * entity; the intake existence query unwraps schedule identifiers to UUIDs for native SQL binding.
+ */
 @Component
 @RequiredArgsConstructor
 public class BlackoutScheduleJpaAdapter
@@ -21,23 +27,27 @@ public class BlackoutScheduleJpaAdapter
                 BlackoutScheduleFindPort {
     private final BlackoutScheduleRepository repository;
 
+    /** {@inheritDoc} */
     @Override
     public Optional<BlackoutSchedule> findByIdWithExclusiveLock(
             BlackoutScheduleId blackoutScheduleId) {
         return repository.findByIdWithExclusiveLock(blackoutScheduleId);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void save(BlackoutSchedule blackoutSchedule) {
         repository.save(blackoutSchedule);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean existsActiveByScheduleIdsAt(Set<ScheduleId> scheduleIds, Instant now) {
         var ids = scheduleIds.stream().map(ScheduleId::getValue).toList();
         return repository.existsActiveByScheduleIdsAt(ids, now);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Optional<ScheduleId> findScheduleIdById(BlackoutScheduleId blackoutScheduleId) {
         return repository.findScheduleIdById(blackoutScheduleId);

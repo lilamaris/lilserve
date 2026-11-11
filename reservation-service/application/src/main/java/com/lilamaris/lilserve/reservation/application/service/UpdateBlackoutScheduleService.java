@@ -17,6 +17,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Changes or soft-deletes active reservation intake blackouts in a transaction.
+ *
+ * <p>Period changes and deletion read only the immutable parent identifier before locking the
+ * schedule and then the blackout exclusively. The final locked blackout determines whether the
+ * request is still valid. Reason changes lock only the blackout. All mutation timestamps come from
+ * {@link Clock} after the required locks are acquired; runtime failures roll back the change.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor
@@ -30,12 +38,7 @@ public class UpdateBlackoutScheduleService
     private final BlackoutScheduleSavePort blackoutScheduleSavePort;
     private final Clock clock;
 
-    /**
-     * Updates the reason under an exclusive blackout lock in one transaction.
-     *
-     * @param command the blackout identifier and replacement reason
-     * @throws NoSuchElementException if the blackout is missing or deleted
-     */
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public void updateReason(UpdateBlackoutScheduleReasonCommand command) {
@@ -55,6 +58,7 @@ public class UpdateBlackoutScheduleService
         blackoutScheduleSavePort.save(blackoutSchedule);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public void updateRange(UpdateBlackoutSchedulePeriodCommand command) {
@@ -86,6 +90,7 @@ public class UpdateBlackoutScheduleService
         blackoutScheduleSavePort.save(blackoutSchedule);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public void delete(DeleteBlackoutScheduleCommand command) {

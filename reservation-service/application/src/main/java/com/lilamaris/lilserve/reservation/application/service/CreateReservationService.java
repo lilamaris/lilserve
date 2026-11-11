@@ -17,14 +17,19 @@ import org.springframework.validation.annotation.Validated;
 
 /**
  * Implements {@link CreateReservationUseCase} by reading resources under shared locks, saving the
- * reservation, and allocating its requested slots in one transaction. Creation time comes from
- * {@link Clock} after every resource is protected.
+ * reservation, and allocating its requested slots in one transaction. After every resource is
+ * protected, one instant from {@link Clock} determines both blackout eligibility and creation time.
  *
  * <p>Resources are protected in room, seat, then slot order, and each protected read returns the
  * row it locks: a deleted room or seat is rejected with {@link NoSuchElementException}, a seat
  * belonging to another room with {@link IllegalArgumentException}, and a missing slot row with
  * {@link NoSuchElementException}. Slots are locked in ascending identifier order, keeping the lock
  * order identical across transactions.
+ *
+ * <p>Before saving, rejects intake if any selected slot has a non-deleted blackout containing the
+ * intake instant in its half-open interval. This decision is independent of the requested service
+ * date. Shared schedule locks coordinate with the exclusive schedule locks used by blackout
+ * creation, period changes, and deletion, so the blackout query needs no additional row lock.
  *
  * <p>Only a complete allocation succeeds. If no slots or only some requested slots are allocated,
  * an exception rolls back the reservation header and any allocations inserted by this request.
@@ -46,7 +51,8 @@ public class CreateReservationService implements CreateReservationUseCase {
      * {@inheritDoc}
      *
      * <p>Propagates protected read and persistence failures. An incomplete allocation raises an
-     * exception so the transaction rolls back the header and all new slots.
+     * exception so the transaction rolls back the header and all new slots. An active intake
+     * blackout raises {@link IllegalStateException} before either write is attempted.
      */
     @Override
     @Transactional

@@ -22,6 +22,10 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ContextConfiguration;
 
+/**
+ * Verifies blackout schema mappings, mutable attributes, and overlapping intervals against
+ * PostgreSQL.
+ */
 @DisplayName("스케줄 일시 사용 불가 JPA 매핑")
 @DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

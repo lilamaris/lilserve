@@ -47,6 +47,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/**
+ * Verifies blackout use case commit and rollback boundaries and exclusive lock lifetime against
+ * PostgreSQL.
+ */
 @DisplayName("차단 스케줄 유스케이스 트랜잭션")
 @DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @ContextConfiguration(classes = PersistenceJpaTestConfiguration.class)

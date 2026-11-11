@@ -35,6 +35,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+/**
+ * Verifies blackout creation details, active resource requirements, and storage failure
+ * propagation.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("차단 스케줄 생성 유스케이스")
 class CreateBlackoutScheduleServiceTest {

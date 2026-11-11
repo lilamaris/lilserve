@@ -23,6 +23,10 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 
+/**
+ * Verifies blackout persistence, scalar identifier projection, and protected reads against
+ * PostgreSQL.
+ */
 @DisplayName("차단 스케줄 JPA 어댑터")
 @DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @ContextConfiguration(classes = PersistenceJpaTestConfiguration.class)

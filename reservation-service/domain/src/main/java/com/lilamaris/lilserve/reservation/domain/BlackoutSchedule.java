@@ -19,13 +19,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * A temporary blackout of a recurring room slot. Deletion and restoration record the update time.
+ * A temporary suspension of new reservation intake for one recurring room slot.
+ *
+ * <p>The half-open interval applies to the intake instant, independent of the requested service
+ * date or slot usage times. It does not cancel existing reservations. The room and schedule
+ * association is fixed at creation; the reason and interval may change while active. Deletion and
+ * restoration record the update time.
  */
 @Entity
 @Table(name = "blackout_schedule")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BlackoutSchedule {
+    /** Maximum stored reason length; the domain permits blank reasons. */
     public static final int MAX_REASON_LENGTH = 1000;
 
     @EmbeddedId private BlackoutScheduleId id;
@@ -119,7 +125,7 @@ public class BlackoutSchedule {
     }
 
     /**
-     * Changes the blackout interval and records the update time.
+     * Changes the reservation intake interval and records the update time.
      *
      * @param startsAt the inclusive start instant
      * @param endsAt the exclusive end instant, strictly after {@code startsAt}

@@ -16,6 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+/**
+ * Creates reservation intake blackouts using a shared room lock followed by an exclusive schedule
+ * lock in one transaction. The clock and identifier generator are read after both resources are
+ * protected. Persistence enforces that the schedule belongs to the requested room.
+ */
 @Service
 @Validated
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ public class CreateBlackoutScheduleService implements CreateBlackoutScheduleUseC
     private final IdGenerator<UUID> uuidGenerator;
     private final Clock clock;
 
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public void create(CreateBlackoutScheduleCommand command) {
