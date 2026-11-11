@@ -18,7 +18,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSche
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateSchedulesCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateSchedulesResult;
-import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
@@ -69,7 +69,7 @@ class CreateScheduleServiceTest {
     private static final LocalTimeRange EVENING = range(EVENING_START, EVENING_END);
 
     @Mock private ScheduleSavePort scheduleSavePort;
-    @Mock private RoomFindPort roomFindPort;
+    @Mock private RoomLockFindPort roomLockFindPort;
 
     private final List<Schedule> savedSchedules = new ArrayList<>();
     private CreateScheduleService service;
@@ -77,7 +77,8 @@ class CreateScheduleServiceTest {
     @BeforeEach
     void setUp() {
         service =
-                new CreateScheduleService(scheduleSavePort, roomFindPort, () -> SCHEDULE_ID, CLOCK);
+                new CreateScheduleService(
+                        scheduleSavePort, roomLockFindPort, () -> SCHEDULE_ID, CLOCK);
     }
 
     @Test
@@ -114,7 +115,7 @@ class CreateScheduleServiceTest {
         service =
                 new CreateScheduleService(
                         scheduleSavePort,
-                        roomFindPort,
+                        roomLockFindPort,
                         List.of(SCHEDULE_ID, SECOND_SCHEDULE_ID, THIRD_SCHEDULE_ID).iterator()
                                 ::next,
                         CLOCK);
@@ -168,7 +169,7 @@ class CreateScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("부모 룸가 없으면 조회 실패 예외를 전파하고 스케줄를 저장하지 않는다")
+    @DisplayName("부모 룸이 없으면 조회 실패 예외를 전파하고 스케줄을 저장하지 않는다")
     void rejectsMissingRoom() {
         givenRoomMissing();
 
@@ -179,7 +180,7 @@ class CreateScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("복수 스케줄도 부모 룸가 없으면 조회 실패 예외를 전파하고 저장하지 않는다")
+    @DisplayName("복수 스케줄도 부모 룸이 없으면 조회 실패 예외를 전파하고 저장하지 않는다")
     void rejectsMissingRoomForBatch() {
         givenRoomMissing();
 
@@ -190,10 +191,44 @@ class CreateScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("부모 룸 조회가 실패하면 해당 예외를 전파하고 스케줄를 저장하지 않는다")
+    @DisplayName("공유 락으로 조회한 부모 룸이 삭제 상태이면 단건 생성을 거부한다")
+    void rejectsDeletedRoom() {
+        givenDeletedRoom();
+
+        assertThatThrownBy(() -> service.create(command(MORNING_START, MORNING_END, MONDAY)))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(scheduleSavePort);
+    }
+
+    @Test
+    @DisplayName("공유 락으로 조회한 부모 룸이 삭제 상태이면 일괄 생성을 거부한다")
+    void rejectsDeletedRoomForBatch() {
+        givenDeletedRoom();
+
+        assertThatThrownBy(() -> create(Map.of(MONDAY, List.of(MORNING, EVENING))))
+                .isInstanceOf(NoSuchElementException.class);
+
+        verifyNoInteractions(scheduleSavePort);
+    }
+
+    @Test
+    @DisplayName("일괄 생성에서 공유 락 조회가 실패하면 예외를 전파하고 저장하지 않는다")
+    void propagatesRoomLockFailureForBatch() {
+        var failure = new IllegalStateException("Room lock failed");
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenThrow(failure);
+
+        assertThatThrownBy(() -> create(Map.of(MONDAY, List.of(MORNING, EVENING))))
+                .isSameAs(failure);
+
+        verifyNoInteractions(scheduleSavePort);
+    }
+
+    @Test
+    @DisplayName("부모 룸 조회가 실패하면 해당 예외를 전파하고 스케줄을 저장하지 않는다")
     void propagatesRoomFindFailure() {
         var failure = new IllegalStateException("Room lookup failed");
-        when(roomFindPort.findNotDeletedById(ROOM)).thenThrow(failure);
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenThrow(failure);
 
         assertThatThrownBy(() -> service.create(command(MORNING_START, MORNING_END, MONDAY)))
                 .isSameAs(failure);
@@ -203,7 +238,7 @@ class CreateScheduleServiceTest {
 
     @ParameterizedTest
     @MethodSource("commandsWithNullFields")
-    @DisplayName("커맨드 필드가 없으면 예외를 전파하고 스케줄를 저장하지 않는다")
+    @DisplayName("커맨드 필드가 없으면 예외를 전파하고 스케줄을 저장하지 않는다")
     void doesNotSaveWhenCommandFieldIsNull(CreateScheduleCommand command) {
         givenRoomFound();
 
@@ -213,14 +248,14 @@ class CreateScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("식별자 생성이 실패하면 예외를 전파하고 스케줄를 저장하지 않는다")
+    @DisplayName("식별자 생성이 실패하면 예외를 전파하고 스케줄을 저장하지 않는다")
     void propagatesIdGenerationFailureWithoutSaving() {
         givenRoomFound();
         var failure = new IllegalStateException("Identifier generation failed");
         service =
                 new CreateScheduleService(
                         scheduleSavePort,
-                        roomFindPort,
+                        roomLockFindPort,
                         (IdGenerator<UUID>)
                                 () -> {
                                     throw failure;
@@ -242,7 +277,7 @@ class CreateScheduleServiceTest {
         service =
                 new CreateScheduleService(
                         scheduleSavePort,
-                        roomFindPort,
+                        roomLockFindPort,
                         () -> {
                             if (!ids.hasNext()) {
                                 throw failure;
@@ -280,11 +315,17 @@ class CreateScheduleServiceTest {
 
     private void givenRoomFound() {
         var room = Room.of(ROOM, "ROOM-01", "main hall", "capacity 100", CREATED_AT);
-        when(roomFindPort.findNotDeletedById(ROOM)).thenReturn(Optional.of(room));
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenReturn(Optional.of(room));
+    }
+
+    private void givenDeletedRoom() {
+        var room = Room.of(ROOM, "ROOM-01", "main hall", "capacity 100", CREATED_AT);
+        room.delete(CREATED_AT.plusSeconds(1));
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenReturn(Optional.of(room));
     }
 
     private void givenRoomMissing() {
-        when(roomFindPort.findNotDeletedById(ROOM)).thenReturn(Optional.empty());
+        when(roomLockFindPort.findByIdWithSharedLock(ROOM)).thenReturn(Optional.empty());
     }
 
     private void givenBatchSave() {
