@@ -12,7 +12,10 @@ version = "0.0.1-SNAPSHOT"
 
 // The boot plugin ships bootJar disabled outside the root project, so the executable module enables
 // its own.
-tasks.named<BootJar>("bootJar") { enabled = true }
+tasks.named<BootJar>("bootJar") {
+    enabled = true
+    archiveFileName.set("reservation-service.jar")
+}
 
 dependencies {
     implementation(libs.spring.boot.starter)
