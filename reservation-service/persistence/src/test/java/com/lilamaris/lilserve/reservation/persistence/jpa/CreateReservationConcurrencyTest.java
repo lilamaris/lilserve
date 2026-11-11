@@ -70,7 +70,8 @@ import org.springframework.transaction.support.TransactionTemplate;
     SeatJpaAdapter.class,
     ScheduleJpaAdapter.class,
     ReservationJpaAdapter.class,
-    ReservedScheduleJpaAdapter.class
+    ReservedScheduleJpaAdapter.class,
+    BlackoutScheduleJpaAdapter.class
 })
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class CreateReservationConcurrencyTest {
@@ -86,6 +87,7 @@ class CreateReservationConcurrencyTest {
     @Autowired private ScheduleJpaAdapter scheduleAdapter;
     @Autowired private ReservationJpaAdapter reservationAdapter;
     @Autowired private ReservedScheduleJpaAdapter allocationAdapter;
+    @Autowired private BlackoutScheduleJpaAdapter blackoutScheduleAdapter;
 
     private final RoomId roomId = RoomId.of(UUID.randomUUID());
     private final SeatId seatId = SeatId.of(UUID.randomUUID());
@@ -358,6 +360,7 @@ class CreateReservationConcurrencyTest {
                         return scheduleAdapter.findByIdWithExclusiveLock(id);
                     }
                 },
+                blackoutScheduleAdapter,
                 UUID::randomUUID,
                 CLOCK);
     }

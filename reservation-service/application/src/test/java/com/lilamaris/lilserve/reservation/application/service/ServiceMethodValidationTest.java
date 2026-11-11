@@ -38,6 +38,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSche
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSeatCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReleaseSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePort;
@@ -106,6 +107,7 @@ class ServiceMethodValidationTest {
         var roomLockPort = mock(RoomLockFindPort.class);
         var seatLockPort = mock(SeatLockFindPort.class);
         var scheduleLockPort = mock(ScheduleLockFindPort.class);
+        var blackoutScheduleFindPort = mock(BlackoutScheduleFindPort.class);
         try (var context = new AnnotationConfigApplicationContext()) {
             context.registerBean(MethodValidationPostProcessor.class);
             context.registerBean(RoomFindPort.class, () -> roomFindPort);
@@ -122,6 +124,7 @@ class ServiceMethodValidationTest {
             context.registerBean(RoomLockFindPort.class, () -> roomLockPort);
             context.registerBean(SeatLockFindPort.class, () -> seatLockPort);
             context.registerBean(ScheduleLockFindPort.class, () -> scheduleLockPort);
+            context.registerBean(BlackoutScheduleFindPort.class, () -> blackoutScheduleFindPort);
             context.registerBean(Clock.class, Clock::systemUTC);
             context.registerBean(IdGenerator.class, () -> (IdGenerator<UUID>) () -> ID);
             context.register(
@@ -141,6 +144,7 @@ class ServiceMethodValidationTest {
                     .isInstanceOf(ConstraintViolationException.class);
 
             verifyNoInteractions(
+                    blackoutScheduleFindPort,
                     scheduleLockPort,
                     seatLockPort,
                     roomLockPort,
