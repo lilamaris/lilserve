@@ -38,6 +38,7 @@ public class CreateReservationService implements CreateReservationUseCase {
     private final RoomLockFindPort roomLockFindPort;
     private final SeatLockFindPort seatLockFindPort;
     private final ScheduleLockFindPort scheduleLockFindPort;
+    private final BlackoutScheduleFindPort blackoutScheduleFindPort;
     private final IdGenerator<UUID> uuidGenerator;
     private final Clock clock;
 
@@ -70,6 +71,12 @@ public class CreateReservationService implements CreateReservationUseCase {
                 .orElseThrow(() -> new NoSuchElementException("schedule does not found."));
 
         var now = clock.instant();
+
+        var isBlackoutExists =
+                blackoutScheduleFindPort.existsActiveByScheduleIdsAt(command.scheduleIds(), now);
+
+        if (isBlackoutExists) throw new IllegalStateException("blackout schedule policy blocked.");
+
         var timezone = clock.getZone();
 
         var reservationId = ReservationId.of(uuidGenerator.generate());

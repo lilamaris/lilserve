@@ -7,7 +7,9 @@ import com.lilamaris.lilserve.reservation.domain.BlackoutSchedule;
 import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.persistence.jpa.repository.BlackoutScheduleRepository;
+import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +30,12 @@ public class BlackoutScheduleJpaAdapter
     @Override
     public void save(BlackoutSchedule blackoutSchedule) {
         repository.save(blackoutSchedule);
+    }
+
+    @Override
+    public boolean existsActiveByScheduleIdsAt(Set<ScheduleId> scheduleIds, Instant now) {
+        var ids = scheduleIds.stream().map(ScheduleId::getValue).toList();
+        return repository.existsActiveByScheduleIdsAt(ids, now);
     }
 
     @Override

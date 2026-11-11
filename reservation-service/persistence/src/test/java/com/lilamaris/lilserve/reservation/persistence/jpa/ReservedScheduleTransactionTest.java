@@ -54,6 +54,7 @@ import org.springframework.transaction.support.TransactionTemplate;
     RoomJpaAdapter.class,
     SeatJpaAdapter.class,
     ScheduleJpaAdapter.class,
+    BlackoutScheduleJpaAdapter.class,
     ReservedScheduleTransactionTest.Configuration.class
 })
 @Transactional(propagation = Propagation.NOT_SUPPORTED)

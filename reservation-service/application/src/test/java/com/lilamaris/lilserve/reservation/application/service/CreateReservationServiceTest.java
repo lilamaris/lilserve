@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateReservationCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateReservationResult;
+import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReserveScheduleStatus;
@@ -65,6 +66,7 @@ class CreateReservationServiceTest {
     @Mock private RoomLockFindPort roomLockFindPort;
     @Mock private SeatLockFindPort seatLockFindPort;
     @Mock private ScheduleLockFindPort scheduleLockFindPort;
+    @Mock private BlackoutScheduleFindPort blackoutScheduleFindPort;
 
     private CreateReservationService service;
 
@@ -256,6 +258,8 @@ class CreateReservationServiceTest {
         givenSeatLocked();
         when(scheduleLockFindPort.findAllByIdsWithSharedLock(schedules))
                 .thenReturn(Optional.of(schedules));
+        when(blackoutScheduleFindPort.existsActiveByScheduleIdsAt(schedules, NOW))
+                .thenReturn(false);
     }
 
     private void givenRoomLocked() {
@@ -275,6 +279,7 @@ class CreateReservationServiceTest {
                 roomLockFindPort,
                 seatLockFindPort,
                 scheduleLockFindPort,
+                blackoutScheduleFindPort,
                 ids::get,
                 clock);
     }
