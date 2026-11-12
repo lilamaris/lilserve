@@ -17,6 +17,8 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.RoomExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateRoomRequest;
+import com.lilamaris.lilserve.reservation.web.dto.OpenApiExamples;
+import com.lilamaris.lilserve.reservation.web.dto.RoomPageResponse;
 import com.lilamaris.lilserve.reservation.web.dto.RoomResponse;
 import com.lilamaris.lilserve.reservation.web.dto.UpdateRoomCodeRequest;
 import com.lilamaris.lilserve.reservation.web.dto.UpdateRoomMetadataRequest;
@@ -119,7 +121,8 @@ public class RoomController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = RoomResponse.class)))
+                            schema = @Schema(implementation = RoomResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.ROOM)))
     @PostMapping
     public ResponseEntity<RoomResponse> create(@Valid @RequestBody CreateRoomRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -140,9 +143,16 @@ public class RoomController {
             summary = "List rooms",
             description =
                     "Lists non-deleted rooms in code order. Name and code filters are literal, case-insensitive substrings combined with AND. Blank filters are ignored. An empty or out-of-range page returns 200 with an empty items array. Page times size must not exceed 2147483647.")
-    @ApiResponse(responseCode = "200", description = "Paginated room list with totalElements")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Paginated room list with totalElements",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RoomPageResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.ROOM_PAGE)))
     @GetMapping
-    public ResponseEntity<OffsetPage<RoomResponse>> list(
+    public ResponseEntity<RoomPageResponse> list(
             @Parameter(description = "Optional room name fragment")
                     @RequestParam(name = "name", required = false)
                     @Nullable
@@ -165,7 +175,9 @@ public class RoomController {
         var result = listRoomUseCase.list(query);
         var items = result.items().stream().map(RoomResponse::from).toList();
         return ResponseEntity.ok(
-                OffsetPage.of(items, result.page(), result.size(), result.totalElements()));
+                RoomPageResponse.of(
+                        OffsetPage.of(
+                                items, result.page(), result.size(), result.totalElements())));
     }
 
     /**
@@ -186,7 +198,8 @@ public class RoomController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = RoomResponse.class)))
+                            schema = @Schema(implementation = RoomResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.ROOM)))
     @GetMapping("/{roomId}")
     public ResponseEntity<RoomResponse> find(
             @Parameter(
@@ -216,7 +229,8 @@ public class RoomController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = RoomResponse.class)))
+                            schema = @Schema(implementation = RoomResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.ROOM)))
     @PutMapping("/{roomId}")
     public ResponseEntity<RoomResponse> updateMetadata(
             @Parameter(
@@ -249,7 +263,8 @@ public class RoomController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = RoomResponse.class)))
+                            schema = @Schema(implementation = RoomResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.ROOM)))
     @ApiResponse(
             responseCode = "409",
             description = "the code is already used by another room",
@@ -319,7 +334,8 @@ public class RoomController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = RoomResponse.class)))
+                            schema = @Schema(implementation = RoomResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.ROOM)))
     @PostMapping("/{roomId}/restore")
     public ResponseEntity<RoomResponse> restore(
             @Parameter(

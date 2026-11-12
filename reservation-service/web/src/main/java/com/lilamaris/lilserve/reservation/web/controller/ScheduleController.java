@@ -8,6 +8,7 @@ import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.ScheduleExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateScheduleRequest;
 import com.lilamaris.lilserve.reservation.web.dto.CreateSchedulesRequest;
+import com.lilamaris.lilserve.reservation.web.dto.OpenApiExamples;
 import com.lilamaris.lilserve.reservation.web.dto.ScheduleResponse;
 import com.lilamaris.lilserve.reservation.web.dto.UpdateScheduleRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -107,7 +108,8 @@ public class ScheduleController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ScheduleResponse.class)))
+                            schema = @Schema(implementation = ScheduleResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SCHEDULE)))
     @PostMapping
     public ResponseEntity<ScheduleResponse> create(
             @Valid @RequestBody CreateScheduleRequest request) {
@@ -139,7 +141,8 @@ public class ScheduleController {
                                             schema =
                                                     @Schema(
                                                             implementation =
-                                                                    ScheduleResponse.class))))
+                                                                    ScheduleResponse.class)),
+                            examples = @ExampleObject(value = OpenApiExamples.SCHEDULE_BATCH)))
     @PostMapping("/batch")
     public ResponseEntity<List<ScheduleResponse>> createBatch(
             @Valid @RequestBody CreateSchedulesRequest request) {
@@ -172,7 +175,8 @@ public class ScheduleController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ScheduleResponse.class)))
+                            schema = @Schema(implementation = ScheduleResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SCHEDULE)))
     @PutMapping("/{scheduleId}")
     public ResponseEntity<ScheduleResponse> update(
             @Parameter(

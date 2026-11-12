@@ -25,52 +25,53 @@ import java.util.UUID;
                 "The reservation intake blackout as the web layer returns it. A blackout created in"
                         + " this request has no update and no deletion timestamp, so those fields are"
                         + " null.",
-        example =
-                """
-                {"blackoutScheduleId":"00000000-0000-0000-0000-000000000005",\
-                "roomId":"00000000-0000-0000-0000-000000000001",\
-                "scheduleId":"00000000-0000-0000-0000-000000000003",\
-                "reason":"facility maintenance",\
-                "startsAt":"2026-01-02T00:00:00Z","endsAt":"2026-01-03T00:00:00Z",\
-                "createdAt":"2026-01-01T00:00:00Z"}
-                """)
+        example = OpenApiExamples.BLACKOUT)
 public record BlackoutScheduleResponse(
         @Schema(
                         description = "blackout identifier",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID blackoutScheduleId,
         @Schema(
                         description = "room owning the blocked slot",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID roomId,
         @Schema(
                         description = "blocked recurring slot",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID scheduleId,
-        @Schema(description = "blackout reason", accessMode = Schema.AccessMode.READ_ONLY)
+        @Schema(
+                        description = "blackout reason",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        accessMode = Schema.AccessMode.READ_ONLY)
                 String reason,
         @Schema(
                         description = "inclusive intake start instant",
                         type = "string",
                         format = "date-time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant startsAt,
         @Schema(
                         description = "exclusive intake end instant",
                         type = "string",
                         format = "date-time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant endsAt,
         @Schema(
                         description = "creation time",
                         type = "string",
                         format = "date-time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant createdAt,
         @Schema(

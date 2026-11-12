@@ -24,46 +24,47 @@ import java.util.UUID;
         description =
                 "The recurring room slot as the web layer returns it. A replacement slot carries a"
                         + " new identifier, so a retired slot is never answered under this shape.",
-        example =
-                """
-                {"scheduleId":"00000000-0000-0000-0000-000000000003","roomId":"00000000-0000-0000-\
-                0000-000000000001","dayOfWeek":"MONDAY","startAt":"09:00:00","endAt":"11:00:00",\
-                "createdAt":"2026-01-01T00:00:00Z"}
-                """)
+        example = OpenApiExamples.SCHEDULE)
 public record ScheduleResponse(
         @Schema(
                         description = "slot identifier",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID scheduleId,
         @Schema(
                         description = "room offering the slot",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID roomId,
         @Schema(
                         description = "ISO weekday the slot repeats on",
                         type = "string",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 DayOfWeek dayOfWeek,
         @Schema(
                         description = "inclusive local start time",
                         type = "string",
                         format = "time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 LocalTime startAt,
         @Schema(
                         description = "exclusive local end time",
                         type = "string",
                         format = "time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 LocalTime endAt,
         @Schema(
                         description = "creation time",
                         type = "string",
                         format = "date-time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant createdAt) {
 

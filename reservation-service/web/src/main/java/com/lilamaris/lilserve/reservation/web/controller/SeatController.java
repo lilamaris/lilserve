@@ -17,6 +17,8 @@ import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.SeatExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateSeatRequest;
+import com.lilamaris.lilserve.reservation.web.dto.OpenApiExamples;
+import com.lilamaris.lilserve.reservation.web.dto.SeatPageResponse;
 import com.lilamaris.lilserve.reservation.web.dto.SeatResponse;
 import com.lilamaris.lilserve.reservation.web.dto.UpdateSeatCodeRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -113,7 +115,8 @@ public class SeatController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = SeatResponse.class)))
+                            schema = @Schema(implementation = SeatResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SEAT)))
     @PostMapping
     public ResponseEntity<SeatResponse> create(@Valid @RequestBody CreateSeatRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -133,9 +136,16 @@ public class SeatController {
             summary = "List seats",
             description =
                     "Lists non-deleted seats of one non-deleted room in code order. An unavailable room returns 404. An empty or out-of-range page returns 200 with an empty items array. Page times size must not exceed 2147483647.")
-    @ApiResponse(responseCode = "200", description = "Paginated seat list with totalElements")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Paginated seat list with totalElements",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = SeatPageResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SEAT_PAGE)))
     @GetMapping
-    public ResponseEntity<OffsetPage<SeatResponse>> list(
+    public ResponseEntity<SeatPageResponse> list(
             @Parameter(
                             description = "Owning room identifier",
                             schema = @Schema(type = "string", format = "uuid"))
@@ -155,7 +165,9 @@ public class SeatController {
         var result = listSeatUseCase.list(query);
         var items = result.items().stream().map(SeatResponse::from).toList();
         return ResponseEntity.ok(
-                OffsetPage.of(items, result.page(), result.size(), result.totalElements()));
+                SeatPageResponse.of(
+                        OffsetPage.of(
+                                items, result.page(), result.size(), result.totalElements())));
     }
 
     /**
@@ -176,7 +188,8 @@ public class SeatController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = SeatResponse.class)))
+                            schema = @Schema(implementation = SeatResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SEAT)))
     @GetMapping("/{seatId}")
     public ResponseEntity<SeatResponse> find(
             @Parameter(
@@ -206,7 +219,8 @@ public class SeatController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = SeatResponse.class)))
+                            schema = @Schema(implementation = SeatResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SEAT)))
     @ApiResponse(
             responseCode = "409",
             description = "the code is already used by another seat",
@@ -275,7 +289,8 @@ public class SeatController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = SeatResponse.class)))
+                            schema = @Schema(implementation = SeatResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SEAT)))
     @PostMapping("/{seatId}/restore")
     public ResponseEntity<SeatResponse> restore(
             @Parameter(

@@ -1,0 +1,17 @@
+# Local development database only.
+# Flyway owns the schema at application startup.
+# Start with: docker compose up -d
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: lilserve
+      POSTGRES_USER: lilserve
+      POSTGRES_PASSWORD: lilserve
+    ports:
+      - "5433:5432"
+    volumes:
+      - lilserve-postgres:/var/lib/postgresql/data
+
+volumes:
+  lilserve-postgres:
