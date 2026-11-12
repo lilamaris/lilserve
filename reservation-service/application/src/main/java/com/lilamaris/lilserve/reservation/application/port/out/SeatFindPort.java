@@ -1,6 +1,9 @@
 package com.lilamaris.lilserve.reservation.application.port.out;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.util.Optional;
 
@@ -42,4 +45,13 @@ public interface SeatFindPort {
      * @throws NullPointerException if {@code seatId} is null
      */
     Optional<Seat> findDeletedById(SeatId seatId);
+
+    /**
+     * Finds a page of non-deleted seats belonging to one room.
+     *
+     * @param roomId the owning room
+     * @param pageRequest the requested page
+     * @return the page ordered by code and identifier, with the room's active seat total
+     */
+    OffsetPage<Seat> findNotDeletedByRoomId(RoomId roomId, OffsetPageRequest pageRequest);
 }

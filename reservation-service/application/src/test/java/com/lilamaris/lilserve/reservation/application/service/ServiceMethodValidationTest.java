@@ -5,6 +5,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.model.id.IdGenerator;
 import com.lilamaris.lilserve.reservation.application.model.time.LocalTimeRange;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateReservationUseCase;
@@ -16,6 +17,8 @@ import com.lilamaris.lilserve.reservation.application.port.in.DeleteRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindSeatUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListRoomUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomCodeUseCase;
@@ -38,6 +41,8 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSche
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSeatCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListRoomQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListSeatQuery;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReleaseSchedulePort;
 import com.lilamaris.lilserve.reservation.application.port.out.ReservationFindPort;
@@ -84,6 +89,7 @@ class ServiceMethodValidationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource({
+        "invalidListRequests",
         "invalidRequests",
         "invalidReservationRequests",
         "invalidDeleteReservationRequests",
@@ -134,6 +140,8 @@ class ServiceMethodValidationTest {
                     DeleteReservationService.class,
                     CreateScheduleService.class,
                     UpdateScheduleService.class,
+                    ListRoomService.class,
+                    ListSeatService.class,
                     FindRoomService.class,
                     FindSeatService.class,
                     UpdateRoomService.class,
@@ -160,6 +168,35 @@ class ServiceMethodValidationTest {
                     scheduleFindPort,
                     retireSchedulePort);
         }
+    }
+
+    private static Stream<Arguments> invalidListRequests() {
+        return Stream.concat(
+                Stream.of(null, ListRoomQuery.of(null, null, null))
+                        .map(
+                                query ->
+                                        arguments(
+                                                "ListRoom." + query,
+                                                (Consumer<AnnotationConfigApplicationContext>)
+                                                        context ->
+                                                                context.getBean(
+                                                                                ListRoomUseCase
+                                                                                        .class)
+                                                                        .list(query))),
+                Stream.of(
+                                null,
+                                ListSeatQuery.of(null, OffsetPageRequest.of(0, 10)),
+                                ListSeatQuery.of(RoomId.of(ID), null))
+                        .map(
+                                query ->
+                                        arguments(
+                                                "ListSeat." + query,
+                                                (Consumer<AnnotationConfigApplicationContext>)
+                                                        context ->
+                                                                context.getBean(
+                                                                                ListSeatUseCase
+                                                                                        .class)
+                                                                        .list(query))));
     }
 
     private static Stream<Arguments> invalidUpdateScheduleRequests() {

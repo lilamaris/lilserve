@@ -1,13 +1,17 @@
 package com.lilamaris.lilserve.reservation.persistence.jpa;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.SeatSavePort;
 import com.lilamaris.lilserve.reservation.domain.Seat;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import com.lilamaris.lilserve.reservation.persistence.jpa.repository.SeatRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 /** Implements seat persistence ports using Spring Data JPA within the caller's transaction. */
@@ -55,5 +59,14 @@ public class SeatJpaAdapter implements SeatFindPort, SeatSavePort, SeatLockFindP
     @Override
     public Optional<Seat> findByIdWithExclusiveLock(SeatId seatId) {
         return repository.findByIdWithExclusiveLock(seatId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public OffsetPage<Seat> findNotDeletedByRoomId(RoomId roomId, OffsetPageRequest pageRequest) {
+        var pageable = PageRequest.of(pageRequest.page(), pageRequest.size());
+        var page = repository.findActiveByRoomId(roomId, pageable);
+        return OffsetPage.of(
+                page.getContent(), pageRequest.page(), pageRequest.size(), page.getTotalElements());
     }
 }
