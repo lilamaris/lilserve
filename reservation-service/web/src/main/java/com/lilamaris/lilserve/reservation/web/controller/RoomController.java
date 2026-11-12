@@ -1,14 +1,18 @@
 package com.lilamaris.lilserve.reservation.web.controller;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindRoomUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadataUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoomCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListRoomQuery;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.RoomExceptionHandler;
@@ -24,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +43,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -52,12 +58,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Tag(
         name = "Room",
-        description = "Rooms: create, find, change metadata, change code, delete, restore.")
+        description = "Rooms: create, find, list, change metadata, change code, delete, restore.")
 @ApiResponses({
     @ApiResponse(
             responseCode = "400",
             description =
-                    "the body carried a value the domain rejected, the identifier is not a UUID,"
+                    "the body or pagination carried a rejected value, the identifier is not a UUID,"
                             + " the request carries no API version, or a version this layer does not"
                             + " declare",
             content =
@@ -89,6 +95,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoomController {
     private final CreateRoomUseCase createRoomUseCase;
     private final FindRoomUseCase findRoomUseCase;
+    private final ListRoomUseCase listRoomUseCase;
     private final UpdateRoomMetadataUseCase updateRoomMetadataUseCase;
     private final UpdateRoomCodeUseCase updateRoomCodeUseCase;
     private final DeleteRoomUseCase deleteRoomUseCase;
@@ -116,6 +123,47 @@ public class RoomController {
     public ResponseEntity<RoomResponse> create(@Valid @RequestBody CreateRoomRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(RoomResponse.from(createRoomUseCase.create(request.toCommand())));
+    }
+
+    /**
+     * Lists non-deleted rooms in code order with offset page metadata.
+     *
+     * @param name optional case-insensitive literal room name fragment
+     * @param code optional case-insensitive literal room code fragment
+     * @param page the zero-based page number, default 0
+     * @param size the positive page size, default 20; page times size must fit in a signed integer
+     * @return 200 with room responses and the page number, size, and matching total
+     */
+    @Operation(
+            summary = "List rooms",
+            description =
+                    "Lists non-deleted rooms in code order. Name and code filters are literal, case-insensitive substrings combined with AND. Blank filters are ignored. An empty or out-of-range page returns 200 with an empty items array. Page times size must not exceed 2147483647.")
+    @ApiResponse(responseCode = "200", description = "Paginated room list with totalElements")
+    @GetMapping
+    public ResponseEntity<OffsetPage<RoomResponse>> list(
+            @Parameter(description = "Optional room name fragment")
+                    @RequestParam(name = "name", required = false)
+                    @Nullable
+                    String name,
+            @Parameter(description = "Optional room code fragment")
+                    @RequestParam(name = "code", required = false)
+                    @Nullable
+                    String code,
+            @Parameter(
+                            description = "Zero-based page number",
+                            schema = @Schema(minimum = "0", defaultValue = "0"))
+                    @RequestParam(name = "page", defaultValue = "0")
+                    int page,
+            @Parameter(
+                            description = "Page size",
+                            schema = @Schema(minimum = "1", defaultValue = "20"))
+                    @RequestParam(name = "size", defaultValue = "20")
+                    int size) {
+        var query = ListRoomQuery.of(name, code, OffsetPageRequest.of(page, size));
+        var result = listRoomUseCase.list(query);
+        var items = result.items().stream().map(RoomResponse::from).toList();
+        return ResponseEntity.ok(
+                OffsetPage.of(items, result.page(), result.size(), result.totalElements()));
     }
 
     /**

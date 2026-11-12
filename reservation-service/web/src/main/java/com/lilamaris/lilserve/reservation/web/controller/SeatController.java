@@ -1,13 +1,18 @@
 package com.lilamaris.lilserve.reservation.web.controller;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindSeatUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListSeatQuery;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.SeatExceptionHandler;
@@ -35,6 +40,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -47,12 +53,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "/api/{version}/seats", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
-@Tag(name = "Seat", description = "Seats: create, find, change code, delete, restore.")
+@Tag(name = "Seat", description = "Seats: create, find, list, change code, delete, restore.")
 @ApiResponses({
     @ApiResponse(
             responseCode = "400",
             description =
-                    "the body carried a value the domain rejected, the identifier is not a UUID,"
+                    "the body or pagination carried a rejected value, the identifier is not a UUID,"
                             + " the request carries no API version, or a version this layer does not"
                             + " declare",
             content =
@@ -84,6 +90,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SeatController {
     private final CreateSeatUseCase createSeatUseCase;
     private final FindSeatUseCase findSeatUseCase;
+    private final ListSeatUseCase listSeatUseCase;
     private final UpdateSeatCodeUseCase updateSeatCodeUseCase;
     private final DeleteSeatUseCase deleteSeatUseCase;
     private final RestoreSeatUseCase restoreSeatUseCase;
@@ -110,6 +117,43 @@ public class SeatController {
     public ResponseEntity<SeatResponse> create(@Valid @RequestBody CreateSeatRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(SeatResponse.from(createSeatUseCase.create(request.toCommand())));
+    }
+
+    /**
+     * Lists non-deleted seats in code order with offset page metadata.
+     *
+     * @param roomId the owning non-deleted room identifier
+     * @param page the zero-based page number, default 0
+     * @param size the positive page size, default 20; page times size must fit in a signed integer
+     * @return 200 with seat responses and the page number, size, and matching total
+     */
+    @Operation(
+            summary = "List seats",
+            description =
+                    "Lists non-deleted seats of one non-deleted room in code order. An unavailable room returns 404. An empty or out-of-range page returns 200 with an empty items array. Page times size must not exceed 2147483647.")
+    @ApiResponse(responseCode = "200", description = "Paginated seat list with totalElements")
+    @GetMapping
+    public ResponseEntity<OffsetPage<SeatResponse>> list(
+            @Parameter(
+                            description = "Owning room identifier",
+                            schema = @Schema(type = "string", format = "uuid"))
+                    @RequestParam("roomId")
+                    UUID roomId,
+            @Parameter(
+                            description = "Zero-based page number",
+                            schema = @Schema(minimum = "0", defaultValue = "0"))
+                    @RequestParam(name = "page", defaultValue = "0")
+                    int page,
+            @Parameter(
+                            description = "Page size",
+                            schema = @Schema(minimum = "1", defaultValue = "20"))
+                    @RequestParam(name = "size", defaultValue = "20")
+                    int size) {
+        var query = ListSeatQuery.of(RoomId.of(roomId), OffsetPageRequest.of(page, size));
+        var result = listSeatUseCase.list(query);
+        var items = result.items().stream().map(SeatResponse::from).toList();
+        return ResponseEntity.ok(
+                OffsetPage.of(items, result.page(), result.size(), result.totalElements()));
     }
 
     /**
