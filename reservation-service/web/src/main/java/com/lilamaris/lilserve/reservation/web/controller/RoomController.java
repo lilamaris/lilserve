@@ -54,7 +54,7 @@ import org.springframework.web.bind.annotation.RestController;
  * ApiVersionConfiguration} resolves the API version from the request path.
  */
 @RestController
-@RequestMapping(path = "/api/{version}/rooms", version = ApiVersionConfiguration.CURRENT)
+@RequestMapping(path = "/api/v{version}/rooms", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
 @Tag(
         name = "Room",

@@ -48,7 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
  * layer maps the create, replace, and retire operations only.
  */
 @RestController
-@RequestMapping(path = "/api/{version}/schedules", version = ApiVersionConfiguration.CURRENT)
+@RequestMapping(path = "/api/v{version}/schedules", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
 @Tag(
         name = "Schedule",

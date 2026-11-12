@@ -11,6 +11,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * carries it: the {@code v1} of {@code /api/v1/rooms} is version {@code 1}. Request mappings
  * declare that version, so this layer answers {@code 1} only.
  *
+ * <p>Mappings keep the literal {@code v} outside the placeholder, as in {@code
+ * /api/v{version}/rooms}, and declare the numeric version through {@link #CURRENT}. This lets
+ * OpenAPI substitute the declared version without dropping the URL prefix. Every endpoint declares
+ * its supported version; no default version inference is required.
+ *
  * <p>A request whose version no mapping declares, and a request that has no version at the version
  * position of a matching path, is answered with 400 before a controller runs, so no use case is
  * reached. A path with no version position matches no mapping, and is answered with 404.

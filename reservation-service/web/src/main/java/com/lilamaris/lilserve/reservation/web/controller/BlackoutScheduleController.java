@@ -46,7 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
  * version from the request path.
  */
 @RestController
-@RequestMapping(path = "/api/{version}/blackouts", version = ApiVersionConfiguration.CURRENT)
+@RequestMapping(path = "/api/v{version}/blackouts", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
 @Tag(
         name = "Blackout",
