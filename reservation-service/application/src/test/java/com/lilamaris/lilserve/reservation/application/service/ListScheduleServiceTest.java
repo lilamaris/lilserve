@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import com.lilamaris.lilserve.reservation.application.model.time.InstantRange;
 import com.lilamaris.lilserve.reservation.application.model.time.LocalTimeRange;
-import com.lilamaris.lilserve.reservation.application.port.in.query.FindScheduleQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListScheduleQuery;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
@@ -32,18 +32,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("방 스케줄 조회 유스케이스")
-class FindScheduleServiceTest {
+class ListScheduleServiceTest {
     private static final Instant CREATED = Instant.parse("2026-01-01T00:00:00Z");
     private static final Instant NOW = CREATED.plusSeconds(60);
     private static final RoomId ROOM_ID = RoomId.of(UUID.randomUUID());
     @Mock private RoomFindPort roomFindPort;
     @Mock private ScheduleFindPort scheduleFindPort;
     @Mock private BlackoutScheduleFindPort blackoutScheduleFindPort;
-    private FindScheduleService service;
+    private ListScheduleService service;
 
     @BeforeEach
     void setUp() {
-        service = new FindScheduleService(roomFindPort, scheduleFindPort, blackoutScheduleFindPort);
+        service = new ListScheduleService(roomFindPort, scheduleFindPort, blackoutScheduleFindPort);
     }
 
     @Test
@@ -60,7 +60,7 @@ class FindScheduleServiceTest {
         when(blackoutScheduleFindPort.findNotDeletedByRoomIdAt(ROOM_ID, NOW))
                 .thenReturn(List.of(first, other, second));
 
-        var result = service.find(FindScheduleQuery.of(ROOM_ID, NOW));
+        var result = service.list(ListScheduleQuery.of(ROOM_ID, NOW));
 
         assertThat(result.roomId()).isEqualTo(ROOM_ID);
         assertThat(result.schedules()).hasSize(2);
@@ -103,7 +103,7 @@ class FindScheduleServiceTest {
         when(scheduleFindPort.findNotDeletedByRoomId(ROOM_ID)).thenReturn(List.of(schedule));
         when(blackoutScheduleFindPort.findNotDeletedByRoomIdAt(ROOM_ID, NOW)).thenReturn(List.of());
 
-        var result = service.find(FindScheduleQuery.of(ROOM_ID, NOW));
+        var result = service.list(ListScheduleQuery.of(ROOM_ID, NOW));
 
         assertThat(result.schedules())
                 .singleElement()
@@ -121,7 +121,7 @@ class FindScheduleServiceTest {
         when(scheduleFindPort.findNotDeletedByRoomId(ROOM_ID)).thenReturn(List.of());
         when(blackoutScheduleFindPort.findNotDeletedByRoomIdAt(ROOM_ID, NOW)).thenReturn(List.of());
 
-        var result = service.find(FindScheduleQuery.of(ROOM_ID, NOW));
+        var result = service.list(ListScheduleQuery.of(ROOM_ID, NOW));
 
         assertThat(result.roomId()).isEqualTo(ROOM_ID);
         assertThat(result.schedules()).isEmpty();
@@ -132,7 +132,7 @@ class FindScheduleServiceTest {
     void rejectsMissingRoom() {
         when(roomFindPort.findNotDeletedById(ROOM_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.find(FindScheduleQuery.of(ROOM_ID, NOW)))
+        assertThatThrownBy(() -> service.list(ListScheduleQuery.of(ROOM_ID, NOW)))
                 .isInstanceOf(NoSuchElementException.class);
     }
 

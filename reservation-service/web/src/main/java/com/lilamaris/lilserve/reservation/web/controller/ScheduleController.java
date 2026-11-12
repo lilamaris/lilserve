@@ -2,13 +2,17 @@ package com.lilamaris.lilserve.reservation.web.controller;
 
 import com.lilamaris.lilserve.reservation.application.port.in.CreateScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteScheduleUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateScheduleUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListScheduleQuery;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.ScheduleExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.CreateScheduleRequest;
 import com.lilamaris.lilserve.reservation.web.dto.CreateSchedulesRequest;
 import com.lilamaris.lilserve.reservation.web.dto.OpenApiExamples;
+import com.lilamaris.lilserve.reservation.web.dto.ScheduleListResponse;
 import com.lilamaris.lilserve.reservation.web.dto.ScheduleResponse;
 import com.lilamaris.lilserve.reservation.web.dto.UpdateScheduleRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +33,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -45,22 +52,26 @@ import org.springframework.web.bind.annotation.RestController;
  * ScheduleExceptionHandler} maps application failures to HTTP problem details. {@link
  * ApiVersionConfiguration} resolves the API version from the request path.
  *
- * <p>There is no read endpoint: the application layer exposes no schedule query use case, so this
- * layer maps the create, replace, and retire operations only.
+ * <p>The read operation is a room-scoped list: it answers the room's slots together with the
+ * reservation intake blackouts active at the instant the caller asks about, because intake
+ * eligibility is that pair and never the slot alone.
  */
 @RestController
 @RequestMapping(path = "/api/v{version}/schedules", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
 @Tag(
         name = "Schedule",
-        description = "Recurring room slots: create, create in batch, replace, retire.")
+        description =
+                "Recurring room slots: list one room's slots with their active blackouts, create,"
+                        + " create in batch, replace, retire.")
 @ApiResponses({
     @ApiResponse(
             responseCode = "400",
             description =
                     "the body carried a value the domain rejected, an interval ended on or before"
-                            + " its start, the identifier is not a UUID, the request carries no API"
-                            + " version, or a version this layer does not declare",
+                            + " its start, the identifier is not a UUID, a list query omits roomId"
+                            + " or now, now is not an instant, the request carries no API version,"
+                            + " or a version this layer does not declare",
             content =
                     @Content(
                             mediaType = "application/json",
@@ -87,6 +98,7 @@ import org.springframework.web.bind.annotation.RestController;
 })
 public class ScheduleController {
     private final CreateScheduleUseCase createScheduleUseCase;
+    private final ListScheduleUseCase listScheduleUseCase;
     private final UpdateScheduleUseCase updateScheduleUseCase;
     private final DeleteScheduleUseCase deleteScheduleUseCase;
 
@@ -151,6 +163,47 @@ public class ScheduleController {
                         createScheduleUseCase.create(request.toCommand()).schedules().stream()
                                 .map(ScheduleResponse::from)
                                 .toList());
+    }
+
+    /**
+     * Lists the recurring slots of one room with the reservation intake blackouts active at the
+     * requested instant.
+     *
+     * @param roomId the room whose slots to list
+     * @param now the intake instant whose active blackouts are reported
+     * @return 200 with the room slots and their active blackouts, empty when the room offers none
+     */
+    @Operation(
+            operationId = "listSchedules",
+            summary = "List one room's recurring slots with their active blackouts",
+            description =
+                    "Lists the slots a room that exists and is not deleted offers. Each slot carries"
+                            + " the reservation intake blackouts active at the requested instant, so a"
+                            + " slot open for intake is answered with an empty blackouts array, and a"
+                            + " room with no slot is answered with an empty schedules array. Ordering"
+                            + " is not guaranteed. A missing or deleted room is answered as 404.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "room slots with their active blackouts",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ScheduleListResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.SCHEDULE_LIST)))
+    @GetMapping
+    public ResponseEntity<ScheduleListResponse> list(
+            @Parameter(
+                            description = "room whose slots to list",
+                            schema = @Schema(type = "string", format = "uuid"))
+                    @RequestParam("roomId")
+                    UUID roomId,
+            @Parameter(
+                            description = "instant whose active blackouts are reported",
+                            schema = @Schema(type = "string", format = "date-time"))
+                    @RequestParam("now")
+                    Instant now) {
+        var result = listScheduleUseCase.list(ListScheduleQuery.of(RoomId.of(roomId), now));
+        return ResponseEntity.ok(ScheduleListResponse.from(result));
     }
 
     /**
