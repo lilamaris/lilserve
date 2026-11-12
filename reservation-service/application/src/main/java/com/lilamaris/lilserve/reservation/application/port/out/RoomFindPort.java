@@ -1,7 +1,10 @@
 package com.lilamaris.lilserve.reservation.application.port.out;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import jakarta.annotation.Nullable;
 import java.util.Optional;
 
 /**
@@ -42,4 +45,16 @@ public interface RoomFindPort {
      * @throws NullPointerException if {@code roomId} is null
      */
     Optional<Room> findDeletedById(RoomId roomId);
+
+    /**
+     * Finds a page of non-deleted rooms using case-insensitive literal substring filters. Null
+     * filters are ignored; supplied name and code filters are combined with AND.
+     *
+     * @param name optional room name fragment
+     * @param code optional room code fragment
+     * @param pageRequest the requested page
+     * @return the page ordered by code and identifier, with the filtered total
+     */
+    OffsetPage<Room> findNotDeletedByFilters(
+            @Nullable String name, @Nullable String code, OffsetPageRequest pageRequest);
 }

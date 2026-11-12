@@ -11,9 +11,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindRoomUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadataUseCase;
@@ -23,6 +26,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreRoo
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateRoomMetadataCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindRoomQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListRoomQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateRoomResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.FindRoomResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateRoomResult;
@@ -30,10 +34,13 @@ import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.web.controller.RoomController;
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -61,6 +68,7 @@ class RoomControllerTest {
 
     @MockitoBean private CreateRoomUseCase createRoomUseCase;
     @MockitoBean private FindRoomUseCase findRoomUseCase;
+    @MockitoBean private ListRoomUseCase listRoomUseCase;
     @MockitoBean private UpdateRoomMetadataUseCase updateRoomMetadataUseCase;
     @MockitoBean private UpdateRoomCodeUseCase updateRoomCodeUseCase;
     @MockitoBean private DeleteRoomUseCase deleteRoomUseCase;
@@ -241,6 +249,70 @@ class RoomControllerTest {
         mockMvc.perform(post(ROOM_URL + "/restore"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("room does not exist."));
+    }
+
+    @Test
+    @DisplayName("목록 조회 조건을 전달하고 식별자가 평탄화된 항목 및 페이지 메타데이터를 반환한다")
+    void listsItemsWithPageMetadata() throws Exception {
+        var query = ListRoomQuery.of("main", "ROOM", OffsetPageRequest.of(1, 2));
+        when(listRoomUseCase.list(query))
+                .thenReturn(OffsetPage.of(List.of(FindRoomResult.from(room())), 1, 2, 3));
+
+        mockMvc.perform(
+                        get(ROOMS_URL)
+                                .param("name", "main")
+                                .param("code", "ROOM")
+                                .param("page", "1")
+                                .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].roomId").value(ID.toString()))
+                .andExpect(jsonPath("$.items[0].name").value(NAME))
+                .andExpect(jsonPath("$.items[0].description").value(DESCRIPTION))
+                .andExpect(jsonPath("$.items[0].code").value(CODE))
+                .andExpect(jsonPath("$.items[0].createdAt").value(CREATED_AT.toString()));
+    }
+
+    @Test
+    @DisplayName("페이징 인자를 생략하면 첫 페이지와 기본 크기로 조회하고 빈 결과도 200으로 반환한다")
+    void listsDefaultEmptyPage() throws Exception {
+        when(listRoomUseCase.list(ListRoomQuery.of(null, null, OffsetPageRequest.of(0, 20))))
+                .thenReturn(OffsetPage.of(List.of(), 0, 20, 0));
+
+        mockMvc.perform(get(ROOMS_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"-1,20", "0,0", "0,-1", "2147483647,2", "invalid,20", "0,invalid", "2147483648,20"})
+    @DisplayName("잘못된 페이징 요청은 유스케이스를 실행하지 않고 400으로 거부한다")
+    void rejectsInvalidListPagination(String page, String size) throws Exception {
+        mockMvc.perform(get(ROOMS_URL).param("page", page).param("size", size))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(listRoomUseCase);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"main,", ",ROOM", "'  ','  '"})
+    @DisplayName("단일 필터 또는 빈 필터를 선택적으로 전달할 수 있다")
+    void acceptsOptionalListFilters(String name, String code) throws Exception {
+        var request = get(ROOMS_URL);
+        if (name != null) request.param("name", name);
+        if (code != null) request.param("code", code);
+        when(listRoomUseCase.list(ListRoomQuery.of(name, code, OffsetPageRequest.of(0, 20))))
+                .thenReturn(OffsetPage.of(List.of(), 0, 20, 0));
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty());
     }
 
     private Room room() {

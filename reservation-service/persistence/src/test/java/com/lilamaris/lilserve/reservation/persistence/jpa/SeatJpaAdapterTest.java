@@ -2,14 +2,20 @@ package com.lilamaris.lilserve.reservation.persistence.jpa;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Seat;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -185,6 +191,49 @@ class SeatJpaAdapterTest {
         var missing = SeatId.of(UUID.randomUUID());
 
         assertThat(adapter.findByIdWithExclusiveLock(missing)).isEmpty();
+    }
+
+    @ParameterizedTest
+    @MethodSource("seatPages")
+    @DisplayName("좌석 목록은 해당 방의 활성 좌석만 코드순으로 페이징하고 전체 건수를 반환한다")
+    void paginatesActiveSeatsInRoom(int number, List<String> expected) {
+        seedRoom();
+        entityManager.persist(seat("C-01"));
+        entityManager.persist(seat("A-01"));
+        entityManager.persist(seat("B-01"));
+        var deleted = seat("D-01");
+        deleted.delete(DELETED_AT);
+        entityManager.persist(deleted);
+        var otherRoom = RoomId.of(UUID.randomUUID());
+        entityManager.persist(Room.of(otherRoom, "ROOM-02", "Other", "", CREATED_AT));
+        entityManager.persist(Seat.of(SeatId.of(UUID.randomUUID()), otherRoom, "E-01", CREATED_AT));
+        flush();
+
+        var page =
+                adapter.findNotDeletedByRoomId(RoomId.of(ROOM_ID), OffsetPageRequest.of(number, 2));
+
+        assertThat(page.items()).extracting(Seat::getCode).containsExactlyElementsOf(expected);
+        assertThat(page.totalElements()).isEqualTo(3);
+        assertThat(page.page()).isEqualTo(number);
+        assertThat(page.size()).isEqualTo(2);
+    }
+
+    private static Stream<Arguments> seatPages() {
+        return Stream.of(
+                Arguments.of(0, List.of("A-01", "B-01")),
+                Arguments.of(1, List.of("C-01")),
+                Arguments.of(2, List.of()));
+    }
+
+    @Test
+    @DisplayName("좌석이 없는 방은 전체 건수가 영인 빈 페이지를 반환한다")
+    void returnsEmptySeatPage() {
+        seedRoom();
+
+        var page = adapter.findNotDeletedByRoomId(RoomId.of(ROOM_ID), OffsetPageRequest.of(0, 10));
+
+        assertThat(page.items()).isEmpty();
+        assertThat(page.totalElements()).isZero();
     }
 
     private Seat seat(String code) {

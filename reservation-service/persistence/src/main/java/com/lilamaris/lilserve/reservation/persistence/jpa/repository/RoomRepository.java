@@ -4,6 +4,8 @@ import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -43,4 +45,23 @@ public interface RoomRepository extends JpaRepository<Room, RoomId> {
             FROM Room r
             WHERE r.id = :roomId""")
     Optional<Room> findByIdWithExclusiveLock(@Param("roomId") RoomId roomId);
+
+    /**
+     * Finds active rooms matching both case-insensitive literal substring filters.
+     *
+     * @param name name fragment, empty to match all names
+     * @param code code fragment, empty to match all codes
+     * @param pageable the database page bounds
+     * @return matching rooms ordered by code and identifier with the filtered total
+     */
+    @Query(
+            """
+            SELECT r FROM Room r
+            WHERE r.deletedAt IS NULL
+              AND LOCATE(LOWER(:name), LOWER(r.name)) > 0
+              AND LOCATE(LOWER(:code), LOWER(r.code)) > 0
+            ORDER BY r.code, r.id
+            """)
+    Page<Room> findActiveByFilters(
+            @Param("name") String name, @Param("code") String code, Pageable pageable);
 }
