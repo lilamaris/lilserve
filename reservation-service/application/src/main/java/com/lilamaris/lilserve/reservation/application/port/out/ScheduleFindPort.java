@@ -1,7 +1,9 @@
 package com.lilamaris.lilserve.reservation.application.port.out;
 
 import com.lilamaris.lilserve.reservation.domain.Schedule;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -23,4 +25,12 @@ public interface ScheduleFindPort {
      * @return the slot, or empty when it does not exist or is retired
      */
     Optional<Schedule> findNotDeletedById(ScheduleId scheduleId);
+
+    /**
+     * Loads every non-deleted recurring slot belonging to the room.
+     *
+     * @param roomId the owning room identifier
+     * @return the slots in unspecified order, or an empty list
+     */
+    List<Schedule> findNotDeletedByRoomId(RoomId roomId);
 }

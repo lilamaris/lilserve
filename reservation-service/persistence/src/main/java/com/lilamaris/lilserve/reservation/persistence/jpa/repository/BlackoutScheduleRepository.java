@@ -2,10 +2,12 @@ package com.lilamaris.lilserve.reservation.persistence.jpa.repository;
 
 import com.lilamaris.lilserve.reservation.domain.BlackoutSchedule;
 import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -75,4 +77,22 @@ public interface BlackoutScheduleRepository
             nativeQuery = true)
     boolean existsActiveByScheduleIdsAt(
             @Param("scheduleIds") Collection<UUID> scheduleIds, @Param("at") Instant at);
+
+    /**
+     * Loads all non-deleted room blackouts active at the supplied instant, including overlaps.
+     *
+     * @param roomId the owning room identifier
+     * @param at the inclusive-start, exclusive-end intake instant
+     * @return the matching blackouts in unspecified order
+     */
+    @Query(
+            """
+            SELECT bs
+            FROM BlackoutSchedule bs
+            WHERE bs.roomId = :roomId
+                AND bs.deletedAt IS NULL
+                AND bs.startsAt <= :at
+                AND :at < bs.endsAt""")
+    List<BlackoutSchedule> findActiveByRoomIdAt(
+            @Param("roomId") RoomId roomId, @Param("at") Instant at);
 }

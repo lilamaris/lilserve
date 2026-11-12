@@ -292,6 +292,45 @@ class ScheduleJpaAdapterTest {
         assertThat(adapter.findByIdWithExclusiveLock(ScheduleId.of(UUID.randomUUID()))).isEmpty();
     }
 
+    @Test
+    @DisplayName("방 스케줄 목록은 해당 방의 삭제되지 않은 슬롯만 반환한다")
+    void findsOnlyNonDeletedSchedulesOfRoom() {
+        var morning = schedule(10, 12);
+        var afternoon = schedule(14, 16);
+        var retired = schedule(16, 18);
+        retired.delete(RETIRED_AT);
+        var otherRoomId = RoomId.of(UUID.randomUUID());
+        entityManager.persist(Room.of(otherRoomId, "ROOM-02", "hall", "", CREATED_AT));
+        var other =
+                Schedule.of(
+                        ScheduleId.of(UUID.randomUUID()),
+                        otherRoomId,
+                        DayOfWeek.MONDAY,
+                        LocalTime.of(10, 0),
+                        LocalTime.of(12, 0),
+                        CREATED_AT);
+        entityManager.persist(morning);
+        entityManager.persist(afternoon);
+        entityManager.persist(retired);
+        entityManager.persist(other);
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomId(roomId))
+                .extracting(Schedule::getId)
+                .containsExactlyInAnyOrder(morning.getId(), afternoon.getId());
+    }
+
+    @Test
+    @DisplayName("방에 활성 스케줄이 없으면 빈 목록을 반환한다")
+    void returnsEmptyRoomSchedules() {
+        var retired = schedule(10, 12);
+        retired.delete(RETIRED_AT);
+        entityManager.persist(retired);
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomId(roomId)).isEmpty();
+    }
+
     private Schedule schedule(int start, int end) {
         return Schedule.of(
                 ScheduleId.of(UUID.randomUUID()),
