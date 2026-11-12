@@ -1,6 +1,7 @@
 package com.lilamaris.lilserve.reservation.persistence.jpa.repository;
 
 import com.lilamaris.lilserve.reservation.domain.Schedule;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
@@ -75,4 +76,18 @@ public interface ScheduleRepository extends JpaRepository<Schedule, ScheduleId> 
             WHERE s.id = :scheduleId
             """)
     Optional<Schedule> findByIdWithExclusiveLock(@Param("scheduleId") ScheduleId scheduleId);
+
+    /**
+     * Loads non-deleted slots for one room without imposing an order.
+     *
+     * @param roomId the owning room identifier
+     * @return the room slots, possibly empty
+     */
+    @Query(
+            """
+            SELECT s
+            FROM Schedule s
+            WHERE s.roomId = :roomId
+                AND s.deletedAt IS NULL""")
+    List<Schedule> findActiveByRoomId(@Param("roomId") RoomId roomId);
 }

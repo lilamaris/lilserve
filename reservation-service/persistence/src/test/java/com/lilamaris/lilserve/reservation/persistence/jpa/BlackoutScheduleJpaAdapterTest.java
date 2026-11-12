@@ -157,6 +157,99 @@ class BlackoutScheduleJpaAdapterTest {
                 .contains("Inspection");
     }
 
+    @Test
+    @DisplayName("같은 슬롯에서 기간이 겹치는 활성 차단을 모두 반환한다")
+    void returnsAllOverlappingRoomBlackouts() {
+        var first = persistBlackout(roomId, scheduleId, CREATED, NOW.plusSeconds(60));
+        var second = persistBlackout(roomId, scheduleId, CREATED, NOW.plusSeconds(120));
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW))
+                .extracting(BlackoutSchedule::getId)
+                .containsExactlyInAnyOrder(first.getId(), second.getId());
+    }
+
+    @Test
+    @DisplayName("차단 시작 시각은 방의 활성 차단 조회에 포함한다")
+    void includesBlackoutAtStart() {
+        var blackout = persistBlackout(roomId, scheduleId, NOW, NOW.plusSeconds(60));
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW))
+                .extracting(BlackoutSchedule::getId)
+                .containsExactly(blackout.getId());
+    }
+
+    @Test
+    @DisplayName("차단 종료 시각은 방의 활성 차단 조회에서 제외한다")
+    void excludesBlackoutAtEnd() {
+        persistBlackout(roomId, scheduleId, CREATED, NOW);
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("종료된 차단은 방의 활성 차단 조회에서 제외한다")
+    void excludesExpiredRoomBlackout() {
+        persistBlackout(roomId, scheduleId, CREATED, NOW.minusSeconds(1));
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("시작 전 차단은 방의 활성 차단 조회에서 제외한다")
+    void excludesFutureRoomBlackout() {
+        // The fixture blackout starts one hour after creation.
+        assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("삭제된 차단은 유효 기간 안이어도 방의 활성 차단 조회에서 제외한다")
+    void excludesDeletedRoomBlackout() {
+        var blackout = persistBlackout(roomId, scheduleId, CREATED, NOW.plusSeconds(60));
+        blackout.delete(NOW);
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("다른 방의 활성 차단은 조회에 포함하지 않는다")
+    void excludesOtherRoomBlackout() {
+        var otherRoom = RoomId.of(UUID.randomUUID());
+        var otherSchedule = ScheduleId.of(UUID.randomUUID());
+        entityManager.persist(Room.of(otherRoom, "ROOM-02", "hall", "", CREATED));
+        entityManager.persist(
+                Schedule.of(
+                        otherSchedule,
+                        otherRoom,
+                        DayOfWeek.MONDAY,
+                        LocalTime.of(10, 0),
+                        LocalTime.of(11, 0),
+                        CREATED));
+        persistBlackout(otherRoom, otherSchedule, CREATED, NOW.plusSeconds(60));
+        flushAndClear();
+
+        assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW)).isEmpty();
+    }
+
+    private BlackoutSchedule persistBlackout(
+            RoomId owner, ScheduleId slot, Instant start, Instant end) {
+        var blackout =
+                BlackoutSchedule.of(
+                        BlackoutScheduleId.of(UUID.randomUUID()),
+                        owner,
+                        slot,
+                        "Maintenance",
+                        start,
+                        end,
+                        CREATED);
+        entityManager.persist(blackout);
+        return blackout;
+    }
+
     private void flushAndClear() {
         entityManager.flush();
         entityManager.clear();

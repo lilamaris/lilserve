@@ -5,6 +5,7 @@ import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleSavePort;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.persistence.jpa.repository.ScheduleRepository;
 import java.time.Instant;
@@ -55,6 +56,12 @@ public class ScheduleJpaAdapter
     @Override
     public Optional<Schedule> findNotDeletedById(ScheduleId scheduleId) {
         return repository.findById(scheduleId).filter(schedule -> !schedule.isDeleted());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<Schedule> findNotDeletedByRoomId(RoomId roomId) {
+        return repository.findActiveByRoomId(roomId);
     }
 
     /**

@@ -5,9 +5,11 @@ import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleL
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleSavePort;
 import com.lilamaris.lilserve.reservation.domain.BlackoutSchedule;
 import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.persistence.jpa.repository.BlackoutScheduleRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -51,5 +53,11 @@ public class BlackoutScheduleJpaAdapter
     @Override
     public Optional<ScheduleId> findScheduleIdById(BlackoutScheduleId blackoutScheduleId) {
         return repository.findScheduleIdById(blackoutScheduleId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<BlackoutSchedule> findNotDeletedByRoomIdAt(RoomId roomId, Instant now) {
+        return repository.findActiveByRoomIdAt(roomId, now);
     }
 }

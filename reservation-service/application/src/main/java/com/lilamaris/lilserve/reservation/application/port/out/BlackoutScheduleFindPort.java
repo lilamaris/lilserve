@@ -1,8 +1,11 @@
 package com.lilamaris.lilserve.reservation.application.port.out;
 
+import com.lilamaris.lilserve.reservation.domain.BlackoutSchedule;
 import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
+import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -40,4 +43,14 @@ public interface BlackoutScheduleFindPort {
      * @return the parent identifier, or empty when the blackout does not exist
      */
     Optional<ScheduleId> findScheduleIdById(BlackoutScheduleId blackoutScheduleId);
+
+    /**
+     * Loads non-deleted room blackouts whose half-open interval contains the instant. Multiple
+     * overlapping blackouts for the same slot are retained.
+     *
+     * @param roomId the owning room identifier
+     * @param now the reservation intake instant
+     * @return the active blackouts in unspecified order, or an empty list
+     */
+    List<BlackoutSchedule> findNotDeletedByRoomIdAt(RoomId roomId, Instant now);
 }
