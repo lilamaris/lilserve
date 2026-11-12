@@ -1,6 +1,7 @@
 package com.lilamaris.lilserve.reservation.application.port.in;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteBlackoutScheduleCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteBlackoutScheduleResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
@@ -13,11 +14,12 @@ public interface DeleteBlackoutScheduleUseCase {
      * that was deleted while the request waited. Existing reservations are preserved.
      *
      * @param command the blackout identifier, not null
+     * @return the deleted blackout identifier and its deletion time
      * @throws java.util.NoSuchElementException if the parent schedule is missing or the blackout is
      *     missing or deleted
      * @throws jakarta.validation.ConstraintViolationException if method validation is active and
      *     the command is null or violates its constraints
      * @throws NullPointerException if method validation is bypassed and the command is null
      */
-    void delete(@NotNull @Valid DeleteBlackoutScheduleCommand command);
+    DeleteBlackoutScheduleResult delete(@NotNull @Valid DeleteBlackoutScheduleCommand command);
 }

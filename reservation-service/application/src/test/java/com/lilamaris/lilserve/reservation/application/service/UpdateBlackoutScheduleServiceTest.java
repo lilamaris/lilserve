@@ -12,6 +12,7 @@ import com.lilamaris.lilserve.reservation.application.model.time.InstantRange;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteBlackoutScheduleCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateBlackoutSchedulePeriodCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateBlackoutScheduleReasonCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateBlackoutScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleSavePort;
@@ -64,36 +65,40 @@ class UpdateBlackoutScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("사유만 변경하고 식별자와 기존 구간을 보존한다")
+    @DisplayName("사유만 변경하고 식별자와 기존 구간을 보존한 결과를 반환한다")
     void updatesReasonWithoutChangingPeriod() {
         var blackout = givenBlackout();
-        service.updateReason(UpdateBlackoutScheduleReasonCommand.of(ID, "Inspection"));
+        var result = service.updateReason(UpdateBlackoutScheduleReasonCommand.of(ID, "Inspection"));
         assertThat(blackout.getReason()).isEqualTo("Inspection");
         assertThat(blackout.getStartsAt()).isEqualTo(CREATED.plusSeconds(3600));
         assertThat(blackout.getEndsAt()).isEqualTo(CREATED.plusSeconds(7200));
         assertUpdated(blackout);
+        assertResultMatches(blackout, result);
     }
 
     @Test
-    @DisplayName("기간을 변경하고 기존 사유와 소속을 보존한다")
+    @DisplayName("기간을 변경하고 기존 사유와 소속을 보존한 결과를 반환한다")
     void updatesPeriodWithoutChangingReason() {
         givenSchedule();
         var blackout = givenBlackout();
-        service.updateRange(UpdateBlackoutSchedulePeriodCommand.of(ID, range()));
+        var result = service.updateRange(UpdateBlackoutSchedulePeriodCommand.of(ID, range()));
         assertThat(blackout.getStartsAt()).isEqualTo(range().startsAt());
         assertThat(blackout.getEndsAt()).isEqualTo(range().endsAt());
         assertThat(blackout.getReason()).isEqualTo("Maintenance");
         assertUpdated(blackout);
+        assertResultMatches(blackout, result);
     }
 
     @Test
-    @DisplayName("삭제 시 삭제 시각과 수정 시각을 함께 저장한다")
+    @DisplayName("삭제 시 삭제 시각과 수정 시각을 저장하고 식별자와 삭제 시각을 반환한다")
     void savesDeletionTime() {
         givenSchedule();
         var blackout = givenBlackout();
-        service.delete(DeleteBlackoutScheduleCommand.of(ID));
+        var result = service.delete(DeleteBlackoutScheduleCommand.of(ID));
         assertThat(blackout.getDeletedAt()).isEqualTo(NOW);
         assertUpdated(blackout);
+        assertThat(result.blackoutScheduleId()).isEqualTo(ID);
+        assertThat(result.deletedAt()).isEqualTo(NOW);
     }
 
     @ParameterizedTest
@@ -177,6 +182,31 @@ class UpdateBlackoutScheduleServiceTest {
                                         LocalTime.of(10, 0),
                                         LocalTime.of(11, 0),
                                         CREATED)));
+    }
+
+    private void assertResultMatches(
+            BlackoutSchedule blackout, UpdateBlackoutScheduleResult result) {
+        assertThat(result)
+                .extracting(
+                        UpdateBlackoutScheduleResult::blackoutScheduleId,
+                        UpdateBlackoutScheduleResult::roomId,
+                        UpdateBlackoutScheduleResult::scheduleId,
+                        UpdateBlackoutScheduleResult::reason,
+                        UpdateBlackoutScheduleResult::startsAt,
+                        UpdateBlackoutScheduleResult::endsAt,
+                        UpdateBlackoutScheduleResult::createdAt,
+                        UpdateBlackoutScheduleResult::updatedAt,
+                        UpdateBlackoutScheduleResult::deletedAt)
+                .containsExactly(
+                        blackout.getId(),
+                        blackout.getRoomId(),
+                        blackout.getScheduleId(),
+                        blackout.getReason(),
+                        blackout.getStartsAt(),
+                        blackout.getEndsAt(),
+                        blackout.getCreatedAt(),
+                        blackout.getUpdatedAt(),
+                        blackout.getDeletedAt());
     }
 
     private void assertUpdated(BlackoutSchedule blackout) {

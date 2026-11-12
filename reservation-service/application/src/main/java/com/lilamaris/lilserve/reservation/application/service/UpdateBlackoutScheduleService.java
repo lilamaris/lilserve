@@ -6,6 +6,8 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateBlackoutSche
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteBlackoutScheduleCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateBlackoutSchedulePeriodCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateBlackoutScheduleReasonCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteBlackoutScheduleResult;
+import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateBlackoutScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleSavePort;
@@ -23,7 +25,9 @@ import org.springframework.validation.annotation.Validated;
  * <p>Period changes and deletion read only the immutable parent identifier before locking the
  * schedule and then the blackout exclusively. The final locked blackout determines whether the
  * request is still valid. Reason changes lock only the blackout. All mutation timestamps come from
- * {@link Clock} after the required locks are acquired; runtime failures roll back the change.
+ * {@link Clock} after the required locks are acquired; runtime failures roll back the change. Each
+ * result reports the locked blackout as it was stored, so the committed state reaches the caller in
+ * the same transaction that changed it.
  */
 @Service
 @Validated
@@ -41,7 +45,7 @@ public class UpdateBlackoutScheduleService
     /** {@inheritDoc} */
     @Override
     @Transactional
-    public void updateReason(UpdateBlackoutScheduleReasonCommand command) {
+    public UpdateBlackoutScheduleResult updateReason(UpdateBlackoutScheduleReasonCommand command) {
         var blackoutSchedule =
                 blackoutScheduleLockFindPort
                         .findByIdWithExclusiveLock(command.blackoutScheduleId())
@@ -56,12 +60,14 @@ public class UpdateBlackoutScheduleService
         blackoutSchedule.updateReason(command.reason(), now);
 
         blackoutScheduleSavePort.save(blackoutSchedule);
+
+        return UpdateBlackoutScheduleResult.from(blackoutSchedule);
     }
 
     /** {@inheritDoc} */
     @Override
     @Transactional
-    public void updateRange(UpdateBlackoutSchedulePeriodCommand command) {
+    public UpdateBlackoutScheduleResult updateRange(UpdateBlackoutSchedulePeriodCommand command) {
         var scheduleId =
                 blackoutScheduleFindPort
                         .findScheduleIdById(command.blackoutScheduleId())
@@ -88,12 +94,14 @@ public class UpdateBlackoutScheduleService
         blackoutSchedule.updatePeriod(command.period().startsAt(), command.period().endsAt(), now);
 
         blackoutScheduleSavePort.save(blackoutSchedule);
+
+        return UpdateBlackoutScheduleResult.from(blackoutSchedule);
     }
 
     /** {@inheritDoc} */
     @Override
     @Transactional
-    public void delete(DeleteBlackoutScheduleCommand command) {
+    public DeleteBlackoutScheduleResult delete(DeleteBlackoutScheduleCommand command) {
         var scheduleId =
                 blackoutScheduleFindPort
                         .findScheduleIdById(command.blackoutScheduleId())
@@ -120,5 +128,7 @@ public class UpdateBlackoutScheduleService
         blackoutSchedule.delete(now);
 
         blackoutScheduleSavePort.save(blackoutSchedule);
+
+        return DeleteBlackoutScheduleResult.from(blackoutSchedule);
     }
 }
