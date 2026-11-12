@@ -108,6 +108,7 @@ public class RoomController {
      * @return 201 with the created room
      */
     @Operation(
+            operationId = "createRoom",
             summary = "Create a room",
             description =
                     "Creates a room from a code, a name, and a description. The code is unique, so"
@@ -135,6 +136,7 @@ public class RoomController {
      * @return 200 with room responses and the page number, size, and matching total
      */
     @Operation(
+            operationId = "listRooms",
             summary = "List rooms",
             description =
                     "Lists non-deleted rooms in code order. Name and code filters are literal, case-insensitive substrings combined with AND. Blank filters are ignored. An empty or out-of-range page returns 200 with an empty items array. Page times size must not exceed 2147483647.")
@@ -173,6 +175,7 @@ public class RoomController {
      * @return 200 with the found room
      */
     @Operation(
+            operationId = "findRoom",
             summary = "Find a room",
             description =
                     "Finds one room that is not deleted. A deleted room is answered as 404, because"
@@ -202,6 +205,7 @@ public class RoomController {
      * @return 200 with the room that has the new metadata
      */
     @Operation(
+            operationId = "updateRoomMetadata",
             summary = "Change a room's name and description",
             description =
                     "Changes the metadata of one room. The room must not be deleted, otherwise the"
@@ -234,6 +238,7 @@ public class RoomController {
      * @return 200 with the room that has the new code
      */
     @Operation(
+            operationId = "updateRoomCode",
             summary = "Change a room's code",
             description =
                     "Changes the code of one room. The code is unique in the database, so a code"
@@ -277,6 +282,7 @@ public class RoomController {
      * @return 204 without a body
      */
     @Operation(
+            operationId = "deleteRoom",
             summary = "Delete a room",
             description =
                     "Soft delete: the deletion time is recorded and the row is kept, so the answer"
@@ -301,6 +307,7 @@ public class RoomController {
      * @return 200 with the restored room
      */
     @Operation(
+            operationId = "restoreRoom",
             summary = "Restore a deleted room",
             description =
                     "Clears the deletion time of a deleted room. A room that is not deleted is"

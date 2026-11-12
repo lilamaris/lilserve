@@ -102,6 +102,7 @@ public class SeatController {
      * @return 201 with the created seat
      */
     @Operation(
+            operationId = "createSeat",
             summary = "Create a seat in a room",
             description =
                     "Creates a seat in a room that exists and is not deleted. The code is unique, so"
@@ -128,6 +129,7 @@ public class SeatController {
      * @return 200 with seat responses and the page number, size, and matching total
      */
     @Operation(
+            operationId = "listSeats",
             summary = "List seats",
             description =
                     "Lists non-deleted seats of one non-deleted room in code order. An unavailable room returns 404. An empty or out-of-range page returns 200 with an empty items array. Page times size must not exceed 2147483647.")
@@ -163,6 +165,7 @@ public class SeatController {
      * @return 200 with the found seat
      */
     @Operation(
+            operationId = "findSeat",
             summary = "Find a seat",
             description =
                     "Finds one seat that is not deleted. A deleted seat is answered as 404, because"
@@ -192,6 +195,7 @@ public class SeatController {
      * @return 200 with the seat that has the new code
      */
     @Operation(
+            operationId = "updateSeatCode",
             summary = "Change a seat's code",
             description =
                     "Changes the code of one seat. The seat must not be deleted, otherwise the answer"
@@ -235,6 +239,7 @@ public class SeatController {
      * @return 204 without a body
      */
     @Operation(
+            operationId = "deleteSeat",
             summary = "Delete a seat",
             description =
                     "Soft delete: the deletion time is recorded and the row is kept, so the answer has"
@@ -259,6 +264,7 @@ public class SeatController {
      * @return 200 with the restored seat
      */
     @Operation(
+            operationId = "restoreSeat",
             summary = "Restore a deleted seat",
             description =
                     "Clears the deletion time of a deleted seat. A seat that is not deleted is"
