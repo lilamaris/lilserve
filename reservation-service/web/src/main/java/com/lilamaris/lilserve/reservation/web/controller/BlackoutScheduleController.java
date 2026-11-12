@@ -98,6 +98,7 @@ public class BlackoutScheduleController {
      * @return 201 with the created blackout
      */
     @Operation(
+            operationId = "createBlackoutSchedule",
             summary = "Suspend new reservation intake for a recurring slot",
             description =
                     "Blocks new intake over the requested absolute interval, independently of the"
@@ -144,6 +145,7 @@ public class BlackoutScheduleController {
      * @return 200 with the blackout that has the new interval
      */
     @Operation(
+            operationId = "updateBlackoutSchedulePeriod",
             summary = "Replace a blackout's intake interval",
             description =
                     "New intake decides against either the preceding interval or the committed"
@@ -178,6 +180,7 @@ public class BlackoutScheduleController {
      * @return 200 with the blackout that has the new reason
      */
     @Operation(
+            operationId = "updateBlackoutScheduleReason",
             summary = "Replace a blackout's reason",
             description =
                     "Changes the explanation only, so intake decisions do not move. The blackout must"
@@ -210,6 +213,7 @@ public class BlackoutScheduleController {
      * @return 204 without a body
      */
     @Operation(
+            operationId = "deleteBlackoutSchedule",
             summary = "Delete a blackout",
             description =
                     "Soft delete: the deletion time is recorded and the row is kept, so the answer has"

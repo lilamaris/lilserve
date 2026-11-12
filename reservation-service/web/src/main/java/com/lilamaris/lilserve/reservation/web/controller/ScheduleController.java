@@ -96,6 +96,7 @@ public class ScheduleController {
      * @return 201 with the created slot
      */
     @Operation(
+            operationId = "createSchedule",
             summary = "Create one recurring slot in a room",
             description =
                     "Creates one recurring slot in a room that exists and is not deleted. The slot"
@@ -121,6 +122,7 @@ public class ScheduleController {
      * @return 201 with the created slots, in no guaranteed weekday order
      */
     @Operation(
+            operationId = "createSchedules",
             summary = "Create recurring slots in a room as one batch",
             description =
                     "Creates the requested slots in one transaction, so a failure leaves none of"
@@ -156,6 +158,7 @@ public class ScheduleController {
      * @return 200 with the replacement slot and its new identifier
      */
     @Operation(
+            operationId = "updateSchedule",
             summary = "Replace a recurring slot",
             description =
                     "Slot definitions are append-only, so the times of the original slot are never"
@@ -190,6 +193,7 @@ public class ScheduleController {
      * @return 204 without a body
      */
     @Operation(
+            operationId = "deleteSchedule",
             summary = "Retire a recurring slot",
             description =
                     "Soft delete: the retirement time is recorded and the row is kept, so the answer"
