@@ -2,10 +2,14 @@ package com.lilamaris.lilserve.reservation.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
+import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateBlackoutScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateScheduleUseCase;
@@ -26,14 +30,18 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomCodeUseC
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateRoomMetadataUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListRoomQuery;
 import com.lilamaris.lilserve.reservation.web.controller.BlackoutScheduleController;
 import com.lilamaris.lilserve.reservation.web.controller.RoomController;
 import com.lilamaris.lilserve.reservation.web.controller.ScheduleController;
 import com.lilamaris.lilserve.reservation.web.controller.SeatController;
 import io.swagger.v3.oas.annotations.Operation;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springdoc.core.configuration.SpringDocConfiguration;
 import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration;
@@ -47,7 +55,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-@DisplayName("OpenAPI 작업 식별자")
+@DisplayName("OpenAPI 문서와 웹 API 계약")
 @WebMvcTest(
         controllers = {
             RoomController.class,
@@ -91,38 +99,39 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
             UpdateScheduleUseCase.class,
             UpdateSeatCodeUseCase.class
         })
-class OpenApiOperationIdTest {
+class OpenApiContractTest {
     private static final Map<String, String> EXPECTED_IDS =
             Map.ofEntries(
-                    Map.entry("post /api/1/rooms", "createRoom"),
-                    Map.entry("get /api/1/rooms", "listRooms"),
-                    Map.entry("get /api/1/rooms/{roomId}", "findRoom"),
-                    Map.entry("put /api/1/rooms/{roomId}", "updateRoomMetadata"),
-                    Map.entry("patch /api/1/rooms/{roomId}/code", "updateRoomCode"),
-                    Map.entry("delete /api/1/rooms/{roomId}", "deleteRoom"),
-                    Map.entry("post /api/1/rooms/{roomId}/restore", "restoreRoom"),
-                    Map.entry("post /api/1/seats", "createSeat"),
-                    Map.entry("get /api/1/seats", "listSeats"),
-                    Map.entry("get /api/1/seats/{seatId}", "findSeat"),
-                    Map.entry("patch /api/1/seats/{seatId}/code", "updateSeatCode"),
-                    Map.entry("delete /api/1/seats/{seatId}", "deleteSeat"),
-                    Map.entry("post /api/1/seats/{seatId}/restore", "restoreSeat"),
-                    Map.entry("post /api/1/schedules", "createSchedule"),
-                    Map.entry("post /api/1/schedules/batch", "createSchedules"),
-                    Map.entry("put /api/1/schedules/{scheduleId}", "updateSchedule"),
-                    Map.entry("delete /api/1/schedules/{scheduleId}", "deleteSchedule"),
-                    Map.entry("post /api/1/blackouts", "createBlackoutSchedule"),
+                    Map.entry("post /api/v1/rooms", "createRoom"),
+                    Map.entry("get /api/v1/rooms", "listRooms"),
+                    Map.entry("get /api/v1/rooms/{roomId}", "findRoom"),
+                    Map.entry("put /api/v1/rooms/{roomId}", "updateRoomMetadata"),
+                    Map.entry("patch /api/v1/rooms/{roomId}/code", "updateRoomCode"),
+                    Map.entry("delete /api/v1/rooms/{roomId}", "deleteRoom"),
+                    Map.entry("post /api/v1/rooms/{roomId}/restore", "restoreRoom"),
+                    Map.entry("post /api/v1/seats", "createSeat"),
+                    Map.entry("get /api/v1/seats", "listSeats"),
+                    Map.entry("get /api/v1/seats/{seatId}", "findSeat"),
+                    Map.entry("patch /api/v1/seats/{seatId}/code", "updateSeatCode"),
+                    Map.entry("delete /api/v1/seats/{seatId}", "deleteSeat"),
+                    Map.entry("post /api/v1/seats/{seatId}/restore", "restoreSeat"),
+                    Map.entry("post /api/v1/schedules", "createSchedule"),
+                    Map.entry("post /api/v1/schedules/batch", "createSchedules"),
+                    Map.entry("put /api/v1/schedules/{scheduleId}", "updateSchedule"),
+                    Map.entry("delete /api/v1/schedules/{scheduleId}", "deleteSchedule"),
+                    Map.entry("post /api/v1/blackouts", "createBlackoutSchedule"),
                     Map.entry(
-                            "patch /api/1/blackouts/{blackoutScheduleId}/period",
+                            "patch /api/v1/blackouts/{blackoutScheduleId}/period",
                             "updateBlackoutSchedulePeriod"),
                     Map.entry(
-                            "patch /api/1/blackouts/{blackoutScheduleId}/reason",
+                            "patch /api/v1/blackouts/{blackoutScheduleId}/reason",
                             "updateBlackoutScheduleReason"),
                     Map.entry(
-                            "delete /api/1/blackouts/{blackoutScheduleId}",
+                            "delete /api/v1/blackouts/{blackoutScheduleId}",
                             "deleteBlackoutSchedule"));
 
     @Autowired private MockMvc mockMvc;
+    @Autowired private ListRoomUseCase listRoomUseCase;
 
     @Autowired
     @Qualifier("requestMappingHandlerMapping")
@@ -142,6 +151,40 @@ class OpenApiOperationIdTest {
         result.andExpect(
                 jsonPath("$.paths..operationId")
                         .value(containsInAnyOrder(EXPECTED_IDS.values().toArray())));
+    }
+
+    @Test
+    @DisplayName("문서가 제공한 방 목록 URL로 실제 요청하면 성공한다")
+    void servesRequestAtDocumentedPath() throws Exception {
+        var document =
+                mockMvc.perform(get("/v3/api-docs"))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        Map<String, Map<String, Object>> paths = JsonPath.read(document, "$.paths");
+        var path =
+                paths.entrySet().stream()
+                        .filter(
+                                entry ->
+                                        entry.getValue().get("get") instanceof Map<?, ?> operation
+                                                && "listRooms".equals(operation.get("operationId")))
+                        .map(Map.Entry::getKey)
+                        .findFirst()
+                        .orElseThrow();
+        when(listRoomUseCase.list(ListRoomQuery.of(null, null, OffsetPageRequest.of(0, 20))))
+                .thenReturn(OffsetPage.of(List.of(), 0, 20, 0));
+
+        mockMvc.perform(get(path))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"/api/v2/rooms,400", "/api/v0/rooms,400", "/api/1/rooms,404", "/api/abc/rooms,404"})
+    @DisplayName("지원하지 않는 버전과 버전 접두사가 잘못된 경로는 거부한다")
+    void rejectsUnsupportedVersionPaths(String path, int statusCode) throws Exception {
+        mockMvc.perform(get(path)).andExpect(status().is(statusCode));
     }
 
     @Test

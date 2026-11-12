@@ -51,7 +51,7 @@ import org.springframework.web.bind.annotation.RestController;
  * ApiVersionConfiguration} resolves the API version from the request path.
  */
 @RestController
-@RequestMapping(path = "/api/{version}/seats", version = ApiVersionConfiguration.CURRENT)
+@RequestMapping(path = "/api/v{version}/seats", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
 @Tag(name = "Seat", description = "Seats: create, find, list, change code, delete, restore.")
 @ApiResponses({

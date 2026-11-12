@@ -38,7 +38,7 @@ class ApiVersionTest {
     @Test
     @DisplayName("버전 자리에 버전이 없는 요청은 400으로 거부한다")
     void rejectsRequestWithoutVersion() throws Exception {
-        mockMvc.perform(get("/api/abc/ping")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/vabc/ping")).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -55,7 +55,7 @@ class ApiVersionTest {
 
     /** The smallest mapping that declares the current version, so versioning is read on its own. */
     @RestController
-    @RequestMapping(path = "/api/{version}/ping", version = ApiVersionConfiguration.CURRENT)
+    @RequestMapping(path = "/api/v{version}/ping", version = ApiVersionConfiguration.CURRENT)
     static class VersionProbeController {
         @GetMapping
         ResponseEntity<Void> ping() {
