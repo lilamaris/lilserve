@@ -3,6 +3,7 @@ package com.lilamaris.lilserve.reservation.application.service;
 import com.lilamaris.lilserve.reservation.application.model.id.IdGenerator;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateBlackoutScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateBlackoutScheduleCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.CreateBlackoutScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
@@ -19,7 +20,9 @@ import org.springframework.validation.annotation.Validated;
 /**
  * Creates reservation intake blackouts using a shared room lock followed by an exclusive schedule
  * lock in one transaction. The clock and identifier generator are read after both resources are
- * protected. Persistence enforces that the schedule belongs to the requested room.
+ * protected. Persistence enforces that the schedule belongs to the requested room. The result
+ * reports the stored blackout, so its generated identifier reaches the caller in the same
+ * transaction that created it.
  */
 @Service
 @Validated
@@ -34,7 +37,7 @@ public class CreateBlackoutScheduleService implements CreateBlackoutScheduleUseC
     /** {@inheritDoc} */
     @Override
     @Transactional
-    public void create(CreateBlackoutScheduleCommand command) {
+    public CreateBlackoutScheduleResult create(CreateBlackoutScheduleCommand command) {
         var room =
                 roomLockFindPort
                         .findByIdWithSharedLock(command.roomId())
@@ -60,5 +63,7 @@ public class CreateBlackoutScheduleService implements CreateBlackoutScheduleUseC
                         now);
 
         blackoutScheduleSavePort.save(blackoutSchedule);
+
+        return CreateBlackoutScheduleResult.from(blackoutSchedule);
     }
 }

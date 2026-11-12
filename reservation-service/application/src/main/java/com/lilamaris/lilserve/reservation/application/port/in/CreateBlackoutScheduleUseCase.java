@@ -1,6 +1,7 @@
 package com.lilamaris.lilserve.reservation.application.port.in;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateBlackoutScheduleCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.CreateBlackoutScheduleResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,10 +15,11 @@ public interface CreateBlackoutScheduleUseCase {
      * existing reservations are preserved. The database enforces room and schedule ownership.
      *
      * @param command the room, schedule, intake interval, and reason, not null
+     * @return the created blackout with its generated identifier
      * @throws java.util.NoSuchElementException if the room or schedule is missing or deleted
      * @throws jakarta.validation.ConstraintViolationException if method validation is active and
      *     the command is null or violates its constraints
      * @throws NullPointerException if method validation is bypassed and the command is null
      */
-    void create(@NotNull @Valid CreateBlackoutScheduleCommand command);
+    CreateBlackoutScheduleResult create(@NotNull @Valid CreateBlackoutScheduleCommand command);
 }

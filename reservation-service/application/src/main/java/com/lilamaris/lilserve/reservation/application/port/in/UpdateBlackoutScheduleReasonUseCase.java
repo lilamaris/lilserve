@@ -1,6 +1,7 @@
 package com.lilamaris.lilserve.reservation.application.port.in;
 
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateBlackoutScheduleReasonCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateBlackoutScheduleResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
@@ -13,10 +14,12 @@ public interface UpdateBlackoutScheduleReasonUseCase {
      * A blackout deleted by a preceding transaction is rejected after the lock is acquired.
      *
      * @param command the blackout identifier and replacement reason, not null
+     * @return the blackout with the new reason
      * @throws java.util.NoSuchElementException if the blackout is missing or deleted
      * @throws jakarta.validation.ConstraintViolationException if method validation is active and
      *     the command is null or violates its constraints
      * @throws NullPointerException if method validation is bypassed and the command is null
      */
-    void updateReason(@NotNull @Valid UpdateBlackoutScheduleReasonCommand command);
+    UpdateBlackoutScheduleResult updateReason(
+            @NotNull @Valid UpdateBlackoutScheduleReasonCommand command);
 }

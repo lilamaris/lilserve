@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.lilamaris.lilserve.reservation.application.model.time.InstantRange;
 import com.lilamaris.lilserve.reservation.application.port.in.command.CreateBlackoutScheduleCommand;
+import com.lilamaris.lilserve.reservation.application.port.in.result.CreateBlackoutScheduleResult;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleSavePort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
@@ -60,12 +61,12 @@ class CreateBlackoutScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("방과 스케줄 및 요청 구간을 생성한 식별자와 현재 시각으로 저장한다")
+    @DisplayName("방과 스케줄 및 요청 구간을 생성한 식별자와 현재 시각으로 저장하고 같은 값을 반환한다")
     void savesRequestedBlackout() {
         givenRoom(false);
         givenSchedule(false);
         var command = command();
-        service.create(command);
+        var result = service.create(command);
         var captured = ArgumentCaptor.forClass(BlackoutSchedule.class);
         verify(storage).save(captured.capture());
         var saved = captured.getValue();
@@ -78,6 +79,7 @@ class CreateBlackoutScheduleServiceTest {
         assertThat(saved.getCreatedAt()).isEqualTo(NOW);
         assertThat(saved.getUpdatedAt()).isNull();
         assertThat(saved.isDeleted()).isFalse();
+        assertResultMatchesSaved(command, result);
     }
 
     @Test
@@ -128,6 +130,27 @@ class CreateBlackoutScheduleServiceTest {
         var failure = new IllegalStateException("Storage failed");
         doThrow(failure).when(storage).save(any());
         assertThatThrownBy(() -> service.create(command())).isSameAs(failure);
+    }
+
+    private void assertResultMatchesSaved(
+            CreateBlackoutScheduleCommand command, CreateBlackoutScheduleResult result) {
+        assertThat(result)
+                .extracting(
+                        CreateBlackoutScheduleResult::blackoutScheduleId,
+                        CreateBlackoutScheduleResult::roomId,
+                        CreateBlackoutScheduleResult::scheduleId,
+                        CreateBlackoutScheduleResult::reason,
+                        CreateBlackoutScheduleResult::startsAt,
+                        CreateBlackoutScheduleResult::endsAt,
+                        CreateBlackoutScheduleResult::createdAt)
+                .containsExactly(
+                        BlackoutScheduleId.of(ID),
+                        ROOM,
+                        SLOT,
+                        command.reason(),
+                        command.range().startsAt(),
+                        command.range().endsAt(),
+                        NOW);
     }
 
     private void givenRoom(boolean deleted) {
