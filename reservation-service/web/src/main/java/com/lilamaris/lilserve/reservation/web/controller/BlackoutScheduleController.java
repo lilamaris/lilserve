@@ -10,6 +10,7 @@ import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.BlackoutScheduleExceptionHandler;
 import com.lilamaris.lilserve.reservation.web.dto.BlackoutScheduleResponse;
 import com.lilamaris.lilserve.reservation.web.dto.CreateBlackoutScheduleRequest;
+import com.lilamaris.lilserve.reservation.web.dto.OpenApiExamples;
 import com.lilamaris.lilserve.reservation.web.dto.UpdateBlackoutSchedulePeriodRequest;
 import com.lilamaris.lilserve.reservation.web.dto.UpdateBlackoutScheduleReasonRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -114,7 +115,8 @@ public class BlackoutScheduleController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = BlackoutScheduleResponse.class)))
+                            schema = @Schema(implementation = BlackoutScheduleResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.BLACKOUT)))
     @ApiResponse(
             responseCode = "409",
             description = "the slot belongs to another room",
@@ -157,7 +159,8 @@ public class BlackoutScheduleController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = BlackoutScheduleResponse.class)))
+                            schema = @Schema(implementation = BlackoutScheduleResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.BLACKOUT)))
     @PatchMapping("/{blackoutScheduleId}/period")
     public ResponseEntity<BlackoutScheduleResponse> updatePeriod(
             @Parameter(
@@ -191,7 +194,8 @@ public class BlackoutScheduleController {
             content =
                     @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = BlackoutScheduleResponse.class)))
+                            schema = @Schema(implementation = BlackoutScheduleResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.BLACKOUT)))
     @PatchMapping("/{blackoutScheduleId}/reason")
     public ResponseEntity<BlackoutScheduleResponse> updateReason(
             @Parameter(

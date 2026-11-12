@@ -22,29 +22,32 @@ import java.util.UUID;
         description =
                 "The seat as the web layer returns it. A seat created in this request has no update"
                         + " and no deletion timestamp, so those fields are null.",
-        example =
-                """
-                {"seatId":"00000000-0000-0000-0000-000000000002","roomId":"00000000-0000-0000-0000"
-                + "-000000000001","code":"SEAT-01","createdAt":"2026-01-01T00:00:00Z"}
-                """)
+        example = OpenApiExamples.SEAT)
 public record SeatResponse(
         @Schema(
                         description = "seat identifier",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID seatId,
         @Schema(
                         description = "room the seat belongs to",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID roomId,
-        @Schema(description = "seat code", accessMode = Schema.AccessMode.READ_ONLY) String code,
+        @Schema(
+                        description = "seat code",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        accessMode = Schema.AccessMode.READ_ONLY)
+                String code,
         @Schema(
                         description = "creation time",
                         type = "string",
                         format = "date-time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant createdAt,
         @Schema(

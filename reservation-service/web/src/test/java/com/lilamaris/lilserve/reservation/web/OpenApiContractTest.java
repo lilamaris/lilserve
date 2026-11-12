@@ -36,6 +36,7 @@ import com.lilamaris.lilserve.reservation.web.controller.RoomController;
 import com.lilamaris.lilserve.reservation.web.controller.ScheduleController;
 import com.lilamaris.lilserve.reservation.web.controller.SeatController;
 import io.swagger.v3.oas.annotations.Operation;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -130,6 +131,36 @@ class OpenApiContractTest {
                             "delete /api/v1/blackouts/{blackoutScheduleId}",
                             "deleteBlackoutSchedule"));
 
+    private static final Map<String, List<String>> EXPECTED_REQUIRED =
+            Map.ofEntries(
+                    Map.entry(
+                            "RoomResponse",
+                            List.of("roomId", "code", "name", "description", "createdAt")),
+                    Map.entry("SeatResponse", List.of("seatId", "roomId", "code", "createdAt")),
+                    Map.entry(
+                            "ScheduleResponse",
+                            List.of(
+                                    "scheduleId",
+                                    "roomId",
+                                    "dayOfWeek",
+                                    "startAt",
+                                    "endAt",
+                                    "createdAt")),
+                    Map.entry(
+                            "BlackoutScheduleResponse",
+                            List.of(
+                                    "blackoutScheduleId",
+                                    "roomId",
+                                    "scheduleId",
+                                    "reason",
+                                    "startsAt",
+                                    "endsAt",
+                                    "createdAt")),
+                    Map.entry(
+                            "RoomPageResponse", List.of("items", "page", "size", "totalElements")),
+                    Map.entry(
+                            "SeatPageResponse", List.of("items", "page", "size", "totalElements")));
+
     @Autowired private MockMvc mockMvc;
     @Autowired private ListRoomUseCase listRoomUseCase;
 
@@ -204,5 +235,83 @@ class OpenApiContractTest {
         assertThat(operations)
                 .allSatisfy(operation -> assertThat(operation.operationId()).isNotBlank());
         assertThat(operations).extracting(Operation::operationId).doesNotHaveDuplicates();
+    }
+
+    @Test
+    @DisplayName("본문을 게시하는 모든 성공 응답은 application/json 과 예시를 함께 게시한다")
+    @SuppressWarnings("unchecked")
+    void publishesSuccessBodyAsJsonWithExample() throws Exception {
+        Map<String, Map<String, Map<String, Object>>> paths =
+                JsonPath.read(openApiDocument(), "$.paths");
+        var problems = successBodyProblems(paths);
+
+        assertThat(problems).isEmpty();
+    }
+
+    @Test
+    @DisplayName("응답 스키마는 항상 존재하는 필드를 required 로 게시한다")
+    @SuppressWarnings("unchecked")
+    void publishesRequiredFieldsOnResponseSchemas() throws Exception {
+        Map<String, Map<String, Object>> schemas =
+                JsonPath.read(openApiDocument(), "$.components.schemas");
+
+        for (var entry : EXPECTED_REQUIRED.entrySet()) {
+            var schema = schemas.get(entry.getKey());
+            assertThat(schema).as("schema %s", entry.getKey()).isNotNull();
+            List<String> required = (List<String>) schema.get("required");
+            assertThat(required)
+                    .as("required of %s", entry.getKey())
+                    .containsExactlyInAnyOrderElementsOf(entry.getValue());
+        }
+    }
+
+    private String openApiDocument() throws Exception {
+        return mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+    }
+
+    /**
+     * Names every success body that is not published as a single {@code application/json} media
+     * type carrying an example.
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> successBodyProblems(Map<String, Map<String, Map<String, Object>>> paths) {
+        var problems = new ArrayList<String>();
+        paths.forEach(
+                (path, operations) ->
+                        operations.forEach(
+                                (method, operation) ->
+                                        responsesOf(operation)
+                                                .forEach(
+                                                        (code, response) ->
+                                                                addProblemWhen(
+                                                                        problems,
+                                                                        method + " " + path + " "
+                                                                                + code,
+                                                                        response))));
+        return problems;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> responsesOf(Map<String, Object> operation) {
+        var responses = (Map<String, Object>) operation.get("responses");
+        return responses == null ? Map.of() : responses;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addProblemWhen(List<String> problems, String endpoint, Object response) {
+        if (!endpoint.endsWith("200") && !endpoint.endsWith("201")) return;
+        var content = (Map<String, Object>) ((Map<String, Object>) response).get("content");
+        if (content == null) return;
+        var body = content.get("application/json");
+        if (content.size() != 1 || body == null) {
+            problems.add(endpoint + " media types " + content.keySet());
+            return;
+        }
+        if (((Map<String, Object>) body).get("example") == null)
+            problems.add(endpoint + " has no example");
     }
 }

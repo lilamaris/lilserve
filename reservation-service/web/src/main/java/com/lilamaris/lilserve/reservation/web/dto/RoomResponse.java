@@ -23,26 +23,35 @@ import java.util.UUID;
         description =
                 "The room as the web layer returns it. A room created in this request has no update"
                         + " and no deletion timestamp, so those fields are null.",
-        example =
-                """
-                {"roomId":"00000000-0000-0000-0000-000000000001","code":"ROOM-01","name":"main"
-                + " hall","description":"capacity 100","createdAt":"2026-01-01T00:00:00Z"}
-                """)
+        example = OpenApiExamples.ROOM)
 public record RoomResponse(
         @Schema(
                         description = "room identifier",
                         type = "string",
                         format = "uuid",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID roomId,
-        @Schema(description = "room code", accessMode = Schema.AccessMode.READ_ONLY) String code,
-        @Schema(description = "room name", accessMode = Schema.AccessMode.READ_ONLY) String name,
-        @Schema(description = "room description", accessMode = Schema.AccessMode.READ_ONLY)
+        @Schema(
+                        description = "room code",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        accessMode = Schema.AccessMode.READ_ONLY)
+                String code,
+        @Schema(
+                        description = "room name",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        accessMode = Schema.AccessMode.READ_ONLY)
+                String name,
+        @Schema(
+                        description = "room description",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
+                        accessMode = Schema.AccessMode.READ_ONLY)
                 String description,
         @Schema(
                         description = "creation time",
                         type = "string",
                         format = "date-time",
+                        requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant createdAt,
         @Schema(
