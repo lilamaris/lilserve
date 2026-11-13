@@ -195,7 +195,7 @@ public class SeatController {
             operationId = "listAvailableSeats",
             summary = "List available seats",
             description =
-                    "Returns seat identifiers with no active allocation overlapping any selected slot on the service date. Times use the application timezone. The result is advisory and reservation creation rechecks availability. An empty result is returned as an empty availableSeatIds array.")
+                    "Returns seat identifiers with no active allocation overlapping any selected slot on the service date. Times use the application timezone. If any selected service interval overlaps a room blackout, no seats are returned. The result is advisory and reservation creation rechecks availability. An empty result is returned as an empty availableSeatIds array.")
     @ApiResponse(
             responseCode = "200",
             description = "Available seat identifiers for the selected slots",

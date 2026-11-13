@@ -76,7 +76,7 @@ public final class OpenApiExamples {
                     + SCHEDULE_BLACKOUT
                     + "]}";
 
-    /** The slots of {@link #ROOM} at one intake instant. */
+    /** The slots of {@link #ROOM} at one usage instant. */
     public static final String SCHEDULE_LIST =
             "{\"roomId\":\"00000000-0000-0000-0000-000000000001\","
                     + "\"schedules\":["

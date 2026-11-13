@@ -46,7 +46,7 @@ public class BlackoutScheduleExceptionHandler {
     }
 
     /**
-     * Maps rejected application values to a 400 problem detail. An intake interval whose end is not
+     * Maps rejected application values to a 400 problem detail. An usage interval whose end is not
      * after its start is reported here, as the interval validates its own bounds when the command
      * builds it.
      *

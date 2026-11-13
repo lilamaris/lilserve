@@ -4,7 +4,7 @@ import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Requests soft deletion of a reservation intake blackout.
+ * Requests soft deletion of a room usage blackout.
  *
  * <p>Construction and the factory retain the supplied values without running Bean Validation.
  * Constraints are checked by explicit validation or a validated use case.

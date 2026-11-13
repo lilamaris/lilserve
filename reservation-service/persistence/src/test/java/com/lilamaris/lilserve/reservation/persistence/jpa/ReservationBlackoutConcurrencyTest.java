@@ -58,10 +58,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * Verifies reservation intake decisions across competing blackout transactions using real locks.
- */
-@DisplayName("예약 접수와 스케줄 차단 변경의 동시성")
+/** Verifies room usage decisions across competing blackout transactions using real locks. */
+@DisplayName("예약 이용 구간과 스케줄 차단 변경의 동시성")
 @DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration(classes = PersistenceJpaTestConfiguration.class)
@@ -134,21 +132,21 @@ class ReservationBlackoutConcurrencyTest {
 
     @ParameterizedTest
     @EnumSource(Change.class)
-    @DisplayName("차단 변경이 먼저 커밋되면 대기한 예약은 확정된 차단 상태로 접수 여부를 결정한다")
+    @DisplayName("차단 변경이 먼저 커밋되면 대기한 예약은 확정된 차단 상태로 이용 가능 여부를 결정한다")
     void observesCommittedBlackoutChange(Change change) throws Exception {
         raceWithBlackoutFirst(change, false);
     }
 
     @ParameterizedTest
     @EnumSource(Change.class)
-    @DisplayName("차단 변경이 롤백되면 대기한 예약은 기존 차단 상태로 접수 여부를 결정한다")
+    @DisplayName("차단 변경이 롤백되면 대기한 예약은 기존 차단 상태로 이용 가능 여부를 결정한다")
     void observesOriginalBlackoutAfterRollback(Change change) throws Exception {
         raceWithBlackoutFirst(change, true);
     }
 
     @ParameterizedTest
     @EnumSource(Change.class)
-    @DisplayName("예약이 스케줄을 먼저 잠그면 차단 변경은 예약 판단과 트랜잭션 종료까지 대기한다")
+    @DisplayName("예약이 방을 먼저 잠그면 차단 변경은 예약 판단과 트랜잭션 종료까지 대기한다")
     void blackoutChangeWaitsForReservationTransaction(Change change) throws Exception {
         seedBlackout(change);
         var gate = new LockGate();
@@ -178,11 +176,11 @@ class ReservationBlackoutConcurrencyTest {
     }
 
     @Test
-    @DisplayName("예약은 차단 변경을 기다린 뒤의 시각을 기준으로 접수를 판단한다")
-    void samplesIntakeTimeAfterWaitingForScheduleLock() throws Exception {
+    @DisplayName("예약은 대기 중 서버 시각이 차단 구간으로 바뀌어도 실제 이용 구간이 겹치지 않으면 허용한다")
+    void ignoresBookingClockWhenEvaluatingServiceUsage() throws Exception {
         var startsAt = NOW.plusSeconds(30);
-        var intakeTime = new AtomicReference<>(NOW);
-        var reservationClock = suppliedClock(intakeTime::get, CLOCK.getZone());
+        var bookingTime = new AtomicReference<>(NOW);
+        var reservationClock = suppliedClock(bookingTime::get, CLOCK.getZone());
         var gate = new LockGate();
         try (var executor = Executors.newFixedThreadPool(2)) {
             try {
@@ -198,7 +196,7 @@ class ReservationBlackoutConcurrencyTest {
                                                                             CreateBlackoutScheduleCommand
                                                                                     .of(
                                                                                             roomId,
-                                                                                            afternoon,
+                                                                                            morning,
                                                                                             InstantRange
                                                                                                     .of(
                                                                                                             startsAt,
@@ -212,15 +210,15 @@ class ReservationBlackoutConcurrencyTest {
                         executor.submit(
                                 () ->
                                         reservationOutcome(
-                                                true,
+                                                false,
                                                 () -> {},
                                                 reservationClock,
                                                 gate::recordWaiter));
                 gate.awaitBlocked();
-                intakeTime.set(startsAt);
+                bookingTime.set(startsAt);
                 gate.release();
                 mutation.get(20, TimeUnit.SECONDS);
-                assertReservation(reservation.get(20, TimeUnit.SECONDS), true);
+                assertReservation(reservation.get(20, TimeUnit.SECONDS), false);
             } finally {
                 gate.release();
             }
@@ -258,7 +256,7 @@ class ReservationBlackoutConcurrencyTest {
         if (blocked) {
             assertThatThrownBy(() -> reserve(afterLock, clock, beforeCreate))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("blackout schedule policy blocked.");
+                    .hasMessage("room usage is blocked by blackout.");
             return Optional.empty();
         }
         return Optional.of(reserve(afterLock, clock, beforeCreate));
@@ -281,10 +279,7 @@ class ReservationBlackoutConcurrencyTest {
                                             clock)
                                     .create(
                                             CreateReservationCommand.of(
-                                                    roomId,
-                                                    seatId,
-                                                    Set.of(morning, afternoon),
-                                                    DATE));
+                                                    roomId, seatId, Set.of(afternoon), DATE));
                         });
     }
 
@@ -301,14 +296,15 @@ class ReservationBlackoutConcurrencyTest {
                                             blackoutAdapter,
                                             locks,
                                             blackoutAdapter,
-                                            CLOCK);
+                                            CLOCK,
+                                            roomAdapter);
                             switch (change) {
                                 case CREATE ->
                                         creation(locks)
                                                 .create(
                                                         CreateBlackoutScheduleCommand.of(
                                                                 roomId,
-                                                                afternoon,
+                                                                morning,
                                                                 activeRange(),
                                                                 "Maintenance"));
                                 case ACTIVATE_PERIOD ->
@@ -361,7 +357,7 @@ class ReservationBlackoutConcurrencyTest {
                                         BlackoutSchedule.of(
                                                 blackoutId,
                                                 roomId,
-                                                afternoon,
+                                                morning,
                                                 "Maintenance",
                                                 range.startsAt(),
                                                 range.endsAt(),
@@ -372,14 +368,14 @@ class ReservationBlackoutConcurrencyTest {
         assertThat(result.isEmpty()).isEqualTo(blocked);
         result.ifPresent(
                 created -> {
-                    assertThat(created.scheduleIds()).containsExactlyInAnyOrder(morning, afternoon);
+                    assertThat(created.scheduleIds()).containsExactly(afternoon);
                     assertThat(created.reservationDate()).isEqualTo(DATE);
                 });
         transaction()
                 .executeWithoutResult(
                         status -> {
                             assertThat(countRows("reservation")).isEqualTo(blocked ? 0 : 1);
-                            assertThat(countRows("reserved_schedule")).isEqualTo(blocked ? 0 : 2);
+                            assertThat(countRows("reserved_schedule")).isEqualTo(blocked ? 0 : 1);
                         });
     }
 
@@ -468,11 +464,15 @@ class ReservationBlackoutConcurrencyTest {
     }
 
     private InstantRange activeRange() {
-        return InstantRange.of(NOW.minusSeconds(60), NOW.plusSeconds(60));
+        return InstantRange.of(
+                DATE.atTime(14, 0).atZone(CLOCK.getZone()).toInstant(),
+                DATE.atTime(15, 0).atZone(CLOCK.getZone()).toInstant());
     }
 
     private InstantRange futureRange() {
-        return InstantRange.of(NOW.plusSeconds(3600), NOW.plusSeconds(7200));
+        return InstantRange.of(
+                DATE.plusWeeks(1).atTime(14, 0).atZone(CLOCK.getZone()).toInstant(),
+                DATE.plusWeeks(1).atTime(15, 0).atZone(CLOCK.getZone()).toInstant());
     }
 
     private TransactionTemplate transaction() {

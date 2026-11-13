@@ -5,13 +5,13 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.DeleteBlack
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** Soft-deletes reservation intake blackouts. */
+/** Soft-deletes room usage blackouts. */
 public interface DeleteBlackoutScheduleUseCase {
     /**
      * Deletes an active blackout and records its deletion and update time atomically.
      *
-     * <p>Locks the parent schedule before the blackout, both exclusively, and rejects a blackout
-     * that was deleted while the request waited. Existing reservations are preserved.
+     * <p>Locks the owning room, registration schedule, then blackout exclusively, and rejects a
+     * blackout that was deleted while the request waited. Existing reservations are preserved.
      *
      * @param command the blackout identifier, not null
      * @return the deleted blackout identifier and its deletion time

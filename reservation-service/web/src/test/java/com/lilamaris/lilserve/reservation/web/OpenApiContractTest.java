@@ -2,6 +2,7 @@ package com.lilamaris.lilserve.reservation.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -279,6 +280,26 @@ class OpenApiContractTest {
                     .as("required of %s", entry.getKey())
                     .containsExactlyInAnyOrderElementsOf(entry.getValue());
         }
+    }
+
+    @Test
+    @DisplayName("점검 API 문서는 실제 이용 구간과 방 전체 제한을 설명한다")
+    void documentsBlackoutAsPhysicalRoomUsageRestriction() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$.paths['/api/v1/blackouts'].post.description")
+                                .value(containsString("actual service intervals")))
+                .andExpect(
+                        jsonPath("$.paths['/api/v1/blackouts'].post.description")
+                                .value(containsString("every slot")))
+                .andExpect(
+                        jsonPath(
+                                        "$.components.schemas.CreateBlackoutScheduleRequest.properties.scheduleId.description")
+                                .value(containsString("whole room")))
+                .andExpect(
+                        jsonPath("$.paths['/api/v1/schedules'].get.description")
+                                .value(containsString("room usage restrictions")));
     }
 
     private String openApiDocument() throws Exception {

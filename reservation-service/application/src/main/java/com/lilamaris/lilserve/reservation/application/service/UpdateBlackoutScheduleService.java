@@ -11,7 +11,9 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateBlack
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleSavePort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
+import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
 import java.time.Clock;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
@@ -20,14 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Changes or soft-deletes active reservation intake blackouts in a transaction.
+ * Changes or soft-deletes active room usage blackouts in a transaction.
  *
- * <p>Period changes and deletion read only the immutable parent identifier before locking the
- * schedule and then the blackout exclusively. The final locked blackout determines whether the
- * request is still valid. Reason changes lock only the blackout. All mutation timestamps come from
- * {@link Clock} after the required locks are acquired; runtime failures roll back the change. Each
- * result reports the locked blackout as it was stored, so the committed state reaches the caller in
- * the same transaction that changed it.
+ * <p>Period changes and deletion read immutable parent identifiers before locking the room,
+ * registration schedule, and then the blackout exclusively. The final locked blackout determines
+ * whether the request is still valid. Reason changes lock only the blackout. All mutation
+ * timestamps come from {@link Clock} after the required locks are acquired; runtime failures roll
+ * back the change. Each result reports the locked blackout as it was stored, so the committed state
+ * reaches the caller in the same transaction that changed it.
  */
 @Service
 @Validated
@@ -41,6 +43,7 @@ public class UpdateBlackoutScheduleService
     private final ScheduleLockFindPort scheduleLockFindPort;
     private final BlackoutScheduleSavePort blackoutScheduleSavePort;
     private final Clock clock;
+    private final RoomLockFindPort roomLockFindPort;
 
     /** {@inheritDoc} */
     @Override
@@ -68,6 +71,7 @@ public class UpdateBlackoutScheduleService
     @Override
     @Transactional
     public UpdateBlackoutScheduleResult updateRange(UpdateBlackoutSchedulePeriodCommand command) {
+        lockOwningRoom(command.blackoutScheduleId());
         var scheduleId =
                 blackoutScheduleFindPort
                         .findScheduleIdById(command.blackoutScheduleId())
@@ -102,6 +106,7 @@ public class UpdateBlackoutScheduleService
     @Override
     @Transactional
     public DeleteBlackoutScheduleResult delete(DeleteBlackoutScheduleCommand command) {
+        lockOwningRoom(command.blackoutScheduleId());
         var scheduleId =
                 blackoutScheduleFindPort
                         .findScheduleIdById(command.blackoutScheduleId())
@@ -130,5 +135,18 @@ public class UpdateBlackoutScheduleService
         blackoutScheduleSavePort.save(blackoutSchedule);
 
         return DeleteBlackoutScheduleResult.from(blackoutSchedule);
+    }
+
+    private void lockOwningRoom(BlackoutScheduleId id) {
+        var roomId =
+                blackoutScheduleFindPort
+                        .findRoomIdById(id)
+                        .orElseThrow(
+                                () ->
+                                        new NoSuchElementException(
+                                                "blackout schedule does not exists."));
+        roomLockFindPort
+                .findByIdWithExclusiveLock(roomId)
+                .orElseThrow(() -> new NoSuchElementException("room does not exists."));
     }
 }

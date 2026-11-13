@@ -8,20 +8,20 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * One recurring slot of a room with the reservation intake blackouts active at the requested
- * instant. A slot that is open for intake carries an empty {@code blackouts} array, so a consumer
- * never has to distinguish a missing field from an open slot.
+ * One recurring slot of a room with the room usage blackouts active at the requested instant. When
+ * the room is available at that instant, each slot carries an empty {@code blackouts} array, so a
+ * consumer never has to distinguish a missing field from an available room.
  *
  * @param scheduleId the slot identifier
  * @param dayOfWeek the ISO weekday the slot repeats on
  * @param startAt the inclusive local start time
  * @param endAt the exclusive local end time
- * @param blackouts the blackouts active at the requested instant, empty when intake is open
+ * @param blackouts the blackouts active at the requested instant, empty when the room is available
  */
 @Schema(
         description =
-                "One recurring slot with the blackouts active at the requested instant. An open slot"
-                        + " is answered with an empty blackouts array.",
+                "One recurring slot with the blackouts active at the requested instant. An available room"
+                        + " has an empty blackouts array on each slot.",
         example = OpenApiExamples.SCHEDULE_SLOT)
 public record DayScheduleResponse(
         @Schema(
@@ -53,8 +53,8 @@ public record DayScheduleResponse(
                 LocalTime endAt,
         @Schema(
                         description =
-                                "blackouts active at the requested instant, empty when intake is"
-                                        + " open",
+                                "blackouts active at the requested instant, empty when the room is"
+                                        + " available",
                         requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 List<ScheduleBlackoutResponse> blackouts) {

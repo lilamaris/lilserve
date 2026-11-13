@@ -7,11 +7,8 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.ListSchedul
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.RoomFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleFindPort;
-import com.lilamaris.lilserve.reservation.domain.BlackoutSchedule;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +16,7 @@ import org.springframework.validation.annotation.Validated;
 
 /**
  * Implements {@link ListScheduleUseCase} by reading the room, its slots, and the blackouts active
- * at the requested instant, then grouping each slot's blackouts under it.
+ * at the requested usage instant, then attaching the same room restrictions to every slot.
  */
 @Service
 @Validated
@@ -41,16 +38,12 @@ public class ListScheduleService implements ListScheduleUseCase {
         var schedules = scheduleFindPort.findNotDeletedByRoomId(query.roomId());
 
         var blackouts =
-                blackoutScheduleFindPort
-                        .findNotDeletedByRoomIdAt(query.roomId(), query.now())
-                        .stream()
-                        .collect(Collectors.groupingBy(BlackoutSchedule::getScheduleId));
+                blackoutScheduleFindPort.findNotDeletedByRoomIdAt(query.roomId(), query.now());
 
         var daySchedules = new ArrayList<DaySchedule>();
 
         for (var schedule : schedules) {
-            var daySchedule =
-                    DaySchedule.from(schedule, blackouts.getOrDefault(schedule.getId(), List.of()));
+            var daySchedule = DaySchedule.from(schedule, blackouts);
 
             daySchedules.add(daySchedule);
         }

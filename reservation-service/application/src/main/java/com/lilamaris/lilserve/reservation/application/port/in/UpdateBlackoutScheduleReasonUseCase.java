@@ -5,12 +5,12 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateBlack
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** Changes the explanatory reason of a reservation intake blackout. */
+/** Changes the explanatory reason of a room usage blackout. */
 public interface UpdateBlackoutScheduleReasonUseCase {
     /**
      * Updates an active blackout's reason and update time in one transaction.
      *
-     * <p>Locks only the blackout exclusively: changing its reason does not affect intake decisions.
+     * <p>Locks only the blackout exclusively: changing its reason does not affect usage decisions.
      * A blackout deleted by a preceding transaction is rejected after the lock is acquired.
      *
      * @param command the blackout identifier and replacement reason, not null

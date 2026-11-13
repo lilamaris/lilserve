@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The recurring slots of one room with the reservation intake blackouts active at the requested
- * instant.
+ * The recurring slots of one room with the room usage blackouts active at the requested instant.
  *
  * <p>Both fields are always present, so the document publishes both as required. A room that offers
  * no slot is answered with an empty {@code schedules} array, and the slots carry no guaranteed

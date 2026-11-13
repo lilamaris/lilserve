@@ -156,7 +156,7 @@ class CreateBlackoutScheduleServiceTest {
     private void givenRoom(boolean deleted) {
         var room = Room.of(ROOM, "ROOM-01", "hall", "", CREATED);
         if (deleted) room.delete(NOW);
-        when(rooms.findByIdWithSharedLock(ROOM)).thenReturn(Optional.of(room));
+        when(rooms.findByIdWithExclusiveLock(ROOM)).thenReturn(Optional.of(room));
     }
 
     private void givenSchedule(boolean deleted) {

@@ -235,6 +235,18 @@ class BlackoutScheduleJpaAdapterTest {
         assertThat(adapter.findNotDeletedByRoomIdAt(roomId, NOW)).isEmpty();
     }
 
+    @Test
+    @DisplayName("점검 식별자로 등록된 방을 엔티티 로딩 없이 조회한다")
+    void findsOwningRoomIdentifier() {
+        assertThat(adapter.findRoomIdById(id)).contains(roomId);
+    }
+
+    @Test
+    @DisplayName("없는 점검의 방 식별자 조회는 빈 결과를 반환한다")
+    void returnsEmptyRoomForMissingBlackout() {
+        assertThat(adapter.findRoomIdById(BlackoutScheduleId.of(UUID.randomUUID()))).isEmpty();
+    }
+
     private BlackoutSchedule persistBlackout(
             RoomId owner, ScheduleId slot, Instant start, Instant end) {
         var blackout =

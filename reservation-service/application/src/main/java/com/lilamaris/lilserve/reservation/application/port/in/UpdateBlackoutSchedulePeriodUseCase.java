@@ -5,14 +5,14 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateBlack
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** Changes the interval during which a slot rejects new reservation intake. */
+/** Changes the interval during which a room is physically unavailable. */
 public interface UpdateBlackoutSchedulePeriodUseCase {
     /**
-     * Replaces an active blackout's intake interval in one transaction.
+     * Replaces an active blackout's usage interval in one transaction.
      *
-     * <p>Locks the parent schedule before the blackout, both exclusively, so reservations decide
-     * against either the preceding or the committed replacement interval. The parent schedule's
-     * retirement state is not checked. Existing reservations are preserved.
+     * <p>Locks the owning room, registration schedule, then blackout exclusively, so reservations
+     * decide against either the preceding or the committed replacement interval. The parent
+     * schedule's retirement state is not checked. Existing reservations are preserved.
      *
      * @param command the blackout identifier and replacement interval, not null
      * @return the blackout with the replaced interval

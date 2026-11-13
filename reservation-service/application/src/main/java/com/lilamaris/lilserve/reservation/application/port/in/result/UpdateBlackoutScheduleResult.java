@@ -11,11 +11,11 @@ import java.time.Instant;
  * in {@code deletedAt}.
  *
  * @param blackoutScheduleId the blackout identifier
- * @param roomId the room owning the blocked slot
- * @param scheduleId the blocked recurring slot
+ * @param roomId the restricted room
+ * @param scheduleId the registration slot; the restriction applies to every slot in the room
  * @param reason the blackout reason
- * @param startsAt the inclusive intake start instant
- * @param endsAt the exclusive intake end instant
+ * @param startsAt the inclusive usage start instant
+ * @param endsAt the exclusive usage end instant
  * @param createdAt the creation time
  * @param updatedAt the last update time
  * @param deletedAt the deletion time, null when not deleted

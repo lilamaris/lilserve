@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * The JSON body that replaces the explanation of an existing blackout. Changing the reason does not
- * change the intake interval, so it is mapped on its own endpoint.
+ * change the usage interval, so it is mapped on its own endpoint.
  *
  * @param reason the explanation, non-blank and within {@link BlackoutSchedule#MAX_REASON_LENGTH}
  */

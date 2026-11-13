@@ -55,10 +55,11 @@ class ListAvailableSeatServiceTest {
     }
 
     @Test
-    @DisplayName("선택 슬롯 중 현재 접수가 차단된 슬롯이 있으면 이용 날짜와 무관하게 빈 좌석 목록을 반환한다")
-    void returnsNoSeatsDuringActiveIntakeBlackout() {
+    @DisplayName("선택 슬롯 중 이용 구간과 방 점검 기간이 겹치면 빈 좌석 목록을 반환한다")
+    void returnsNoSeatsForUsageOverlappingBlackout() {
         givenRoom();
-        when(blackoutScheduleFindPort.existsActiveByScheduleIdsAt(SCHEDULE_IDS, NOW))
+        when(blackoutScheduleFindPort.existsOverlappingUsage(
+                        ROOM_ID, SCHEDULE_IDS, TARGET_DATE, ZoneId.of("Asia/Seoul")))
                 .thenReturn(true);
 
         var result = service.list(ListAvailableSeatQuery.of(ROOM_ID, TARGET_DATE, SCHEDULE_IDS));
@@ -70,10 +71,11 @@ class ListAvailableSeatServiceTest {
     }
 
     @Test
-    @DisplayName("현재 선택 슬롯의 접수가 차단되지 않았으면 조회한 좌석 식별자를 반환한다")
-    void returnsAvailableSeatsWhenIntakeIsOpen() {
+    @DisplayName("선택 슬롯의 이용 구간이 방 점검 기간과 겹치지 않으면 조회한 좌석 식별자를 반환한다")
+    void returnsAvailableSeatsWhenUsageIsAllowed() {
         givenRoom();
-        when(blackoutScheduleFindPort.existsActiveByScheduleIdsAt(SCHEDULE_IDS, NOW))
+        when(blackoutScheduleFindPort.existsOverlappingUsage(
+                        ROOM_ID, SCHEDULE_IDS, TARGET_DATE, ZoneId.of("Asia/Seoul")))
                 .thenReturn(false);
         var seat = Seat.of(SeatId.of(UUID.randomUUID()), ROOM_ID, "A-01", NOW);
         when(availableSeatFindPort.findAvailableSeat(

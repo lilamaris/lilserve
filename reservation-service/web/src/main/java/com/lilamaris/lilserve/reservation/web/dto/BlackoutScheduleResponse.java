@@ -7,22 +7,22 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * The reservation intake blackout as the web layer returns it. A blackout created in this request
- * has no update and no deletion timestamp, so those fields are null.
+ * The room usage blackout as the web layer returns it. A blackout created in this request has no
+ * update and no deletion timestamp, so those fields are null.
  *
  * @param blackoutScheduleId the blackout identifier
- * @param roomId the room owning the blocked slot
- * @param scheduleId the blocked recurring slot
+ * @param roomId the restricted room
+ * @param scheduleId the registration slot; the restriction applies to every slot in the room
  * @param reason the blackout reason
- * @param startsAt the inclusive intake start instant
- * @param endsAt the exclusive intake end instant
+ * @param startsAt the inclusive usage start instant
+ * @param endsAt the exclusive usage end instant
  * @param createdAt the creation time
  * @param updatedAt the last update time, null when never updated
  * @param deletedAt the deletion time, null when not deleted
  */
 @Schema(
         description =
-                "The reservation intake blackout as the web layer returns it. A blackout created in"
+                "The room usage blackout as the web layer returns it. A blackout created in"
                         + " this request has no update and no deletion timestamp, so those fields are"
                         + " null.",
         example = OpenApiExamples.BLACKOUT)
@@ -35,14 +35,15 @@ public record BlackoutScheduleResponse(
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID blackoutScheduleId,
         @Schema(
-                        description = "room owning the blocked slot",
+                        description = "restricted room",
                         type = "string",
                         format = "uuid",
                         requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID roomId,
         @Schema(
-                        description = "blocked recurring slot",
+                        description =
+                                "registration slot; the restriction applies to every slot in the room",
                         type = "string",
                         format = "uuid",
                         requiredMode = Schema.RequiredMode.REQUIRED,
@@ -54,14 +55,14 @@ public record BlackoutScheduleResponse(
                         accessMode = Schema.AccessMode.READ_ONLY)
                 String reason,
         @Schema(
-                        description = "inclusive intake start instant",
+                        description = "inclusive usage start instant",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant startsAt,
         @Schema(
-                        description = "exclusive intake end instant",
+                        description = "exclusive usage end instant",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED,

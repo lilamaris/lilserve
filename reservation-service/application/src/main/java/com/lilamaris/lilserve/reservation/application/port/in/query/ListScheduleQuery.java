@@ -11,15 +11,14 @@ import java.time.Instant;
  * is explicitly validated or passed to a use case with method validation active.
  *
  * @param roomId the room whose slots to list, must not be null when validated
- * @param now the intake instant whose active blackouts are reported, must not be null when
- *     validated
+ * @param now the usage instant whose active blackouts are reported, must not be null when validated
  */
 public record ListScheduleQuery(@NotNull RoomId roomId, @NotNull Instant now) {
     /**
      * Creates a room slot list query.
      *
      * @param roomId the room identifier
-     * @param now the instant used to determine active reservation intake blackouts
+     * @param now the instant used to determine active room usage blackouts
      * @return the query, validated at the use case boundary
      */
     public static ListScheduleQuery of(RoomId roomId, Instant now) {

@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Creates reservation intake blackouts using a shared room lock followed by an exclusive schedule
+ * Creates room usage restrictions using an exclusive room lock followed by an exclusive schedule
  * lock in one transaction. The clock and identifier generator are read after both resources are
  * protected. Persistence enforces that the schedule belongs to the requested room. The result
  * reports the stored blackout, so its generated identifier reaches the caller in the same
@@ -40,7 +40,7 @@ public class CreateBlackoutScheduleService implements CreateBlackoutScheduleUseC
     public CreateBlackoutScheduleResult create(CreateBlackoutScheduleCommand command) {
         var room =
                 roomLockFindPort
-                        .findByIdWithSharedLock(command.roomId())
+                        .findByIdWithExclusiveLock(command.roomId())
                         .filter(locked -> !locked.isDeleted())
                         .orElseThrow(() -> new NoSuchElementException("room does not exists."));
 

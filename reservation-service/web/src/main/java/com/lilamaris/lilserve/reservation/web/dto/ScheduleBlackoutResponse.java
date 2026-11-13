@@ -6,19 +6,19 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * A reservation intake blackout as a slot list reports it. Only the intake interval the slot
- * carries is published, so the blackout's own creation, update, and deletion timestamps are absent:
- * a slot list answers the blackouts that are active at the requested instant, and those rows are
- * never deleted at that instant.
+ * A room usage blackout as a slot list reports it. Only the usage interval the slot carries is
+ * published, so the blackout's own creation, update, and deletion timestamps are absent: a slot
+ * list answers the blackouts that are active at the requested instant, and those rows are never
+ * deleted at that instant.
  *
  * @param blackoutScheduleId the blackout identifier
- * @param startsAt the inclusive intake start instant
- * @param endsAt the exclusive intake end instant
+ * @param startsAt the inclusive usage start instant
+ * @param endsAt the exclusive usage end instant
  * @param reason the blackout reason
  */
 @Schema(
         description =
-                "A blackout as a slot list reports it: only the intake interval is published, so"
+                "A blackout as a slot list reports it: only the usage interval is published, so"
                         + " the blackout's creation, update, and deletion timestamps are absent.",
         example = OpenApiExamples.SCHEDULE_BLACKOUT)
 public record ScheduleBlackoutResponse(
@@ -30,14 +30,14 @@ public record ScheduleBlackoutResponse(
                         accessMode = Schema.AccessMode.READ_ONLY)
                 UUID blackoutScheduleId,
         @Schema(
-                        description = "inclusive intake start instant",
+                        description = "inclusive usage start instant",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED,
                         accessMode = Schema.AccessMode.READ_ONLY)
                 Instant startsAt,
         @Schema(
-                        description = "exclusive intake end instant",
+                        description = "exclusive usage end instant",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED,

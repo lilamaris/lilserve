@@ -16,8 +16,10 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateBlack
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.BlackoutScheduleSavePort;
+import com.lilamaris.lilserve.reservation.application.port.out.RoomLockFindPort;
 import com.lilamaris.lilserve.reservation.application.port.out.ScheduleLockFindPort;
 import com.lilamaris.lilserve.reservation.domain.BlackoutSchedule;
+import com.lilamaris.lilserve.reservation.domain.Room;
 import com.lilamaris.lilserve.reservation.domain.Schedule;
 import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
@@ -52,6 +54,7 @@ class UpdateBlackoutScheduleServiceTest {
     private static final ScheduleId SLOT = ScheduleId.of(UUID.randomUUID());
     private static final BlackoutScheduleId ID = BlackoutScheduleId.of(UUID.randomUUID());
     @Mock private BlackoutScheduleFindPort finder;
+    @Mock private RoomLockFindPort rooms;
     @Mock private BlackoutScheduleLockFindPort locks;
     @Mock private ScheduleLockFindPort schedules;
     @Mock private BlackoutScheduleSavePort storage;
@@ -61,7 +64,7 @@ class UpdateBlackoutScheduleServiceTest {
     void setUp() {
         service =
                 new UpdateBlackoutScheduleService(
-                        finder, locks, schedules, storage, Clock.fixed(NOW, ZoneOffset.UTC));
+                        finder, locks, schedules, storage, Clock.fixed(NOW, ZoneOffset.UTC), rooms);
     }
 
     @Test
@@ -140,6 +143,7 @@ class UpdateBlackoutScheduleServiceTest {
             names = {"PERIOD", "DELETE"})
     @DisplayName("부모 스케줄이 없으면 차단을 저장하지 않는다")
     void rejectsMissingSchedule(Change change) {
+        givenRoom();
         when(finder.findScheduleIdById(ID)).thenReturn(Optional.of(SLOT));
         assertThatThrownBy(() -> change(change)).isInstanceOf(NoSuchElementException.class);
         verifyNoInteractions(storage);
@@ -156,6 +160,32 @@ class UpdateBlackoutScheduleServiceTest {
         assertThatThrownBy(() -> change(change)).isSameAs(failure);
     }
 
+    @ParameterizedTest
+    @EnumSource(
+            value = Change.class,
+            names = {"PERIOD", "DELETE"})
+    @DisplayName("등록된 방이 없으면 기간 변경과 삭제를 거절하고 차단을 저장하지 않는다")
+    void rejectsMissingOwningRoom(Change change) {
+        when(finder.findRoomIdById(ID)).thenReturn(Optional.of(ROOM));
+        assertThatThrownBy(() -> change(change))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("room does not exists.");
+        verifyNoInteractions(schedules, locks, storage);
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = Change.class,
+            names = {"PERIOD", "DELETE"})
+    @DisplayName("방을 보호한 뒤 등록 스케줄 식별자가 없으면 요청을 거절한다")
+    void rejectsMissingRegistrationIdentifier(Change change) {
+        givenRoom();
+        assertThatThrownBy(() -> change(change))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("blackout schedule does not exists.");
+        verifyNoInteractions(schedules, locks, storage);
+    }
+
     private BlackoutSchedule givenBlackout() {
         var blackout =
                 BlackoutSchedule.of(
@@ -170,7 +200,14 @@ class UpdateBlackoutScheduleServiceTest {
         return blackout;
     }
 
+    private void givenRoom() {
+        when(finder.findRoomIdById(ID)).thenReturn(Optional.of(ROOM));
+        when(rooms.findByIdWithExclusiveLock(ROOM))
+                .thenReturn(Optional.of(Room.of(ROOM, "ROOM-01", "Hall", "", CREATED)));
+    }
+
     private void givenSchedule() {
+        givenRoom();
         when(finder.findScheduleIdById(ID)).thenReturn(Optional.of(SLOT));
         when(schedules.findByIdWithExclusiveLock(SLOT))
                 .thenReturn(

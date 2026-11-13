@@ -6,6 +6,7 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -15,14 +16,14 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/** Provides JPA persistence, locked reads, and reservation intake queries for blackouts. */
+/** Provides JPA persistence, locked reads, and room usage queries for blackouts. */
 public interface BlackoutScheduleRepository
         extends JpaRepository<BlackoutSchedule, BlackoutScheduleId> {
     /**
      * Reads a blackout, including a deleted row, with an exclusive lock in one statement.
      *
-     * <p>Requires an active transaction; the lock is held until its end. Intake-changing callers
-     * must lock the parent schedule before acquiring this lock.
+     * <p>Requires an active transaction; the lock is held until its end. Usage-changing callers
+     * must lock the parent room and then the registration schedule before acquiring this lock.
      *
      * @param blackoutScheduleId the blackout identifier, not null
      * @return the locked blackout, or empty if absent
@@ -53,36 +54,56 @@ public interface BlackoutScheduleRepository
             @Param("blackoutScheduleId") BlackoutScheduleId blackoutScheduleId);
 
     /**
-     * Checks for any non-deleted blackout containing the reservation intake instant.
+     * Checks each requested service interval against all non-deleted blackouts of its room.
      *
-     * <p>Uses PostgreSQL EXISTS and a half-open interval. This query does not acquire row locks;
-     * reservation callers first retain shared locks on the selected schedules. UUID values are
-     * required for the native parameters, rather than embedded schedule identifier objects.
+     * <p>Uses half-open timestamp ranges and the room blackout GiST index. The registration
+     * schedule of a blackout does not limit its room-wide effect. The caller owns locking.
      *
-     * @param scheduleIds the slot UUIDs, non-empty and without null elements
-     * @param at the reservation intake instant, not null
-     * @return true if any selected slot rejects new intake at this instant
+     * @param roomId the owning room UUID
+     * @param scheduleIds non-empty selected slot UUIDs
+     * @param serviceDate the requested service date
+     * @param timeZone the reservation timezone name
+     * @return whether any requested interval overlaps a room restriction
      */
     @Query(
             value =
                     """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM blackout_schedule bs
-                        WHERE bs.schedule_id IN (:scheduleIds)
-                            AND bs.deleted_at IS NULL
-                            AND bs.starts_at <= :at
-                            AND :at < bs.ends_at
-                    )""",
+            SELECT EXISTS (
+                SELECT 1
+                FROM blackout_schedule bs
+                JOIN schedule s ON s.room_id = bs.room_id
+                WHERE bs.room_id = :roomId
+                    AND bs.deleted_at IS NULL
+                    AND s.id IN (:scheduleIds)
+                    AND s.deleted_at IS NULL
+                    AND s.day_of_week = EXTRACT(ISODOW FROM CAST(:serviceDate AS date))
+                    AND tstzrange(bs.starts_at, bs.ends_at, '[)') && tstzrange(
+                        (CAST(:serviceDate AS date) + s.start_at) AT TIME ZONE CAST(:timeZone AS text),
+                        (CAST(:serviceDate AS date) + s.end_at) AT TIME ZONE CAST(:timeZone AS text),
+                        '[)')
+            )""",
             nativeQuery = true)
-    boolean existsActiveByScheduleIdsAt(
-            @Param("scheduleIds") Collection<UUID> scheduleIds, @Param("at") Instant at);
+    boolean existsOverlappingUsage(
+            @Param("roomId") UUID roomId,
+            @Param("scheduleIds") Collection<UUID> scheduleIds,
+            @Param("serviceDate") LocalDate serviceDate,
+            @Param("timeZone") String timeZone);
+
+    /**
+     * Projects the immutable owning room, including for a deleted blackout, without a row lock.
+     *
+     * @param blackoutScheduleId the blackout identifier
+     * @return the owning room, or empty if the blackout is absent
+     */
+    @Query("SELECT bs.roomId FROM BlackoutSchedule bs WHERE bs.id = :blackoutScheduleId")
+    Optional<RoomId> findRoomIdById(
+            @Param("blackoutScheduleId") BlackoutScheduleId blackoutScheduleId);
 
     /**
      * Loads all non-deleted room blackouts active at the supplied instant, including overlaps.
      *
      * @param roomId the owning room identifier
-     * @param at the inclusive-start, exclusive-end intake instant
+     * @param at the inclusive-start, exclusive-end usage instant
      * @return the matching blackouts in unspecified order
      */
     @Query(
