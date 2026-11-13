@@ -57,6 +57,32 @@ public final class OpenApiExamples {
                     + "\"createdAt\":\"2026-01-01T00:00:00Z\","
                     + "\"updatedAt\":null,\"deletedAt\":null}";
 
+    /**
+     * One active blackout as a slot list reports it, so it carries no creation, update, and
+     * deletion timestamp.
+     */
+    public static final String SCHEDULE_BLACKOUT =
+            "{\"blackoutScheduleId\":\"00000000-0000-0000-0000-000000000005\","
+                    + "\"startsAt\":\"2026-01-02T00:00:00Z\","
+                    + "\"endsAt\":\"2026-01-03T00:00:00Z\","
+                    + "\"reason\":\"facility maintenance\"}";
+
+    /** One slot of {@link #ROOM} with one blackout active at the requested instant. */
+    public static final String SCHEDULE_SLOT =
+            "{\"scheduleId\":\"00000000-0000-0000-0000-000000000003\","
+                    + "\"dayOfWeek\":\"MONDAY\",\"startAt\":\"09:00:00\","
+                    + "\"endAt\":\"11:00:00\","
+                    + "\"blackouts\":["
+                    + SCHEDULE_BLACKOUT
+                    + "]}";
+
+    /** The slots of {@link #ROOM} at one intake instant. */
+    public static final String SCHEDULE_LIST =
+            "{\"roomId\":\"00000000-0000-0000-0000-000000000001\","
+                    + "\"schedules\":["
+                    + SCHEDULE_SLOT
+                    + "]}";
+
     /** First page of one room. */
     public static final String ROOM_PAGE =
             "{\"items\":[" + ROOM + "],\"page\":0,\"size\":20,\"totalElements\":1}";

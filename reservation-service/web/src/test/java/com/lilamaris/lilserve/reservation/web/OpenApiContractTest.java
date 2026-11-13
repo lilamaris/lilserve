@@ -21,6 +21,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.DeleteSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.ListRoomUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.ListSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreSeatUseCase;
@@ -90,6 +91,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
             FindRoomUseCase.class,
             FindSeatUseCase.class,
             ListRoomUseCase.class,
+            ListScheduleUseCase.class,
             ListSeatUseCase.class,
             RestoreRoomUseCase.class,
             RestoreSeatUseCase.class,
@@ -117,6 +119,7 @@ class OpenApiContractTest {
                     Map.entry("delete /api/v1/seats/{seatId}", "deleteSeat"),
                     Map.entry("post /api/v1/seats/{seatId}/restore", "restoreSeat"),
                     Map.entry("post /api/v1/schedules", "createSchedule"),
+                    Map.entry("get /api/v1/schedules", "listSchedules"),
                     Map.entry("post /api/v1/schedules/batch", "createSchedules"),
                     Map.entry("put /api/v1/schedules/{scheduleId}", "updateSchedule"),
                     Map.entry("delete /api/v1/schedules/{scheduleId}", "deleteSchedule"),
@@ -146,6 +149,13 @@ class OpenApiContractTest {
                                     "startAt",
                                     "endAt",
                                     "createdAt")),
+                    Map.entry("ScheduleListResponse", List.of("roomId", "schedules")),
+                    Map.entry(
+                            "DayScheduleResponse",
+                            List.of("scheduleId", "dayOfWeek", "startAt", "endAt", "blackouts")),
+                    Map.entry(
+                            "ScheduleBlackoutResponse",
+                            List.of("blackoutScheduleId", "startsAt", "endsAt", "reason")),
                     Map.entry(
                             "BlackoutScheduleResponse",
                             List.of(

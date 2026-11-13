@@ -7,6 +7,14 @@ import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import java.time.DayOfWeek;
 import java.util.List;
 
+/**
+ * One recurring slot of a room with the reservation intake blackouts active at the queried instant.
+ *
+ * @param scheduleId the slot identifier
+ * @param dayOfWeek the ISO weekday the slot repeats on
+ * @param period the slot's local time interval
+ * @param blackouts the blackouts active at the queried instant, empty when intake is open
+ */
 public record DaySchedule(
         ScheduleId scheduleId,
         DayOfWeek dayOfWeek,

@@ -4,25 +4,31 @@ import com.lilamaris.lilserve.reservation.application.model.schedule.DaySchedule
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import java.util.List;
 
-public record FindScheduleResult(RoomId roomId, List<DaySchedule> schedules) {
+/**
+ * The slots of one room and the reservation intake blackouts active at the requested instant.
+ *
+ * @param roomId the room the slots belong to
+ * @param schedules the room slots, in unspecified order, empty when the room offers none
+ */
+public record ListScheduleResult(RoomId roomId, List<DaySchedule> schedules) {
     /**
      * Copies the slot list to preserve the result independently of the supplied list.
      *
      * @param roomId the room identifier
      * @param schedules the room slots, in unspecified order
      */
-    public FindScheduleResult {
+    public ListScheduleResult {
         schedules = List.copyOf(schedules);
     }
 
     /**
-     * Creates a room schedule result.
+     * Creates a room slot list result.
      *
      * @param roomId the room identifier
      * @param daySchedules the room slots and their active blackouts
      * @return the result with an immutable slot list
      */
-    public static FindScheduleResult of(RoomId roomId, List<DaySchedule> daySchedules) {
-        return new FindScheduleResult(roomId, daySchedules);
+    public static ListScheduleResult of(RoomId roomId, List<DaySchedule> daySchedules) {
+        return new ListScheduleResult(roomId, daySchedules);
     }
 }
