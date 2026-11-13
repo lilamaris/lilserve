@@ -47,8 +47,8 @@ class ListScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("같은 스케줄의 여러 차단을 모두 보존하고 다른 스케줄의 차단과 분리한다")
-    void groupsAllBlackoutsBySchedule() {
+    @DisplayName("방의 모든 차단을 등록 스케줄과 무관하게 각 슬롯에 반환한다")
+    void appliesRoomBlackoutsToEverySchedule() {
         givenRoom();
         var morning = schedule(10);
         var afternoon = schedule(14);
@@ -74,10 +74,10 @@ class ListScheduleServiceTest {
                 .isEqualTo(LocalTimeRange.of(LocalTime.of(10, 0), LocalTime.of(11, 0)));
         assertThat(morningResult.blackouts())
                 .extracting(summary -> summary.blackoutScheduleId())
-                .containsExactlyInAnyOrder(first.getId(), second.getId());
+                .containsExactlyInAnyOrder(first.getId(), other.getId(), second.getId());
         assertThat(morningResult.blackouts())
                 .extracting(summary -> summary.reason())
-                .containsExactlyInAnyOrder("Maintenance", "Inspection");
+                .containsExactlyInAnyOrder("Maintenance", "Cleaning", "Inspection");
         assertThat(morningResult.blackouts())
                 .allSatisfy(
                         summary ->
@@ -89,10 +89,8 @@ class ListScheduleServiceTest {
                         .findFirst()
                         .orElseThrow();
         assertThat(afternoonResult.blackouts())
-                .singleElement()
-                .satisfies(
-                        summary ->
-                                assertThat(summary.blackoutScheduleId()).isEqualTo(other.getId()));
+                .extracting(summary -> summary.blackoutScheduleId())
+                .containsExactlyInAnyOrder(first.getId(), other.getId(), second.getId());
     }
 
     @Test

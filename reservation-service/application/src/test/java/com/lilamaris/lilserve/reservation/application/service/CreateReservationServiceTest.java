@@ -69,6 +69,7 @@ class CreateReservationServiceTest {
     @Mock private BlackoutScheduleFindPort blackoutScheduleFindPort;
 
     private CreateReservationService service;
+    private Clock serviceClock = CLOCK;
 
     @BeforeEach
     void setUp() {
@@ -80,11 +81,11 @@ class CreateReservationServiceTest {
     @DisplayName("단건과 복수 슬롯 예약은 생성한 헤더와 시간대를 유지하고 요청 슬롯 전체를 전달한다")
     void savesHeaderAndReservesExactlyRequestedSchedules(
             Set<ScheduleId> schedules, String timezone) {
+        service = newService(Clock.fixed(NOW, ZoneId.of(timezone)), () -> GENERATED_ID);
         givenResourcesLocked(schedules);
         when(reserveSchedulePort.reserve(RESERVATION_ID, schedules))
                 .thenReturn(ReserveScheduleStatus.ALL_RESERVED);
 
-        service = newService(Clock.fixed(NOW, ZoneId.of(timezone)), () -> GENERATED_ID);
         var result = service.create(command(schedules));
 
         var header = savedReservation();
@@ -258,7 +259,8 @@ class CreateReservationServiceTest {
         givenSeatLocked();
         when(scheduleLockFindPort.findAllByIdsWithSharedLock(schedules))
                 .thenReturn(Optional.of(schedules));
-        when(blackoutScheduleFindPort.existsActiveByScheduleIdsAt(schedules, NOW))
+        when(blackoutScheduleFindPort.existsOverlappingUsage(
+                        ROOM_ID, schedules, SERVICE_DATE, serviceClock.getZone()))
                 .thenReturn(false);
     }
 
@@ -273,6 +275,7 @@ class CreateReservationServiceTest {
 
     private CreateReservationService newService(
             Clock clock, java.util.function.Supplier<UUID> ids) {
+        serviceClock = clock;
         return new CreateReservationService(
                 reservationSavePort,
                 reserveSchedulePort,

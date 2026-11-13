@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-/** Lists available seats, returning no seats while any selected slot has an intake blackout. */
+/** Lists available seats, returning no seats when requested usage overlaps a room blackout. */
 @Service
 @Validated
 @RequiredArgsConstructor
@@ -28,8 +28,8 @@ public class ListAvailableSeatService implements ListAvailableSeatUseCase {
     /**
      * {@inheritDoc}
      *
-     * <p>Evaluates intake blackouts at the current clock instant, independently of the requested
-     * service date. Returns an empty list for an empty slot selection or an active blackout. This
+     * <p>Evaluates room blackouts against the selected service intervals in the application
+     * timezone. Returns an empty list for an empty slot selection or an overlapping blackout. This
      * lookup does not lock resources; reservation creation rechecks eligibility in its transaction.
      */
     @Override
@@ -43,8 +43,8 @@ public class ListAvailableSeatService implements ListAvailableSeatUseCase {
         if (query.targetSchedules().isEmpty())
             return new ListAvailableSeatResult(room.getId(), query.targetDate(), List.of());
 
-        if (blackoutScheduleFindPort.existsActiveByScheduleIdsAt(
-                query.targetSchedules(), clock.instant()))
+        if (blackoutScheduleFindPort.existsOverlappingUsage(
+                query.roomId(), query.targetSchedules(), query.targetDate(), clock.getZone()))
             return new ListAvailableSeatResult(room.getId(), query.targetDate(), List.of());
 
         var seats =

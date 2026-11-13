@@ -9,6 +9,8 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.persistence.jpa.repository.BlackoutScheduleRepository;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -19,7 +21,7 @@ import org.springframework.stereotype.Component;
  * Implements blackout read, exclusive-lock, and save ports using JPA.
  *
  * <p>Participates in the caller's transaction. Scalar parent lookup does not load a blackout
- * entity; the intake existence query unwraps schedule identifiers to UUIDs for native SQL binding.
+ * entity; usage overlap queries unwrap identifiers and timezone names for native SQL binding.
  */
 @Component
 @RequiredArgsConstructor
@@ -44,9 +46,17 @@ public class BlackoutScheduleJpaAdapter
 
     /** {@inheritDoc} */
     @Override
-    public boolean existsActiveByScheduleIdsAt(Set<ScheduleId> scheduleIds, Instant now) {
+    public boolean existsOverlappingUsage(
+            RoomId roomId, Set<ScheduleId> scheduleIds, LocalDate serviceDate, ZoneId timeZone) {
         var ids = scheduleIds.stream().map(ScheduleId::getValue).toList();
-        return repository.existsActiveByScheduleIdsAt(ids, now);
+        return repository.existsOverlappingUsage(
+                roomId.getValue(), ids, serviceDate, timeZone.getId());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<RoomId> findRoomIdById(BlackoutScheduleId blackoutScheduleId) {
+        return repository.findRoomIdById(blackoutScheduleId);
     }
 
     /** {@inheritDoc} */

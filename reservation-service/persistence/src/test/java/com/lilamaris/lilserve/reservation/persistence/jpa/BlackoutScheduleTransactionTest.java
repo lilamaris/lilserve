@@ -304,22 +304,26 @@ class BlackoutScheduleTransactionTest {
 
         @Bean
         UpdateBlackoutScheduleService updateService(
-                BlackoutScheduleJpaAdapter adapter, ScheduleJpaAdapter schedules) {
+                BlackoutScheduleJpaAdapter adapter,
+                ScheduleJpaAdapter schedules,
+                RoomJpaAdapter rooms) {
             return new UpdateBlackoutScheduleService(
-                    adapter, adapter, schedules, adapter, Clock.fixed(NOW, ZoneOffset.UTC));
+                    adapter, adapter, schedules, adapter, Clock.fixed(NOW, ZoneOffset.UTC), rooms);
         }
 
         @Bean
         UpdateBlackoutScheduleService failingUpdateService(
                 BlackoutScheduleJpaAdapter adapter,
                 ScheduleJpaAdapter schedules,
-                EntityManager entityManager) {
+                EntityManager entityManager,
+                RoomJpaAdapter rooms) {
             return new UpdateBlackoutScheduleService(
                     adapter,
                     adapter,
                     schedules,
                     failingSave(adapter, entityManager),
-                    Clock.fixed(NOW, ZoneOffset.UTC));
+                    Clock.fixed(NOW, ZoneOffset.UTC),
+                    rooms);
         }
 
         private BlackoutScheduleSavePort failingSave(
