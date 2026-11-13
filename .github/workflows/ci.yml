@@ -109,7 +109,9 @@ jobs:
         with:
           context: reservation-service/launcher
           push: true
-          tags: docker.io/${{ vars.DOCKERHUB_USERNAME }}/reservation-service:${{ github.sha }}
+          tags: |
+            docker.io/${{ vars.DOCKERHUB_USERNAME }}/reservation-service:${{ github.sha }}
+            docker.io/${{ vars.DOCKERHUB_USERNAME }}/reservation-service:latest
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
