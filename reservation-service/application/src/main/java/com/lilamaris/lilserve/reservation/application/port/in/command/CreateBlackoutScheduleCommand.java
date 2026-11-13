@@ -9,15 +9,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * Requests a reservation intake blackout for one recurring slot.
+ * Requests a room-wide physical usage restriction with a registration slot.
  *
  * <p>Construction and the factory retain the supplied values without running Bean Validation.
  * Required fields and text constraints are checked by explicit validation or a validated use case.
  * A non-null {@link InstantRange} validates its own bounds when constructed.
  *
  * @param roomId the room offering the slot, required when validated
- * @param scheduleId the recurring slot whose intake is blocked, required when validated
- * @param range the absolute intake interval, inclusive at the start and exclusive at the end,
+ * @param scheduleId the recurring registration slot; the restriction applies to the whole room,
+ *     required when validated
+ * @param range the absolute usage interval, inclusive at the start and exclusive at the end,
  *     required when validated
  * @param reason the non-blank explanation, at most the blackout reason length limit, required when
  *     validated
@@ -31,8 +32,8 @@ public record CreateBlackoutScheduleCommand(
      * Creates a command without running Bean Validation.
      *
      * @param roomId the room offering the slot
-     * @param scheduleId the recurring slot whose intake is blocked
-     * @param range the absolute intake interval, inclusive at the start and exclusive at the end
+     * @param scheduleId the recurring registration slot; the restriction applies to the whole room
+     * @param range the absolute usage interval, inclusive at the start and exclusive at the end
      * @param reason the non-blank explanation, at most the blackout reason length limit
      * @return the command
      */

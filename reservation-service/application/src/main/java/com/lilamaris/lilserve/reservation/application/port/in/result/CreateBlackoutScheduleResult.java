@@ -7,14 +7,14 @@ import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import java.time.Instant;
 
 /**
- * The created reservation intake blackout, without an update or deletion timestamp.
+ * The created room usage blackout, without an update or deletion timestamp.
  *
  * @param blackoutScheduleId the created blackout identifier
- * @param roomId the room owning the blocked slot
- * @param scheduleId the blocked recurring slot
+ * @param roomId the restricted room
+ * @param scheduleId the registration slot; the restriction applies to every slot in the room
  * @param reason the blackout reason
- * @param startsAt the inclusive intake start instant
- * @param endsAt the exclusive intake end instant
+ * @param startsAt the inclusive usage start instant
+ * @param endsAt the exclusive usage end instant
  * @param createdAt the creation time
  */
 public record CreateBlackoutScheduleResult(

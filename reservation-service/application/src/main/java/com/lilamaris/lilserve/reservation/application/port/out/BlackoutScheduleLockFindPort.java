@@ -10,8 +10,8 @@ public interface BlackoutScheduleLockFindPort {
      * Reads a blackout, including a deleted one, under an exclusive row lock.
      *
      * <p>Requires an active transaction and retains the lock until it ends. The caller validates
-     * the returned deletion state. For period changes and deletion, acquire the parent schedule's
-     * exclusive lock first to coordinate with reservation intake checks.
+     * the returned deletion state. For period changes and deletion, acquire the owning room and
+     * registration schedule exclusively first to coordinate with room usage checks.
      *
      * @param blackoutScheduleId the blackout identifier, not null
      * @return the locked blackout, or empty if missing; never null

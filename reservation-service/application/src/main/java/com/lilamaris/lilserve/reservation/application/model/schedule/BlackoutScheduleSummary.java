@@ -5,16 +5,16 @@ import com.lilamaris.lilserve.reservation.domain.BlackoutSchedule;
 import com.lilamaris.lilserve.reservation.domain.id.BlackoutScheduleId;
 
 /**
- * The part of a reservation intake blackout a slot list reports.
+ * The part of a room usage blackout a slot list reports.
  *
  * @param blackoutScheduleId the blackout identifier
- * @param validPeriod the half-open interval the blackout blocks intake for
+ * @param validPeriod the half-open interval the blackout blocks usage for
  * @param reason the blackout reason
  */
 public record BlackoutScheduleSummary(
         BlackoutScheduleId blackoutScheduleId, InstantRange validPeriod, String reason) {
     /**
-     * Projects a reservation intake blackout, preserving its half-open validity interval.
+     * Projects a room usage blackout, preserving its half-open validity interval.
      *
      * @param blackoutSchedule the blackout to summarize
      * @return its identifier, interval, and reason

@@ -9,25 +9,25 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * The JSON body that replaces the reservation intake interval of an existing blackout. The interval
- * is absolute, so it carries instants. Existing reservations are preserved.
+ * The JSON body that replaces the room usage interval of an existing blackout. The interval is
+ * absolute, so it carries instants. Existing reservations are preserved.
  *
  * @param startsAt the inclusive start instant, not null
  * @param endsAt the exclusive end instant, not null
  */
 @Schema(
-        description = "The body that replaces a blackout's reservation intake interval.",
+        description = "The body that replaces a blackout's room usage interval.",
         example = "{\"startsAt\":\"2026-01-04T00:00:00Z\",\"endsAt\":\"2026-01-05T00:00:00Z\"}")
 public record UpdateBlackoutSchedulePeriodRequest(
         @Schema(
-                        description = "inclusive intake start instant",
+                        description = "inclusive usage start instant",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED)
                 @NotNull
                 Instant startsAt,
         @Schema(
-                        description = "exclusive intake end instant, after startsAt",
+                        description = "exclusive usage end instant, after startsAt",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED)

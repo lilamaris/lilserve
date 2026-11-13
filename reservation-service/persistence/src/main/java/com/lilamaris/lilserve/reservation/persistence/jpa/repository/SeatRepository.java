@@ -72,7 +72,7 @@ public interface SeatRepository extends JpaRepository<Seat, SeatId> {
      * <p>Selected local slot times are combined with the service date and supplied timezone.
      * Existing allocations are compared by their stored absolute instants, even when their original
      * slots are retired. Half-open intervals allow adjacent reservations and preserve gaps between
-     * selected slots. The caller validates slot ownership, weekday, and intake.
+     * selected slots. The caller validates slot ownership, weekday, and usage.
      *
      * @param roomId the owning room UUID
      * @param targetDate the requested service date

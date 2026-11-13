@@ -10,8 +10,9 @@ public interface ListAvailableSeatUseCase {
     /**
      * Lists available seat identifiers in a non-deleted room.
      *
-     * <p>Returns an empty seat list when no slots are selected or any selected slot has an active
-     * intake blackout at lookup time. Availability is advisory; reservation creation rechecks it.
+     * <p>Returns an empty seat list when no slots are selected or any selected service interval
+     * overlaps a non-deleted room usage restriction. Availability is advisory; reservation creation
+     * rechecks it.
      *
      * @param query the room, service date, and selected slots, validated at the use case boundary
      * @return the room, service date, and available seat identifiers in code and identifier order

@@ -11,7 +11,7 @@ public interface ListScheduleUseCase {
      * Returns the non-deleted recurring slots of a non-deleted room, including all blackouts active
      * at the requested instant. Result ordering is unspecified.
      *
-     * @param query the room and reservation intake instant
+     * @param query the room and room usage instant
      * @return the room slots and their active blackouts, possibly empty
      * @throws java.util.NoSuchElementException if the room is missing or deleted
      */

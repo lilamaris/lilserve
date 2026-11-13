@@ -16,7 +16,7 @@ import org.springframework.validation.annotation.Validated;
 
 /**
  * Implements {@link ListScheduleUseCase} by reading the room, its slots, and the blackouts active
- * at the requested instant, then grouping each slot's blackouts under it.
+ * at the requested usage instant, then attaching the same room restrictions to every slot.
  */
 @Service
 @Validated

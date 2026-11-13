@@ -13,21 +13,21 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * The JSON body that suspends new reservation intake for one recurring room slot. The interval is
- * absolute and applies to the intake instant, independent of the requested service date, so it
- * carries instants rather than local times. The room and the slot are carried by the body, as a
- * seat carries its room; persistence enforces that the slot belongs to that room.
+ * The JSON body that restricts physical room usage over an absolute interval. Reservations are
+ * rejected when their actual service intervals overlap this period, regardless of booking time. The
+ * schedule records the registration context and must belong to the room; the restriction applies to
+ * every slot of the room, including replacement slots.
  *
  * <p>Overlapping blackouts are allowed, and existing reservations are preserved.
  *
  * @param roomId the room offering the slot, not null
- * @param scheduleId the slot whose intake is blocked, not null
+ * @param scheduleId the registration slot; the restriction applies to the whole room, not null
  * @param startsAt the inclusive start instant, not null
  * @param endsAt the exclusive end instant, not null
  * @param reason the explanation, non-blank and within {@link BlackoutSchedule#MAX_REASON_LENGTH}
  */
 @Schema(
-        description = "The body that suspends new reservation intake for one recurring room slot.",
+        description = "The body that restricts physical room usage over an absolute interval.",
         example =
                 """
                 {"roomId":"00000000-0000-0000-0000-000000000001","scheduleId":"00000000-0000-0000-\
@@ -43,21 +43,22 @@ public record CreateBlackoutScheduleRequest(
                 @NotNull
                 UUID roomId,
         @Schema(
-                        description = "slot whose intake is blocked",
+                        description =
+                                "registration slot; the restriction applies to the whole room",
                         type = "string",
                         format = "uuid",
                         requiredMode = Schema.RequiredMode.REQUIRED)
                 @NotNull
                 UUID scheduleId,
         @Schema(
-                        description = "inclusive intake start instant",
+                        description = "inclusive usage start instant",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED)
                 @NotNull
                 Instant startsAt,
         @Schema(
-                        description = "exclusive intake end instant, after startsAt",
+                        description = "exclusive usage end instant, after startsAt",
                         type = "string",
                         format = "date-time",
                         requiredMode = Schema.RequiredMode.REQUIRED)

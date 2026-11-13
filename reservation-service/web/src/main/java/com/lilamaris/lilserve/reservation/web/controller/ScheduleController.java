@@ -52,9 +52,10 @@ import org.springframework.web.bind.annotation.RestController;
  * ScheduleExceptionHandler} maps application failures to HTTP problem details. {@link
  * ApiVersionConfiguration} resolves the API version from the request path.
  *
- * <p>The read operation is a room-scoped list: it answers the room's slots together with the
- * reservation intake blackouts active at the instant the caller asks about, because intake
- * eligibility is that pair and never the slot alone.
+ * <p>The read operation is a room-scoped list: it answers the room's slots together with the room
+ * usage restrictions active at the instant the caller asks about. The same room restrictions are
+ * reported on every slot. This status snapshot does not determine date-specific booking
+ * availability; the available-seat endpoint compares actual service intervals.
  */
 @RestController
 @RequestMapping(path = "/api/v{version}/schedules", version = ApiVersionConfiguration.CURRENT)
@@ -166,11 +167,11 @@ public class ScheduleController {
     }
 
     /**
-     * Lists the recurring slots of one room with the reservation intake blackouts active at the
-     * requested instant.
+     * Lists the recurring slots of one room with the room usage blackouts active at the requested
+     * instant.
      *
      * @param roomId the room whose slots to list
-     * @param now the intake instant whose active blackouts are reported
+     * @param now the usage instant whose active blackouts are reported
      * @return 200 with the room slots and their active blackouts, empty when the room offers none
      */
     @Operation(
@@ -178,8 +179,9 @@ public class ScheduleController {
             summary = "List one room's recurring slots with their active blackouts",
             description =
                     "Lists the slots a room that exists and is not deleted offers. Each slot carries"
-                            + " the reservation intake blackouts active at the requested instant, so a"
-                            + " slot open for intake is answered with an empty blackouts array, and a"
+                            + " the room usage restrictions active at the requested instant. The same"
+                            + " restrictions apply to every slot; an available room has empty blackout"
+                            + " arrays. This is a status snapshot, not date-specific booking availability. A"
                             + " room with no slot is answered with an empty schedules array. Ordering"
                             + " is not guaranteed. A missing or deleted room is answered as 404.")
     @ApiResponse(

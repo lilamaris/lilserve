@@ -5,7 +5,7 @@ import com.lilamaris.lilserve.reservation.domain.id.RoomId;
 import java.util.List;
 
 /**
- * The slots of one room and the reservation intake blackouts active at the requested instant.
+ * The slots of one room and the room usage blackouts active at the requested instant.
  *
  * @param roomId the room the slots belong to
  * @param schedules the room slots, in unspecified order, empty when the room offers none

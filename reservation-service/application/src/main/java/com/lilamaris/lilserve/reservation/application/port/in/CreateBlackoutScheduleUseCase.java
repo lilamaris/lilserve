@@ -5,16 +5,16 @@ import com.lilamaris.lilserve.reservation.application.port.in.result.CreateBlack
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-/** Creates temporary reservation intake blackouts for recurring room slots. */
+/** Creates temporary physical room usage restrictions. */
 public interface CreateBlackoutScheduleUseCase {
     /**
      * Creates a blackout while protecting the active room and schedule in one transaction.
      *
-     * <p>Locks the room in shared mode, then the schedule in exclusive mode. The schedule lock
-     * serializes creation with reservation intake checks. Overlapping blackouts are allowed;
-     * existing reservations are preserved. The database enforces room and schedule ownership.
+     * <p>Locks the room and then the registration schedule exclusively. The room lock serializes
+     * creation with reservation usage checks. Overlapping blackouts are allowed; existing
+     * reservations are preserved. The database enforces room and schedule ownership.
      *
-     * @param command the room, schedule, intake interval, and reason, not null
+     * @param command the room, schedule, usage interval, and reason, not null
      * @return the created blackout with its generated identifier
      * @throws java.util.NoSuchElementException if the room or schedule is missing or deleted
      * @throws jakarta.validation.ConstraintViolationException if method validation is active and

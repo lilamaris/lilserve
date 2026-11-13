@@ -36,15 +36,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Maps HTTP requests for reservation intake blackouts to application use cases and returns their
- * results as JSON.
+ * Maps HTTP requests for room usage blackouts to application use cases and returns their results as
+ * JSON.
  *
- * <p>A blackout suspends new reservation intake for one recurring slot over an absolute interval,
- * and never cancels existing reservations. Creation and both changes answer with the stored
- * blackout, so the identifier the change and delete endpoints require comes from the creation that
- * produced it. Deletion is soft, so 204 has no body. {@link BlackoutScheduleExceptionHandler} maps
- * application failures to HTTP problem details. {@link ApiVersionConfiguration} resolves the API
- * version from the request path.
+ * <p>A blackout restricts physical room usage over an absolute interval, and never cancels existing
+ * reservations. Creation and both changes answer with the stored blackout, so the identifier the
+ * change and delete endpoints require comes from the creation that produced it. Deletion is soft,
+ * so 204 has no body. {@link BlackoutScheduleExceptionHandler} maps application failures to HTTP
+ * problem details. {@link ApiVersionConfiguration} resolves the API version from the request path.
  */
 @RestController
 @RequestMapping(path = "/api/v{version}/blackouts", version = ApiVersionConfiguration.CURRENT)
@@ -52,7 +51,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(
         name = "Blackout",
         description =
-                "Reservation intake blackouts: create, change interval, change reason, delete.")
+                "Reservation usage blackouts: create, change interval, change reason, delete.")
 @ApiResponses({
     @ApiResponse(
             responseCode = "400",
@@ -93,17 +92,19 @@ public class BlackoutScheduleController {
     private final DeleteBlackoutScheduleUseCase deleteBlackoutScheduleUseCase;
 
     /**
-     * Suspends new reservation intake for the slot carried by the request body.
+     * Restricts usage of the room carried by the request body.
      *
      * @param request the create body, validated before the use case runs
      * @return 201 with the created blackout
      */
     @Operation(
             operationId = "createBlackoutSchedule",
-            summary = "Suspend new reservation intake for a recurring slot",
+            summary = "Restrict physical room usage",
             description =
-                    "Blocks new intake over the requested absolute interval, independently of the"
-                            + " requested service date. Overlapping blackouts are allowed and"
+                    "Blocks reservations whose actual service intervals overlap the requested absolute"
+                            + " period, regardless of booking time. The restriction covers every slot"
+                            + " in the room; scheduleId records the registration context only."
+                            + " Overlapping blackouts are allowed and"
                             + " existing reservations are preserved. The answer carries the created"
                             + " blackout identifier, which the change and delete endpoints require."
                             + " The slot must belong to the room in the body and be active: a slot"
@@ -140,7 +141,7 @@ public class BlackoutScheduleController {
     }
 
     /**
-     * Replaces a blackout's intake interval.
+     * Replaces a blackout's usage interval.
      *
      * @param blackoutScheduleId the blackout to change
      * @param request the replacement interval, validated before the use case runs
@@ -148,9 +149,9 @@ public class BlackoutScheduleController {
      */
     @Operation(
             operationId = "updateBlackoutSchedulePeriod",
-            summary = "Replace a blackout's intake interval",
+            summary = "Replace a blackout's usage interval",
             description =
-                    "New intake decides against either the preceding interval or the committed"
+                    "New usage decides against either the preceding interval or the committed"
                             + " replacement, never a mix. Existing reservations are preserved. The"
                             + " blackout must not be deleted, otherwise the answer is 404.")
     @ApiResponse(
@@ -186,7 +187,7 @@ public class BlackoutScheduleController {
             operationId = "updateBlackoutScheduleReason",
             summary = "Replace a blackout's reason",
             description =
-                    "Changes the explanation only, so intake decisions do not move. The blackout must"
+                    "Changes the explanation only, so usage decisions do not move. The blackout must"
                             + " not be deleted, otherwise the answer is 404.")
     @ApiResponse(
             responseCode = "200",

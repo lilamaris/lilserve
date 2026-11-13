@@ -13,7 +13,7 @@ public interface AvailableSeatFindPort {
     /**
      * Finds non-deleted seats with no occupied time overlapping the requested slots.
      *
-     * <p>The caller validates the room, slot selection, and intake blackouts. Slot times are
+     * <p>The caller validates the room, slot selection, and usage blackouts. Slot times are
      * interpreted in the same timezone as reservation creation. Existing allocations retain their
      * stored instants, including allocations referring to retired slots. Intervals are half-open.
      *

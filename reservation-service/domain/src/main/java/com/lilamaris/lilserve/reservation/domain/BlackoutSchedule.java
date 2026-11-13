@@ -19,12 +19,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * A temporary suspension of new reservation intake for one recurring room slot.
+ * A temporary physical usage restriction for a room over an absolute time interval.
  *
- * <p>The half-open interval applies to the intake instant, independent of the requested service
- * date or slot usage times. It does not cancel existing reservations. The room and schedule
- * association is fixed at creation; the reason and interval may change while active. Deletion and
- * restoration record the update time.
+ * <p>The half-open interval is compared with requested service usage, never the booking clock. The
+ * restriction applies to every slot in the room, including replacements of retired slots. The
+ * schedule association records the registration context only; it does not narrow the scope.
+ * Existing reservations are preserved. The reason and interval may change while active; deletion
+ * and restoration record the update time.
  */
 @Entity
 @Table(name = "blackout_schedule")
@@ -125,7 +126,7 @@ public class BlackoutSchedule {
     }
 
     /**
-     * Changes the reservation intake interval and records the update time.
+     * Changes the room usage interval and records the update time.
      *
      * @param startsAt the inclusive start instant
      * @param endsAt the exclusive end instant, strictly after {@code startsAt}
