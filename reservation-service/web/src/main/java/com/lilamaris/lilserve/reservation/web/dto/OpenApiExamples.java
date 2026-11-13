@@ -97,6 +97,17 @@ public final class OpenApiExamples {
                     + "\"targetDate\":\"2026-11-16\","
                     + "\"availableSeatIds\":[\"00000000-0000-0000-0000-000000000002\"]}";
 
+    /** One reservation with all selected slots secured. */
+    public static final String RESERVATION =
+            """
+            {"reservationId":"00000000-0000-0000-0000-000000000006",
+            "roomId":"00000000-0000-0000-0000-000000000001",
+            "seatId":"00000000-0000-0000-0000-000000000002",
+            "scheduleIds":["00000000-0000-0000-0000-000000000003"],
+            "reservationDate":"2026-11-16","timeZone":"Asia/Seoul",
+            "createdAt":"2026-01-01T00:00:00Z"}
+            """;
+
     private OpenApiExamples() {
         throw new UnsupportedOperationException("Constants holder.");
     }

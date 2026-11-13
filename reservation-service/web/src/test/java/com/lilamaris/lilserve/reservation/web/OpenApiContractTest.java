@@ -12,6 +12,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.lilamaris.lilserve.kernel.pagination.OffsetPage;
 import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateBlackoutScheduleUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.CreateReservationUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateSeatUseCase;
@@ -35,6 +36,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.UpdateScheduleUseC
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.query.ListRoomQuery;
 import com.lilamaris.lilserve.reservation.web.controller.BlackoutScheduleController;
+import com.lilamaris.lilserve.reservation.web.controller.ReservationController;
 import com.lilamaris.lilserve.reservation.web.controller.RoomController;
 import com.lilamaris.lilserve.reservation.web.controller.ScheduleController;
 import com.lilamaris.lilserve.reservation.web.controller.SeatController;
@@ -65,7 +67,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
             RoomController.class,
             SeatController.class,
             ScheduleController.class,
-            BlackoutScheduleController.class
+            BlackoutScheduleController.class,
+            ReservationController.class
         })
 @ContextConfiguration(classes = WebMvcTestConfiguration.class)
 @ImportAutoConfiguration({
@@ -78,12 +81,14 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
     SeatController.class,
     ScheduleController.class,
     BlackoutScheduleController.class,
+    ReservationController.class,
     ApiVersionConfiguration.class
 })
 @MockitoBean(
         types = {
             CreateBlackoutScheduleUseCase.class,
             CreateRoomUseCase.class,
+            CreateReservationUseCase.class,
             CreateScheduleUseCase.class,
             CreateSeatUseCase.class,
             DeleteBlackoutScheduleUseCase.class,
@@ -109,6 +114,7 @@ class OpenApiContractTest {
     private static final Map<String, String> EXPECTED_IDS =
             Map.ofEntries(
                     Map.entry("post /api/v1/rooms", "createRoom"),
+                    Map.entry("post /api/v1/reservations", "createReservation"),
                     Map.entry("get /api/v1/rooms", "listRooms"),
                     Map.entry("get /api/v1/rooms/{roomId}", "findRoom"),
                     Map.entry("put /api/v1/rooms/{roomId}", "updateRoomMetadata"),
@@ -140,6 +146,16 @@ class OpenApiContractTest {
 
     private static final Map<String, List<String>> EXPECTED_REQUIRED =
             Map.ofEntries(
+                    Map.entry(
+                            "ReservationResponse",
+                            List.of(
+                                    "reservationId",
+                                    "roomId",
+                                    "seatId",
+                                    "scheduleIds",
+                                    "reservationDate",
+                                    "timeZone",
+                                    "createdAt")),
                     Map.entry(
                             "RoomResponse",
                             List.of("roomId", "code", "name", "description", "createdAt")),
