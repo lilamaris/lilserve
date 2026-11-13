@@ -20,6 +20,7 @@ import com.lilamaris.lilserve.reservation.application.port.in.DeleteScheduleUseC
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindSeatUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListAvailableSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.ListRoomUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.ListScheduleUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.ListSeatUseCase;
@@ -93,6 +94,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
             ListRoomUseCase.class,
             ListScheduleUseCase.class,
             ListSeatUseCase.class,
+            ListAvailableSeatUseCase.class,
             RestoreRoomUseCase.class,
             RestoreSeatUseCase.class,
             UpdateBlackoutSchedulePeriodUseCase.class,
@@ -114,6 +116,7 @@ class OpenApiContractTest {
                     Map.entry("post /api/v1/rooms/{roomId}/restore", "restoreRoom"),
                     Map.entry("post /api/v1/seats", "createSeat"),
                     Map.entry("get /api/v1/seats", "listSeats"),
+                    Map.entry("get /api/v1/seats/available", "listAvailableSeats"),
                     Map.entry("get /api/v1/seats/{seatId}", "findSeat"),
                     Map.entry("patch /api/v1/seats/{seatId}/code", "updateSeatCode"),
                     Map.entry("delete /api/v1/seats/{seatId}", "deleteSeat"),
@@ -140,6 +143,9 @@ class OpenApiContractTest {
                             "RoomResponse",
                             List.of("roomId", "code", "name", "description", "createdAt")),
                     Map.entry("SeatResponse", List.of("seatId", "roomId", "code", "createdAt")),
+                    Map.entry(
+                            "AvailableSeatResponse",
+                            List.of("roomId", "targetDate", "availableSeatIds")),
                     Map.entry(
                             "ScheduleResponse",
                             List.of(

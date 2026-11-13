@@ -5,17 +5,21 @@ import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindSeatUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListAvailableSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.ListSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListAvailableSeatQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.query.ListSeatQuery;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import com.lilamaris.lilserve.reservation.web.ApiVersionConfiguration;
 import com.lilamaris.lilserve.reservation.web.SeatExceptionHandler;
+import com.lilamaris.lilserve.reservation.web.dto.AvailableSeatResponse;
 import com.lilamaris.lilserve.reservation.web.dto.CreateSeatRequest;
 import com.lilamaris.lilserve.reservation.web.dto.OpenApiExamples;
 import com.lilamaris.lilserve.reservation.web.dto.SeatPageResponse;
@@ -30,8 +34,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +65,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "/api/v{version}/seats", version = ApiVersionConfiguration.CURRENT)
 @RequiredArgsConstructor
-@Tag(name = "Seat", description = "Seats: create, find, list, change code, delete, restore.")
+@Tag(
+        name = "Seat",
+        description = "Seats: create, find, list, find availability, change code, delete, restore.")
 @ApiResponses({
     @ApiResponse(
             responseCode = "400",
@@ -93,6 +105,7 @@ public class SeatController {
     private final CreateSeatUseCase createSeatUseCase;
     private final FindSeatUseCase findSeatUseCase;
     private final ListSeatUseCase listSeatUseCase;
+    private final ListAvailableSeatUseCase listAvailableSeatUseCase;
     private final UpdateSeatCodeUseCase updateSeatCodeUseCase;
     private final DeleteSeatUseCase deleteSeatUseCase;
     private final RestoreSeatUseCase restoreSeatUseCase;
@@ -168,6 +181,51 @@ public class SeatController {
                 SeatPageResponse.of(
                         OffsetPage.of(
                                 items, result.page(), result.size(), result.totalElements())));
+    }
+
+    /**
+     * Lists seats available for the selected slots on the requested service date.
+     *
+     * @param roomId the owning non-deleted room identifier
+     * @param targetDate the ISO service date, interpreted in the application timezone
+     * @param scheduleIds the non-empty selection of slot identifiers
+     * @return 200 with the room, service date, and available seat identifiers
+     */
+    @Operation(
+            operationId = "listAvailableSeats",
+            summary = "List available seats",
+            description =
+                    "Returns seat identifiers with no active allocation overlapping any selected slot on the service date. Times use the application timezone. The result is advisory and reservation creation rechecks availability. An empty result is returned as an empty availableSeatIds array.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Available seat identifiers for the selected slots",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AvailableSeatResponse.class),
+                            examples = @ExampleObject(value = OpenApiExamples.AVAILABLE_SEATS)))
+    @GetMapping("/available")
+    public ResponseEntity<AvailableSeatResponse> listAvailable(
+            @Parameter(
+                            description = "Owning room identifier",
+                            schema = @Schema(type = "string", format = "uuid"))
+                    @RequestParam("roomId")
+                    UUID roomId,
+            @Parameter(
+                            description = "Service date in the application timezone",
+                            schema = @Schema(type = "string", format = "date"))
+                    @RequestParam("targetDate")
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate targetDate,
+            @Parameter(
+                            description =
+                                    "Selected slot identifiers; repeat the parameter for multiple slots")
+                    @RequestParam("scheduleIds")
+                    @NotEmpty
+                    Set<@NotNull UUID> scheduleIds) {
+        var ids = scheduleIds.stream().map(ScheduleId::of).collect(Collectors.toSet());
+        var query = ListAvailableSeatQuery.of(RoomId.of(roomId), targetDate, ids);
+        return ResponseEntity.ok(AvailableSeatResponse.from(listAvailableSeatUseCase.list(query)));
     }
 
     /**

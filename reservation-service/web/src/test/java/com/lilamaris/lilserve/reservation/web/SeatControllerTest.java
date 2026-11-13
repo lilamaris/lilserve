@@ -15,6 +15,7 @@ import com.lilamaris.lilserve.kernel.pagination.OffsetPageRequest;
 import com.lilamaris.lilserve.reservation.application.port.in.CreateSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.DeleteSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.FindSeatUseCase;
+import com.lilamaris.lilserve.reservation.application.port.in.ListAvailableSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.ListSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.RestoreSeatUseCase;
 import com.lilamaris.lilserve.reservation.application.port.in.UpdateSeatCodeUseCase;
@@ -23,22 +24,28 @@ import com.lilamaris.lilserve.reservation.application.port.in.command.DeleteSeat
 import com.lilamaris.lilserve.reservation.application.port.in.command.RestoreSeatCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.command.UpdateSeatCodeCommand;
 import com.lilamaris.lilserve.reservation.application.port.in.query.FindSeatQuery;
+import com.lilamaris.lilserve.reservation.application.port.in.query.ListAvailableSeatQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.query.ListSeatQuery;
 import com.lilamaris.lilserve.reservation.application.port.in.result.CreateSeatResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.FindSeatResult;
+import com.lilamaris.lilserve.reservation.application.port.in.result.ListAvailableSeatResult;
 import com.lilamaris.lilserve.reservation.application.port.in.result.UpdateSeatResult;
 import com.lilamaris.lilserve.reservation.domain.Seat;
 import com.lilamaris.lilserve.reservation.domain.id.RoomId;
+import com.lilamaris.lilserve.reservation.domain.id.ScheduleId;
 import com.lilamaris.lilserve.reservation.domain.id.SeatId;
 import com.lilamaris.lilserve.reservation.web.controller.SeatController;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -66,9 +73,119 @@ class SeatControllerTest {
     @MockitoBean private CreateSeatUseCase createSeatUseCase;
     @MockitoBean private FindSeatUseCase findSeatUseCase;
     @MockitoBean private ListSeatUseCase listSeatUseCase;
+    @MockitoBean private ListAvailableSeatUseCase listAvailableSeatUseCase;
     @MockitoBean private UpdateSeatCodeUseCase updateSeatCodeUseCase;
     @MockitoBean private DeleteSeatUseCase deleteSeatUseCase;
     @MockitoBean private RestoreSeatUseCase restoreSeatUseCase;
+
+    @Test
+    @DisplayName("방과 날짜 및 복수 슬롯으로 예약 가능한 좌석을 조회한다")
+    void listsAvailableSeatsForSelectedSchedules() throws Exception {
+        var schedule = UUID.randomUUID();
+        var other = UUID.randomUUID();
+        var date = LocalDate.of(2026, 11, 16);
+        when(listAvailableSeatUseCase.list(
+                        ListAvailableSeatQuery.of(
+                                RoomId.of(ROOM_ID),
+                                date,
+                                Set.of(ScheduleId.of(schedule), ScheduleId.of(other)))))
+                .thenReturn(
+                        new ListAvailableSeatResult(
+                                RoomId.of(ROOM_ID), date, List.of(SeatId.of(SEAT_ID))));
+
+        mockMvc.perform(
+                        get(SEATS_URL + "/available")
+                                .param("roomId", ROOM_ID.toString())
+                                .param("targetDate", date.toString())
+                                .param("scheduleIds", schedule.toString(), other.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roomId").value(ROOM_ID.toString()))
+                .andExpect(jsonPath("$.targetDate").value(date.toString()))
+                .andExpect(jsonPath("$.availableSeatIds[0]").value(SEAT_ID.toString()))
+                .andExpect(jsonPath("$.availableSeatIds.length()").value(1));
+    }
+
+    @Test
+    @DisplayName("예약 가능한 좌석이 없으면 빈 배열을 반환한다")
+    void returnsEmptyAvailableSeats() throws Exception {
+        var schedule = UUID.randomUUID();
+        var date = LocalDate.of(2026, 11, 16);
+        when(listAvailableSeatUseCase.list(
+                        ListAvailableSeatQuery.of(
+                                RoomId.of(ROOM_ID), date, Set.of(ScheduleId.of(schedule)))))
+                .thenReturn(new ListAvailableSeatResult(RoomId.of(ROOM_ID), date, List.of()));
+
+        mockMvc.perform(
+                        get(SEATS_URL + "/available")
+                                .param("roomId", ROOM_ID.toString())
+                                .param("targetDate", date.toString())
+                                .param("scheduleIds", schedule.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.availableSeatIds").isArray())
+                .andExpect(jsonPath("$.availableSeatIds").isEmpty());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"roomId", "targetDate", "scheduleIds"})
+    @DisplayName("예약 가능 좌석 조회의 필수 파라미터가 없으면 거부한다")
+    void rejectsMissingAvailabilityParameter(String missing) throws Exception {
+        var request = get(SEATS_URL + "/available");
+        if (!missing.equals("roomId")) request.param("roomId", ROOM_ID.toString());
+        if (!missing.equals("targetDate")) request.param("targetDate", "2026-11-16");
+        if (!missing.equals("scheduleIds"))
+            request.param("scheduleIds", UUID.randomUUID().toString());
+
+        mockMvc.perform(request).andExpect(status().isBadRequest());
+        verifyNoInteractions(listAvailableSeatUseCase);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "invalid,2026-11-16,00000000-0000-0000-0000-000000000003",
+        "00000000-0000-0000-0000-000000000001,invalid,00000000-0000-0000-0000-000000000003",
+        "00000000-0000-0000-0000-000000000001,2026-11-16,invalid"
+    })
+    @DisplayName("예약 가능 좌석 조회의 UUID나 날짜 형식이 잘못되면 거부한다")
+    void rejectsMalformedAvailabilityParameter(String room, String date, String schedule)
+            throws Exception {
+        mockMvc.perform(
+                        get(SEATS_URL + "/available")
+                                .param("roomId", room)
+                                .param("targetDate", date)
+                                .param("scheduleIds", schedule))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(listAvailableSeatUseCase);
+    }
+
+    @Test
+    @DisplayName("예약 가능 좌석 조회의 슬롯 선택이 비어 있으면 거부한다")
+    void rejectsEmptyAvailabilitySchedules() throws Exception {
+        mockMvc.perform(
+                        get(SEATS_URL + "/available")
+                                .param("roomId", ROOM_ID.toString())
+                                .param("targetDate", "2026-11-16")
+                                .param("scheduleIds", ""))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(listAvailableSeatUseCase);
+    }
+
+    @Test
+    @DisplayName("예약 가능 좌석 조회의 방이 없거나 삭제되었으면 404를 반환한다")
+    void rejectsAvailabilityForMissingRoom() throws Exception {
+        var schedule = UUID.randomUUID();
+        var date = LocalDate.of(2026, 11, 16);
+        when(listAvailableSeatUseCase.list(
+                        ListAvailableSeatQuery.of(
+                                RoomId.of(ROOM_ID), date, Set.of(ScheduleId.of(schedule)))))
+                .thenThrow(new NoSuchElementException("room does not exists."));
+
+        mockMvc.perform(
+                        get(SEATS_URL + "/available")
+                                .param("roomId", ROOM_ID.toString())
+                                .param("targetDate", date.toString())
+                                .param("scheduleIds", schedule.toString()))
+                .andExpect(status().isNotFound());
+    }
 
     @Test
     @DisplayName("요청 본문으로 좌석을 생성하고 생성된 좌석을 201로 반환한다")
