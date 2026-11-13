@@ -65,6 +65,12 @@ public final class OpenApiExamples {
     public static final String SEAT_PAGE =
             "{\"items\":[" + SEAT + "],\"page\":0,\"size\":20,\"totalElements\":1}";
 
+    /** Available seat identifiers for one room and service date. */
+    public static final String AVAILABLE_SEATS =
+            "{\"roomId\":\"00000000-0000-0000-0000-000000000001\","
+                    + "\"targetDate\":\"2026-11-16\","
+                    + "\"availableSeatIds\":[\"00000000-0000-0000-0000-000000000002\"]}";
+
     private OpenApiExamples() {
         throw new UnsupportedOperationException("Constants holder.");
     }
