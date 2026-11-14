@@ -27,4 +27,14 @@ public class ListRoomService implements ListRoomUseCase {
         var items = page.items().stream().map(FindRoomResult::from).toList();
         return OffsetPage.of(items, page.page(), page.size(), page.totalElements());
     }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public OffsetPage<FindRoomResult> listDeleted(ListRoomQuery query) {
+        var page =
+                roomFindPort.findDeletedByFilters(query.name(), query.code(), query.pageRequest());
+        var items = page.items().stream().map(FindRoomResult::from).toList();
+        return OffsetPage.of(items, page.page(), page.size(), page.totalElements());
+    }
 }

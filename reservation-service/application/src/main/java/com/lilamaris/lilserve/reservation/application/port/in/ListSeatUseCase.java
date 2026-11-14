@@ -16,4 +16,14 @@ public interface ListSeatUseCase {
      * @throws java.util.NoSuchElementException if the room is missing or deleted
      */
     OffsetPage<FindSeatResult> list(@NotNull @Valid ListSeatQuery query);
+
+    /**
+     * Lists deleted seats in a non-deleted room.
+     *
+     * @param query the required room identifier and page request
+     * @return the page ordered by code and identifier, with the room's deleted seat total; empty
+     *     when no seats match or the page is beyond the result
+     * @throws java.util.NoSuchElementException if the room is missing or deleted
+     */
+    OffsetPage<FindSeatResult> listDeleted(@NotNull @Valid ListSeatQuery query);
 }

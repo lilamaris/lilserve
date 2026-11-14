@@ -15,4 +15,13 @@ public interface ListRoomUseCase {
      * @return the requested page, empty when no items match or the page is beyond the result
      */
     OffsetPage<FindRoomResult> list(@NotNull @Valid ListRoomQuery query);
+
+    /**
+     * Lists deleted rooms matching optional case-insensitive name and code substrings.
+     *
+     * @param query optional filters and the required page request
+     * @return the page ordered by code and identifier, with the matching deleted room total; empty
+     *     when no rooms match or the page is beyond the result
+     */
+    OffsetPage<FindRoomResult> listDeleted(@NotNull @Valid ListRoomQuery query);
 }

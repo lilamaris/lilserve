@@ -57,4 +57,15 @@ public interface RoomFindPort {
      */
     OffsetPage<Room> findNotDeletedByFilters(
             @Nullable String name, @Nullable String code, OffsetPageRequest pageRequest);
+
+    /**
+     * Finds deleted rooms matching both optional case-insensitive literal substring filters.
+     *
+     * @param name the name filter; null or empty matches any name
+     * @param code the code filter; null or empty matches any code
+     * @param pageRequest the zero-based page number and size
+     * @return the page ordered by code and identifier, with the matching deleted room total
+     */
+    OffsetPage<Room> findDeletedByFilters(
+            @Nullable String name, @Nullable String code, OffsetPageRequest pageRequest);
 }

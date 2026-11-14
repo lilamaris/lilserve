@@ -72,4 +72,16 @@ public class RoomJpaAdapter implements RoomFindPort, RoomSavePort, RoomLockFindP
         return OffsetPage.of(
                 page.getContent(), pageRequest.page(), pageRequest.size(), page.getTotalElements());
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public OffsetPage<Room> findDeletedByFilters(
+            @Nullable String name, @Nullable String code, OffsetPageRequest pageRequest) {
+        var pageable = PageRequest.of(pageRequest.page(), pageRequest.size());
+        var page =
+                repository.findInactiveByFilters(
+                        name == null ? "" : name, code == null ? "" : code, pageable);
+        return OffsetPage.of(
+                page.getContent(), pageRequest.page(), pageRequest.size(), page.getTotalElements());
+    }
 }
