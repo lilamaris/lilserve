@@ -1,16 +1,26 @@
 services:
   reservation-service:
-    image: lilamaris/reservation-service:latest
+    # Registry tag by default (docker compose pull). To run the working tree
+    # instead, build locally: docker compose up -d --build
+    image: lilamaris/reservation-service:${APP_IMAGE_TAG:-latest}
+    build:
+      context: ../reservation-service/launcher
+      dockerfile: Dockerfile
     environment:
       LILSERVE_DATASOURCE_URL: "${LILSERVE_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lilserve}}"
       LILSERVE_DATASOURCE_USERNAME: "${LILSERVE_DATASOURCE_USERNAME:-lilserve}"
       LILSERVE_DATASOURCE_PASSWORD: "${LILSERVE_DATASOURCE_PASSWORD:-lilserve}"
       LILSERVE_TIMEZONE: "${LILSERVE_TIMEZONE:-UTC}"
+      LILSERVE_MANAGEMENT_SERVER_PORT: "${LILSERVE_MANAGEMENT_SERVER_PORT:-8081}"
+      LILSERVE_TRACING_SAMPLING: "${LILSERVE_TRACING_SAMPLING:-1}"
+      MANAGEMENT_OPENTELEMETRY_LOGGING_EXPORT_OTLP_ENDPOINT:
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT:
     depends_on:
       postgres:
         condition: service_healthy
     ports:
       - "${BIND_HOST:-127.0.0.1}:${APP_BIND_PORT:-8080}:8080"
+      - "${MANAGEMENT_BIND_HOST:-127.0.0.1}:${LILSERVE_MANAGEMENT_SERVER_PORT:-8081}:${LILSERVE_MANAGEMENT_SERVER_PORT:-8081}"
   postgres:
     image: postgres:18-alpine
     environment:
@@ -23,8 +33,6 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
-    ports:
-      - "${BIND_HOST:-127.0.0.1}:${DB_BIND_PORT:-5432}:5432"
     volumes:
       - lilserve-postgres:/var/lib/postgresql
 

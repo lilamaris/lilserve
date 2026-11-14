@@ -19,6 +19,12 @@ tasks.named<BootJar>("bootJar") {
 
 dependencies {
     implementation(libs.spring.boot.starter)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.opentelemetry)
+    implementation(libs.opentelemetry.logback.appender)
+    implementation(libs.micrometer.registry.prometheus)
+    implementation(libs.datasource.micrometer.spring.boot)
+    implementation(libs.datasource.micrometer.opentelemetry)
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(testFixtures(project(":reservation-service:persistence")))
