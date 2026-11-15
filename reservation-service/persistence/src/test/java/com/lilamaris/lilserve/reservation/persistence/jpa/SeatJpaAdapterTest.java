@@ -236,6 +236,44 @@ class SeatJpaAdapterTest {
         assertThat(page.totalElements()).isZero();
     }
 
+    @ParameterizedTest
+    @MethodSource("seatPages")
+    @DisplayName("삭제 목록: 좌석 목록은 해당 방의 삭제된 좌석만 코드순으로 페이징하고 전체 건수를 반환한다")
+    void paginatesDeletedSeatsInRoom(int number, List<String> expected) {
+        seedRoom();
+        persistDeletedSeat(seat("C-01"));
+        persistDeletedSeat(seat("A-01"));
+        persistDeletedSeat(seat("B-01"));
+        entityManager.persist(seat("D-01"));
+        var otherRoom = RoomId.of(UUID.randomUUID());
+        entityManager.persist(Room.of(otherRoom, "ROOM-02", "Other", "", CREATED_AT));
+        persistDeletedSeat(Seat.of(SeatId.of(UUID.randomUUID()), otherRoom, "E-01", CREATED_AT));
+        flush();
+
+        var page = adapter.findDeletedByRoomId(RoomId.of(ROOM_ID), OffsetPageRequest.of(number, 2));
+
+        assertThat(page.items()).extracting(Seat::getCode).containsExactlyElementsOf(expected);
+        assertThat(page.totalElements()).isEqualTo(3);
+        assertThat(page.page()).isEqualTo(number);
+        assertThat(page.size()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("삭제 목록: 좌석이 없는 방은 전체 건수가 영인 빈 페이지를 반환한다")
+    void returnsEmptyDeletedSeatPage() {
+        seedRoom();
+
+        var page = adapter.findDeletedByRoomId(RoomId.of(ROOM_ID), OffsetPageRequest.of(0, 10));
+
+        assertThat(page.items()).isEmpty();
+        assertThat(page.totalElements()).isZero();
+    }
+
+    private void persistDeletedSeat(Seat seat) {
+        seat.delete(DELETED_AT);
+        entityManager.persist(seat);
+    }
+
     private Seat seat(String code) {
         return Seat.of(SeatId.of(UUID.randomUUID()), RoomId.of(ROOM_ID), code, CREATED_AT);
     }

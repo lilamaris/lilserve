@@ -69,4 +69,13 @@ public class SeatJpaAdapter implements SeatFindPort, SeatSavePort, SeatLockFindP
         return OffsetPage.of(
                 page.getContent(), pageRequest.page(), pageRequest.size(), page.getTotalElements());
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public OffsetPage<Seat> findDeletedByRoomId(RoomId roomId, OffsetPageRequest pageRequest) {
+        var pageable = PageRequest.of(pageRequest.page(), pageRequest.size());
+        var page = repository.findInactiveByRoomId(roomId, pageable);
+        return OffsetPage.of(
+                page.getContent(), pageRequest.page(), pageRequest.size(), page.getTotalElements());
+    }
 }

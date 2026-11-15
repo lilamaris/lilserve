@@ -60,11 +60,28 @@ public interface SeatRepository extends JpaRepository<Seat, SeatId> {
      */
     @Query(
             """
-            SELECT s FROM Seat s
-            WHERE s.roomId = :roomId AND s.deletedAt IS NULL
-            ORDER BY s.code, s.id
-            """)
+            SELECT s
+            FROM Seat s
+            WHERE s.roomId = :roomId
+                AND s.deletedAt IS NULL
+            ORDER BY s.code, s.id""")
     Page<Seat> findActiveByRoomId(@Param("roomId") RoomId roomId, Pageable pageable);
+
+    /**
+     * Finds deleted seats in a room regardless of the room's deletion state.
+     *
+     * @param roomId the owning room identifier
+     * @param pageable the requested page
+     * @return deleted seats ordered by code and identifier with the room's deleted seat total
+     */
+    @Query(
+            """
+            SELECT s
+            FROM Seat s
+            WHERE s.roomId = :roomId
+                AND s.deletedAt IS NOT NULL
+            ORDER BY s.code, s.id""")
+    Page<Seat> findInactiveByRoomId(@Param("roomId") RoomId roomId, Pageable pageable);
 
     /**
      * Finds non-deleted seats with no active allocation overlapping any selected slot.

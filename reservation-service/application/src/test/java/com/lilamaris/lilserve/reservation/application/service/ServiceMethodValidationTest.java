@@ -90,6 +90,7 @@ class ServiceMethodValidationTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource({
         "invalidListRequests",
+        "invalidDeletedListRequests",
         "invalidRequests",
         "invalidReservationRequests",
         "invalidDeleteReservationRequests",
@@ -197,6 +198,35 @@ class ServiceMethodValidationTest {
                                                                                 ListSeatUseCase
                                                                                         .class)
                                                                         .list(query))));
+    }
+
+    private static Stream<Arguments> invalidDeletedListRequests() {
+        return Stream.concat(
+                Stream.of(null, ListRoomQuery.of(null, null, null))
+                        .map(
+                                query ->
+                                        arguments(
+                                                "ListDeletedRoom." + query,
+                                                (Consumer<AnnotationConfigApplicationContext>)
+                                                        context ->
+                                                                context.getBean(
+                                                                                ListRoomUseCase
+                                                                                        .class)
+                                                                        .listDeleted(query))),
+                Stream.of(
+                                null,
+                                ListSeatQuery.of(null, OffsetPageRequest.of(0, 10)),
+                                ListSeatQuery.of(RoomId.of(ID), null))
+                        .map(
+                                query ->
+                                        arguments(
+                                                "ListDeletedSeat." + query,
+                                                (Consumer<AnnotationConfigApplicationContext>)
+                                                        context ->
+                                                                context.getBean(
+                                                                                ListSeatUseCase
+                                                                                        .class)
+                                                                        .listDeleted(query))));
     }
 
     private static Stream<Arguments> invalidUpdateScheduleRequests() {

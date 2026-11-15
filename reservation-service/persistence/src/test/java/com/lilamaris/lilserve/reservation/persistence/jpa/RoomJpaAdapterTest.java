@@ -266,6 +266,67 @@ class RoomJpaAdapterTest {
         persist(deleted);
     }
 
+    @ParameterizedTest
+    @MethodSource("roomFilters")
+    @DisplayName("삭제 목록: 방 이름과 코드 부분 일치 필터는 대소문자 구분 없이 결합되고 활성 방은 제외한다")
+    void filtersDeletedRooms(String name, String code, List<String> expected) {
+        seedDeletedListRooms();
+
+        var page = adapter.findDeletedByFilters(name, code, OffsetPageRequest.of(0, 10));
+
+        assertThat(page.items()).extracting(Room::getCode).containsExactlyElementsOf(expected);
+        assertThat(page.totalElements()).isEqualTo(expected.size());
+    }
+
+    @ParameterizedTest
+    @MethodSource("roomPages")
+    @DisplayName("삭제 목록: 방 목록은 코드순으로 페이지를 나누고 범위 밖에서도 전체 건수를 보존한다")
+    void paginatesDeletedRooms(int number, List<String> expected) {
+        seedDeletedListRooms();
+
+        var page = adapter.findDeletedByFilters(null, null, OffsetPageRequest.of(number, 2));
+
+        assertThat(page.items()).extracting(Room::getCode).containsExactlyElementsOf(expected);
+        assertThat(page.totalElements()).isEqualTo(3);
+        assertThat(page.page()).isEqualTo(number);
+        assertThat(page.size()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("삭제 목록: 검색어의 퍼센트와 밑줄은 와일드카드가 아닌 실제 문자로 처리한다")
+    void treatsDeletedFilterWildcardsLiterally() {
+        persistDeletedRoom(room("A%_01", "Hall%_", ""));
+        persistDeletedRoom(room("AB01", "HallAB", ""));
+
+        var page = adapter.findDeletedByFilters("%_", "%_", OffsetPageRequest.of(0, 10));
+
+        assertThat(page.items()).extracting(Room::getCode).containsExactly("A%_01");
+        assertThat(page.totalElements()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("삭제 목록: 필터가 적용된 페이지의 전체 건수는 일치하는 방만 센다")
+    void countsOnlyFilteredDeletedRoomsAcrossPages() {
+        seedDeletedListRooms();
+
+        var page = adapter.findDeletedByFilters("main", null, OffsetPageRequest.of(0, 1));
+
+        assertThat(page.items()).extracting(Room::getCode).containsExactly("A-01");
+        assertThat(page.totalElements()).isEqualTo(2);
+    }
+
+    private void seedDeletedListRooms() {
+        persistDeletedRoom(room("B-01", "Main annex", ""));
+        persistDeletedRoom(room("A-02", "Quiet room", ""));
+        persistDeletedRoom(room("A-01", "Main hall", ""));
+        persist(room("D-01", "Main hall", ""));
+    }
+
+    private RoomId persistDeletedRoom(Room room) {
+        room.delete(DELETED_AT);
+        return persist(room);
+    }
+
     private Room room(String code, String name, String description) {
         return Room.of(RoomId.of(UUID.randomUUID()), code, name, description, CREATED_AT);
     }

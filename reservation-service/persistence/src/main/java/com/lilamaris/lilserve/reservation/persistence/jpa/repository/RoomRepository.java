@@ -60,8 +60,26 @@ public interface RoomRepository extends JpaRepository<Room, RoomId> {
             WHERE r.deletedAt IS NULL
               AND LOCATE(LOWER(:name), LOWER(r.name)) > 0
               AND LOCATE(LOWER(:code), LOWER(r.code)) > 0
-            ORDER BY r.code, r.id
-            """)
+            ORDER BY r.code, r.id""")
     Page<Room> findActiveByFilters(
+            @Param("name") String name, @Param("code") String code, Pageable pageable);
+
+    /**
+     * Finds deleted rooms matching both case-insensitive literal substring filters.
+     *
+     * @param name the name substring; empty matches any name
+     * @param code the code substring; empty matches any code
+     * @param pageable the requested page
+     * @return deleted rooms ordered by code and identifier with the matching total
+     */
+    @Query(
+            """
+            SELECT r
+            FROM Room r
+            WHERE r.deletedAt IS NOT NULL
+                AND LOCATE(LOWER(:name), LOWER(r.name)) > 0
+                AND LOCATE(LOWER(:code), LOWER(r.code)) > 0
+            ORDER BY r.code, r.id""")
+    Page<Room> findInactiveByFilters(
             @Param("name") String name, @Param("code") String code, Pageable pageable);
 }

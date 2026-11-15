@@ -54,4 +54,13 @@ public interface SeatFindPort {
      * @return the page ordered by code and identifier, with the room's active seat total
      */
     OffsetPage<Seat> findNotDeletedByRoomId(RoomId roomId, OffsetPageRequest pageRequest);
+
+    /**
+     * Finds deleted seats belonging to the specified room without checking the room's state.
+     *
+     * @param roomId the owning room identifier
+     * @param pageRequest the zero-based page number and size
+     * @return the page ordered by code and identifier, with the room's deleted seat total
+     */
+    OffsetPage<Seat> findDeletedByRoomId(RoomId roomId, OffsetPageRequest pageRequest);
 }

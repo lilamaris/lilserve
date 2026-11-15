@@ -31,4 +31,16 @@ public class ListSeatService implements ListSeatUseCase {
         var items = page.items().stream().map(FindSeatResult::from).toList();
         return OffsetPage.of(items, page.page(), page.size(), page.totalElements());
     }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    public OffsetPage<FindSeatResult> listDeleted(ListSeatQuery query) {
+        roomFindPort
+                .findNotDeletedById(query.roomId())
+                .orElseThrow(() -> new NoSuchElementException("room does not exists."));
+        var page = seatFindPort.findDeletedByRoomId(query.roomId(), query.pageRequest());
+        var items = page.items().stream().map(FindSeatResult::from).toList();
+        return OffsetPage.of(items, page.page(), page.size(), page.totalElements());
+    }
 }
