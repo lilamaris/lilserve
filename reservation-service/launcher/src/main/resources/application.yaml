@@ -8,5 +8,24 @@ spring:
   jpa:
     open-in-view: false
 
+# OTLP log and trace export is opt-in: Boot builds the exporters only when
+# MANAGEMENT_OPENTELEMETRY_LOGGING_EXPORT_OTLP_ENDPOINT and
+# MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT are set. Without them no
+# exporter exists, so nothing is sent and no endpoint is required.
+management:
+  server:
+    port: ${LILSERVE_MANAGEMENT_SERVER_PORT:8081}
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  tracing:
+    sampling:
+      probability: ${LILSERVE_TRACING_SAMPLING:1}
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
 lilserve:
   timezone: ${LILSERVE_TIMEZONE:UTC}
